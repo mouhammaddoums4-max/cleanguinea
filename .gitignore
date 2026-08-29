@@ -22,3 +22,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Artefacts de build TypeScript
+*.tsbuildinfo

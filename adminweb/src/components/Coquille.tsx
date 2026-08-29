@@ -1,25 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, ChevronDown, LogOut, Recycle } from 'lucide-react';
+import {
+  BadgeCheck,
+  Bell,
+  Boxes,
+  ChevronDown,
+  FileText,
+  HardHat,
+  LayoutDashboard,
+  LogOut,
+  Recycle,
+  Settings,
+  ShoppingCart,
+  Trash2,
+  Truck,
+  Users,
+  Wallet,
+} from 'lucide-react';
 
 import { api, effacerJeton, lireJeton } from '@/lib/api';
 import { useConfig, type CleTexte, type Langue } from '@/lib/config';
 
-const NAVIGATION: { cle: CleTexte; href: string }[] = [
-  { cle: 'tableauDeBord', href: '/tableau-de-bord' },
-  { cle: 'clients', href: '/clients' },
-  { cle: 'abonnements', href: '/abonnements' },
-  { cle: 'collectes', href: '/collectes' },
-  { cle: 'collecteurs', href: '/collecteurs' },
-  { cle: 'dechets', href: '/dechets' },
-  { cle: 'stock', href: '/stock' },
-  { cle: 'ventes', href: '/ventes' },
-  { cle: 'finance', href: '/finance' },
-  { cle: 'rapports', href: '/rapports' },
-  { cle: 'parametres', href: '/parametres' },
+type Icone = ComponentType<{ className?: string }>;
+
+const NAVIGATION: { cle: CleTexte; href: string; icone: Icone }[] = [
+  { cle: 'tableauDeBord', href: '/tableau-de-bord', icone: LayoutDashboard },
+  { cle: 'clients', href: '/clients', icone: Users },
+  { cle: 'abonnements', href: '/abonnements', icone: BadgeCheck },
+  { cle: 'collectes', href: '/collectes', icone: Truck },
+  { cle: 'collecteurs', href: '/collecteurs', icone: HardHat },
+  { cle: 'dechets', href: '/dechets', icone: Trash2 },
+  { cle: 'stock', href: '/stock', icone: Boxes },
+  { cle: 'ventes', href: '/ventes', icone: ShoppingCart },
+  { cle: 'finance', href: '/finance', icone: Wallet },
+  { cle: 'rapports', href: '/rapports', icone: FileText },
+  { cle: 'parametres', href: '/parametres', icone: Settings },
 ];
 
 const LANGUES: Langue[] = ['fr', 'en'];
@@ -75,27 +93,7 @@ export function Coquille({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <nav className="table-scroll flex flex-1 items-center gap-1">
-            {NAVIGATION.map((entree) => {
-              const actif = chemin.startsWith(entree.href);
-              return (
-                <Link
-                  key={entree.href}
-                  href={entree.href}
-                  className={clsxLocal(
-                    'whitespace-nowrap rounded-md px-3 py-2 text-sm transition',
-                    actif
-                      ? 'border-b-2 border-primaire-500 font-semibold text-primaire-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                  )}
-                >
-                  {t(entree.cle)}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="ml-auto flex shrink-0 items-center gap-4">
             <button className="relative" aria-label="Notifications">
               <Bell className="h-5 w-5 text-gray-500" />
               <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primaire-500 text-[10px] font-bold text-white">
@@ -143,8 +141,67 @@ export function Coquille({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="px-6 py-6">{children}</main>
+      {/* pb-28 : le dock flotte au-dessus du contenu, on lui réserve la place. */}
+      <main className="px-6 pb-28 pt-6">{children}</main>
+
+      <Dock chemin={chemin} t={t} />
     </div>
+  );
+}
+
+/**
+ * Navigation flottante, centrée en bas de l'écran.
+ * Icônes seules : le libellé n'apparaît qu'au survol ou au focus clavier.
+ */
+function Dock({ chemin, t }: { chemin: string; t: (cle: CleTexte) => string }) {
+  return (
+    <nav
+      aria-label={t('navigationPrincipale')}
+      className="fixed inset-x-0 bottom-5 z-30 flex justify-center px-4"
+    >
+      {/* Pas d'overflow ici : il découperait les infobulles, qui débordent vers le haut.
+          Sur petit écran les icônes passent à la ligne plutôt que de défiler. */}
+      <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white/90 p-2 shadow-lg shadow-gray-900/10 backdrop-blur">
+        {NAVIGATION.map((entree) => {
+          const actif = chemin.startsWith(entree.href);
+          const libelle = t(entree.cle);
+          const Icone = entree.icone;
+
+          return (
+            <Link
+              key={entree.href}
+              href={entree.href}
+              aria-label={libelle}
+              aria-current={actif ? 'page' : undefined}
+              className={clsxLocal(
+                'group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl outline-none transition',
+                'focus-visible:ring-2 focus-visible:ring-primaire-500 focus-visible:ring-offset-2',
+                actif
+                  ? 'bg-primaire-500 text-white shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
+              )}
+            >
+              <Icone className="h-5 w-5" />
+
+              {/* Infobulle : masquée aux lecteurs d'écran, qui lisent déjà aria-label. */}
+              <span
+                aria-hidden
+                className={clsxLocal(
+                  'pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 translate-y-1',
+                  'whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs font-medium text-white',
+                  'opacity-0 shadow-md transition duration-150',
+                  'group-hover:translate-y-0 group-hover:opacity-100',
+                  'group-focus-visible:translate-y-0 group-focus-visible:opacity-100',
+                )}
+              >
+                {libelle}
+                <span className="absolute left-1/2 top-full -ml-1 border-4 border-transparent border-t-gray-900" />
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
