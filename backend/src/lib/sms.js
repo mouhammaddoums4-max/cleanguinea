@@ -1,23 +1,30 @@
 import { randomInt } from 'node:crypto';
 
 /**
- * Passerelle SMS - NimbaSMS (https://www.nimbasms.com/)
+ * Passerelle SMS - NimbaSMS (https://api.nimbasms.com)
  *
  * Sert a deux choses dans Clean Guinee :
  *   1. les codes OTP d'inscription et de connexion ;
  *   2. les notifications de passage, pour les clients sans smartphone.
  *
- * A VERIFIER AVANT MISE EN PRODUCTION
- * L'URL, le schema d'authentification et le nom des champs ci-dessous suivent la
- * convention habituelle de NimbaSMS (Basic auth SERVICE_ID:SECRET_TOKEN, POST
- * /v1/messages avec { to, sender_name, message }). Ils sont tous surchargeables par
- * variable d'environnement : confirmez-les dans votre espace developpeur NimbaSMS
- * et ajustez SMS_BASE_URL / SMS_ENDPOINT si besoin, sans toucher au reste du code.
+ * Contrat verifie contre l'API (OPTIONS /v1/messages) :
+ *   POST /v1/messages
+ *   Authorization: Basic base64(SERVICE_ID:SECRET_TOKEN)
+ *   { sender_name: string (obligatoire, SENSIBLE A LA CASSE, <= 100),
+ *     to: string[] (obligatoire, 1 a 30 numeros),
+ *     message: string (<= 1071 caracteres, soit 7 SMS) }
+ *
+ * Formats de numero acceptes : 623XXXXXX, 224623XXXXXX, +224623XXXXXX.
  */
 
 const BASE_URL = process.env.SMS_BASE_URL || 'https://api.nimbasms.com';
-const ENDPOINT = process.env.SMS_ENDPOINT || '/v1/messages';
+const ENDPOINT_MESSAGES = process.env.SMS_ENDPOINT || '/v1/messages';
+const ENDPOINT_COMPTE = '/v1/accounts';
 const SENDER = process.env.SMS_SENDER_ID || 'CleanGuinee';
+
+/** Limites imposees par l'API. */
+const MAX_DESTINATAIRES = 30;
+const MAX_CARACTERES = 1071;
 
 /** true si la passerelle est configuree. Sinon, on bascule en mode journal. */
 export function smsActif() {
@@ -31,52 +38,126 @@ function enteteAuth() {
   return `Basic ${jeton}`;
 }
 
-/** NimbaSMS attend des numeros au format international sans le "+". */
+/** Normalise vers 224XXXXXXXXX, l'un des formats acceptes par NimbaSMS. */
 function normaliser(numero) {
   const chiffres = String(numero).replace(/\D/g, '');
   if (chiffres.startsWith('224')) return chiffres;
   return `224${chiffres.replace(/^0+/, '')}`;
 }
 
+/** Decoupe la liste en lots de 30, la limite par requete. */
+function parLots(liste, taille = MAX_DESTINATAIRES) {
+  const lots = [];
+  for (let i = 0; i < liste.length; i += taille) lots.push(liste.slice(i, i + taille));
+  return lots;
+}
+
+async function envoyerLot(destinataires, message) {
+  const reponse = await fetch(`${BASE_URL}${ENDPOINT_MESSAGES}`, {
+    method: 'POST',
+    headers: {
+      Authorization: enteteAuth(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender_name: SENDER,
+      to: destinataires,
+      message,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  const corps = await reponse.json().catch(() => ({}));
+
+  if (!reponse.ok) {
+    console.error(`[SMS] echec ${reponse.status}`, corps);
+    return { envoye: false, statut: reponse.status, corps };
+  }
+
+  return { envoye: true, corps };
+}
+
 /**
- * Envoie un SMS a un ou plusieurs destinataires.
+ * Envoie un SMS a un ou plusieurs destinataires, par lots de 30.
  * Ne leve jamais : un echec d'envoi ne doit pas faire echouer la requete metier.
  */
 export async function envoyerSms(destinataires, message) {
-  const liste = (Array.isArray(destinataires) ? destinataires : [destinataires]).map(normaliser);
+  const liste = [...new Set(
+    (Array.isArray(destinataires) ? destinataires : [destinataires]).map(normaliser),
+  )];
+
+  if (liste.length === 0) return { envoye: false, erreur: 'Aucun destinataire' };
+
+  // Au-dela de 1071 caracteres l'API rejette le message : on tronque proprement
+  // plutot que de perdre l'envoi entier.
+  let texte = message;
+  if (texte.length > MAX_CARACTERES) {
+    console.warn(`[SMS] message tronque : ${texte.length} > ${MAX_CARACTERES} caracteres`);
+    texte = `${texte.slice(0, MAX_CARACTERES - 1)}…`;
+  }
 
   if (!smsActif()) {
     // En developpement, on affiche le message au lieu de l'envoyer.
-    console.log(`[SMS simule] -> ${liste.join(', ')} : ${message}`);
+    console.log(`[SMS simule] -> ${liste.join(', ')} : ${texte}`);
     return { simule: true, destinataires: liste };
   }
 
   try {
-    const reponse = await fetch(`${BASE_URL}${ENDPOINT}`, {
-      method: 'POST',
-      headers: {
-        Authorization: enteteAuth(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: liste,
-        sender_name: SENDER,
-        message,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-
-    const corps = await reponse.json().catch(() => ({}));
-
-    if (!reponse.ok) {
-      console.error(`[SMS] echec ${reponse.status}`, corps);
-      return { envoye: false, statut: reponse.status, corps };
+    const resultats = [];
+    for (const lot of parLots(liste)) {
+      resultats.push(await envoyerLot(lot, texte));
     }
 
-    return { envoye: true, corps };
+    return {
+      envoye: resultats.every((r) => r.envoye),
+      lots: resultats.length,
+      destinataires: liste.length,
+      resultats,
+    };
   } catch (err) {
     console.error('[SMS] erreur reseau', err.message);
     return { envoye: false, erreur: err.message };
+  }
+}
+
+/**
+ * Solde du compte NimbaSMS.
+ * A surveiller : sans credit, les OTP ne partent plus et personne ne peut s'inscrire.
+ */
+export async function soldeSms() {
+  if (!smsActif()) return { simule: true, sms_balance: null };
+
+  try {
+    const reponse = await fetch(`${BASE_URL}${ENDPOINT_COMPTE}`, {
+      headers: { Authorization: enteteAuth(), Accept: 'application/json' },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!reponse.ok) return { erreur: `HTTP ${reponse.status}` };
+
+    const { balance, sms_balance } = await reponse.json();
+    return { balance, sms_balance };
+  } catch (err) {
+    return { erreur: err.message };
+  }
+}
+
+/** Noms d'expediteur valides sur le compte (statut "accepted"). */
+export async function expediteursAutorises() {
+  if (!smsActif()) return [];
+
+  try {
+    const reponse = await fetch(`${BASE_URL}/v1/sendernames`, {
+      headers: { Authorization: enteteAuth(), Accept: 'application/json' },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!reponse.ok) return [];
+
+    const { results } = await reponse.json();
+    return (results ?? []).filter((s) => s.status === 'accepted').map((s) => s.name);
+  } catch {
+    return [];
   }
 }
 

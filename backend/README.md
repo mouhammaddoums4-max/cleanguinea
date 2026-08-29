@@ -135,10 +135,31 @@ points ne doit jamais annuler une collecte réellement effectuée.
 
 `src/lib/sms.js` implémente NimbaSMS (OTP et notifications de passage).
 
-> **À vérifier avant production** : l'URL, le schéma d'authentification et le nom des champs
-> suivent la convention habituelle (Basic auth `SERVICE_ID:SECRET_TOKEN`, `POST /v1/messages`
-> avec `{ to, sender_name, message }`). Confirmez-les dans votre espace développeur NimbaSMS
-> et ajustez `SMS_BASE_URL` / `SMS_ENDPOINT` si nécessaire — aucun autre code n'est à toucher.
+Contrat **vérifié contre l'API** (`OPTIONS /v1/messages`) :
+
+```
+POST https://api.nimbasms.com/v1/messages
+Authorization: Basic base64(SERVICE_ID:SECRET_TOKEN)
+
+{ "sender_name": "…",   // obligatoire, SENSIBLE À LA CASSE, ≤ 100 caractères
+  "to": ["224622123456"], // obligatoire, 1 à 30 numéros par requête
+  "message": "…" }        // ≤ 1071 caractères (7 SMS)
+```
+
+Formats de numéro acceptés : `623XXXXXX`, `224623XXXXXX`, `+224623XXXXXX`.
+
+| Fonction | Rôle |
+|---|---|
+| `envoyerSms(destinataires, message)` | Envoi, **découpé en lots de 30** et tronqué à 1071 caractères |
+| `soldeSms()` | Crédit restant — `GET /v1/accounts` |
+| `expediteursAutorises()` | Noms d'expéditeur au statut `accepted` |
+| `genererOtp()` | Code à 6 chiffres tiré de `randomInt` |
+
+**`SMS_SENDER_ID` doit correspondre exactement** à un nom accepté sur le compte : l'API est
+sensible à la casse. Vérifiez avec `expediteursAutorises()`.
+
+> **Surveiller le solde.** Sans crédit, les OTP ne partent plus et **plus personne ne peut
+> s'inscrire**. Prévoyez une alerte sous un seuil (200 SMS par exemple) via `soldeSms()`.
 
 Sans clés configurées, les messages sont **affichés dans la console** au lieu d'être envoyés :
 le développement fonctionne sans compte SMS.
