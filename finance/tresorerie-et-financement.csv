@@ -1,0 +1,26 @@
+Section;Poste;A0;A1;A2;A3;A4;A5
+TRESORERIE;Financement amorcage;1900,0;0,0;0,0;0,0;0,0;0,0
+TRESORERIE;Levee serie A;0,0;0,0;2500,0;0,0;0,0;0,0
+TRESORERIE;Investissements initiaux;-1242,0;0,0;0,0;0,0;0,0;0,0
+TRESORERIE;Frais de lancement;-135,0;0,0;0,0;0,0;0,0;0,0
+TRESORERIE;Resultat net;0,0;-444,4;-485,5;-156,3;1211,5;2920,2
+TRESORERIE;Dotations aux amortissements;0,0;186,0;333,0;558,0;918,0;1398,0
+TRESORERIE;Investissements de croissance;0,0;0,0;-850,0;-1400,0;-2200,0;-2600,0
+TRESORERIE;FLUX NET DE LA PERIODE;523,0;-258,4;1497,5;-998,3;-70,5;1718,2
+TRESORERIE;TRESORERIE FIN DE PERIODE;523,0;264,6;1762,1;763,8;693,3;2411,5
+FINANCEMENT AMORCAGE;Apport des fondateurs;200,0;;;;;
+FINANCEMENT AMORCAGE;Subventions et prix de concours;600,0;;;;;
+FINANCEMENT AMORCAGE;Investisseurs en capital;700,0;;;;;
+FINANCEMENT AMORCAGE;Credit-bail equipements;400,0;;;;;
+FINANCEMENT AMORCAGE;TOTAL AMORCAGE;1900,0;;;;;
+FINANCEMENT SERIE A;Fonds d impact economie circulaire;;;1500,0;;;
+FINANCEMENT SERIE A;Ligne de credit bancaire garantie;;;700,0;;;
+FINANCEMENT SERIE A;Subvention climat bailleur;;;300,0;;;
+FINANCEMENT SERIE A;TOTAL SERIE A;;;2500,0;;;
+RENTABILITE;Seuil de rentabilite en CA (M GNF);;;;5906,0;;
+RENTABILITE;Seuil en nombre de menages;;;;9100;;
+RENTABILITE;Mois d atteinte du point mort net;;;;;40;
+RENTABILITE;Mois de recuperation de l amorcage;;;;;;55
+RENTABILITE;Capitaux investis totaux (M GNF);;;;;;4400,0
+RENTABILITE;Valorisation indicative 6x EBITDA A5;;;;;;31750,0
+RENTABILITE;Multiple sur capitaux investis;;;;;;7,2

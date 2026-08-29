@@ -1,0 +1,86 @@
+/**
+ * Charte Clean Guinée.
+ * Les teintes de marque sont reprises du logo (moulinet turquoise / lime / vert / ardoise).
+ */
+
+export const brand = {
+  tealFonce: '#14524F',
+  teal: '#0FA085',
+  lime: '#8CD211',
+  vert: '#00B140',
+  ardoise: '#2E4256',
+} as const;
+
+export const colors = {
+  primary: '#16A34A',
+  primaryFonce: '#15803D',
+  primaryClair: '#DCFCE7',
+  primaryTexte: '#166534',
+
+  fond: '#F9FAFB',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F3F4F6',
+  bordure: '#E5E7EB',
+
+  texte: '#111827',
+  texteSecondaire: '#6B7280',
+  texteTertiaire: '#9CA3AF',
+
+  danger: '#DC2626',
+  dangerClair: '#FEE2E2',
+  alerte: '#F59E0B',
+  alerteClair: '#FEF3C7',
+  info: '#2563EB',
+  infoClair: '#DBEAFE',
+
+  blanc: '#FFFFFF',
+  noir: '#000000',
+} as const;
+
+/** Couleurs des trois bacs, telles qu'elles apparaissent dans les maquettes. */
+export const couleursCategorie: Record<string, { fond: string; teinte: string; libelle: string }> = {
+  PLASTIQUE: { fond: '#DBEAFE', teinte: '#2563EB', libelle: 'Plastiques' },
+  METAL_FER: { fond: '#FEF3C7', teinte: '#F59E0B', libelle: 'Métaux / Fer' },
+  AUTRES: { fond: '#F3F4F6', teinte: '#4B5563', libelle: 'Autres déchets' },
+  CARTON: { fond: '#DCFCE7', teinte: '#16A34A', libelle: 'Carton' },
+  VERRE: { fond: '#EDE9FE', teinte: '#7C3AED', libelle: 'Verre' },
+  ORGANIQUE: { fond: '#FEE2E2', teinte: '#DC2626', libelle: 'Déchets organiques' },
+  REFUS: { fond: '#F3F4F6', teinte: '#6B7280', libelle: 'Refus' },
+};
+
+export const espacement = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
+
+export const rayon = { sm: 8, md: 12, lg: 16, xl: 20, plein: 999 } as const;
+
+export const typo = {
+  titre: { fontSize: 22, fontWeight: '700' as const, color: colors.texte },
+  sousTitre: { fontSize: 17, fontWeight: '600' as const, color: colors.texte },
+  corps: { fontSize: 15, color: colors.texte },
+  petit: { fontSize: 13, color: colors.texteSecondaire },
+  minuscule: { fontSize: 11, color: colors.texteTertiaire },
+};
+
+export const ombre = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.05,
+  shadowRadius: 3,
+  elevation: 2,
+};
+
+/** 50 000 GNF -> "50 000 GNF" */
+export function formaterGnf(montant: number): string {
+  return `${montant.toLocaleString('fr-FR').replace(/ | /g, ' ')} GNF`;
+}
+
+export function formaterDate(date: string | Date): string {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function formaterHeure(date: string | Date): string {
+  return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}

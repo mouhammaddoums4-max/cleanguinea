@@ -1,0 +1,23 @@
+Bloc;Poste;Detail;Montant GNF;Montant USD;Amortissable
+A. Technologie;Application mobile abonne;Expo React Native iOS + Android 4 mois;95000000;11047;Oui
+A. Technologie;Application collecteur;Scan QR tournees hors ligne pesee;40000000;4651;Oui
+A. Technologie;Back-office et API;Node.js PostgreSQL tableau de bord;35000000;4070;Oui
+A. Technologie;Integrations Mobile Money;Orange Money MTN MoMo USSD SMS;10000000;1163;Oui
+B. Materiel de collecte;300 bacs roulants 240 L;850000 GNF l unite livres et serialises;255000000;29651;Oui
+B. Materiel de collecte;3 tricycles motorises bennes;55000000 GNF l unite;165000000;19186;Oui
+B. Materiel de collecte;1 camionnette benne 3,5 t;Occasion revisee import;220000000;25581;Oui
+C. Centre de tri;Amenagement du site;Dalle 400 m2 hangar cloture sanitaires;190000000;22093;Oui
+C. Centre de tri;Presse a balles hydraulique;Capacite 30 t par mois;95000000;11047;Oui
+C. Centre de tri;Bascule 500 kg et pont-bascule mobile;Pesee certifiee;30000000;3488;Oui
+C. Centre de tri;Convoyeur et table de tri;Ligne simple;20000000;2326;Oui
+D. EPI et securite;Equipements de protection;40 kits gants bottes masques gilets;22000000;2558;Oui
+D. EPI et securite;Vestiaires douches infirmerie;Amenagement sur site;10000000;1163;Oui
+E. Bureau et informatique;10 postes de travail;Ordinateurs ecrans onduleurs;35000000;4070;Oui
+E. Bureau et informatique;Mobilier et imprimante;Bureau administratif;12000000;1395;Oui
+E. Bureau et informatique;15 smartphones collecteurs;Terminaux durcis application terrain;8000000;930;Oui
+F. Frais de lancement;Marketing et lancement;Campagne quartiers radio flyers uniformes;90000000;10465;Non
+F. Frais de lancement;Frais juridiques et administratifs;SARL RCCM NIF agrements assurances;45000000;5233;Non
+G. Reserve;Fonds de roulement;5 mois de charges operationnelles du pilote;380000000;44186;Non
+G. Reserve;Imprevus;Environ 8% du budget hors reserve;143000000;16628;Non
+TOTAL;BESOIN D AMORCAGE;;1900000000;220930;
+TOTAL;Dont immobilisations amortissables;;1242000000;144419;

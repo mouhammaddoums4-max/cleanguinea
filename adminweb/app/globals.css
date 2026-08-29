@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fond: #f9fafb;
+}
+
+body {
+  background-color: var(--fond);
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Les tableaux larges defilent dans leur propre conteneur, jamais la page. */
+.table-scroll {
+  overflow-x: auto;
+}

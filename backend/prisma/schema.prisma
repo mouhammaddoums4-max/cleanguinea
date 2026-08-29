@@ -1,0 +1,499 @@
+// Clean Guinee - schema de donnees
+// Aligne sur les maquettes : application client, application collecteur, back-office web.
+// Base : PostgreSQL. La chaine de connexion vit dans backend/.env (jamais commite).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enumerations
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CLIENT
+  COLLECTEUR
+  SUPERVISEUR
+  ADMIN
+}
+
+/// Les trois bacs remis a chaque client, tels qu ils apparaissent dans l application.
+enum CategorieDechet {
+  PLASTIQUE // Bac 1 - bleu
+  METAL_FER // Bac 2 - jaune
+  AUTRES    // Bac 3 - gris
+  CARTON
+  VERRE
+  ORGANIQUE
+  REFUS
+}
+
+enum TypeOffre {
+  ESSENTIEL // 2 passages / semaine
+  STANDARD  // 3 passages / semaine - offre mise en avant dans l application
+  PRO       // 6 passages / semaine, volume negocie
+}
+
+enum StatutAbonnement {
+  ACTIF
+  SUSPENDU // impaye de plus de 45 jours
+  RESILIE
+}
+
+/// Deux origines de mission : la tournee planifiee, ou le bouton
+/// "Ma poubelle est pleine" de l application client.
+enum OrigineMission {
+  PLANIFIEE
+  DEMANDE_IMMEDIATE
+  DEMANDE_PROGRAMMEE
+}
+
+/// Reprend exactement le suivi en temps reel de l ecran client :
+/// Acceptee -> En route -> Arrive -> Terminee
+enum StatutMission {
+  EN_ATTENTE
+  ACCEPTEE
+  EN_ROUTE
+  ARRIVE
+  TERMINEE
+  ANNULEE
+  MANQUEE
+}
+
+enum MoyenPaiement {
+  ORANGE_MONEY
+  MTN_MOMO
+  VISA
+  MASTERCARD
+  ESPECES
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  PAYE
+  ECHOUE
+  REMBOURSE
+}
+
+enum SensPoints {
+  CREDIT
+  DEBIT
+}
+
+enum TypeConversion {
+  REDUCTION_ABONNEMENT
+  CREDIT_MOBILE_MONEY
+  BON_PARTENAIRE
+  CADEAU_CATALOGUE
+  DON_ASSOCIATION
+}
+
+enum NiveauAlerte {
+  INFO
+  ATTENTION
+  CRITIQUE
+}
+
+// ---------------------------------------------------------------------------
+// Territoire
+// ---------------------------------------------------------------------------
+
+model Commune {
+  id        String     @id @default(cuid())
+  nom       String     @unique // Ratoma, Matam, Dixinn, Matoto, Kaloum
+  quartiers Quartier[]
+  createdAt DateTime   @default(now())
+}
+
+model Quartier {
+  id        String    @id @default(cuid())
+  nom       String // Cite FOFANA, Cite Faranah, Cite Miniere...
+  communeId String
+  commune   Commune   @relation(fields: [communeId], references: [id])
+  latitude  Float?
+  longitude Float?
+  clients   Client[]
+  missions  Mission[]
+  createdAt DateTime  @default(now())
+
+  @@unique([communeId, nom])
+}
+
+// ---------------------------------------------------------------------------
+// Utilisateurs
+// ---------------------------------------------------------------------------
+
+model User {
+  id         String   @id @default(cuid())
+  telephone  String   @unique // +224 622 12 34 56
+  email      String?  @unique
+  nom        String
+  motDePasse String // hash bcrypt
+  role       Role     @default(CLIENT)
+  photoUrl   String?
+  langue     String   @default("fr") // bascule FR / EN de l ecran de bienvenue
+  actif      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  client           Client?
+  collecteur       Collecteur?
+  mouvementsPoints MouvementPoints[]
+
+  @@index([role])
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adresse     String // "Cite FOFANA, Ratoma"
+  quartierId  String
+  quartier    Quartier @relation(fields: [quartierId], references: [id])
+  latitude    Float?
+  longitude   Float?
+  nbPersonnes Int      @default(6)
+  notes       String? // "Sortir le bac devant la porte." - visible par le collecteur
+  createdAt   DateTime @default(now())
+
+  bacs        Bac[]
+  abonnements Abonnement[]
+  missions    Mission[]
+  paiements   Paiement[]
+
+  @@index([quartierId])
+}
+
+model Collecteur {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricule    String   @unique // COL-001
+  vehicule     String? // immatriculation du tricycle ou de la camionnette
+  note         Float    @default(5.0) // note moyenne affichee au client (ex. 4,8)
+  nbEvaluations Int     @default(0)
+  disponible   Boolean  @default(true)
+  latitude     Float? // derniere position connue, pour le suivi temps reel
+  longitude    Float?
+  positionMaj  DateTime?
+  createdAt    DateTime @default(now())
+
+  missions    Mission[]
+  evaluations Evaluation[]
+}
+
+// ---------------------------------------------------------------------------
+// Offres et abonnements
+// ---------------------------------------------------------------------------
+
+model Offre {
+  id                 String    @id @default(cuid())
+  type               TypeOffre @unique
+  libelle            String // "Abonnement Standard"
+  tarifMensuelGnf    Int // 50 000
+  passagesParSemaine Int
+  nbBacsFournis      Int       @default(3)
+  actif              Boolean   @default(true)
+
+  abonnements Abonnement[]
+}
+
+model Abonnement {
+  id            String           @id @default(cuid())
+  reference     String           @unique // CG-2026-000001
+  clientId      String
+  client        Client           @relation(fields: [clientId], references: [id])
+  offreId       String
+  offre         Offre            @relation(fields: [offreId], references: [id])
+  statut        StatutAbonnement @default(ACTIF)
+  dateDebut     DateTime         @default(now())
+  dateFin       DateTime?
+  prochainPrelevement DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  paiements Paiement[]
+
+  @@index([clientId])
+  @@index([statut])
+}
+
+// ---------------------------------------------------------------------------
+// Bacs
+// ---------------------------------------------------------------------------
+
+model Bac {
+  id           String          @id @default(cuid())
+  codeQr       String          @unique // scanne par l application collecteur
+  numero       Int // 1, 2 ou 3 - "Bac 1", "Bac 2", "Bac 3"
+  categorie    CategorieDechet
+  volumeLitres Int             @default(240)
+  /// Niveau de remplissage declare par le client : 0 a 3 tiers (0/3 a 3/3 plein).
+  niveauTiers  Int             @default(0)
+  clientId     String?
+  client       Client?         @relation(fields: [clientId], references: [id])
+  enService    Boolean         @default(true)
+  dateRemise   DateTime?
+  createdAt    DateTime        @default(now())
+
+  missions MissionBac[]
+  pesees   Pesee[]
+
+  @@unique([clientId, numero])
+  @@index([categorie])
+}
+
+// ---------------------------------------------------------------------------
+// Missions de collecte
+// ---------------------------------------------------------------------------
+
+model Mission {
+  id        String @id @default(cuid())
+  /// Reference affichee partout dans les interfaces : #M-1256
+  reference String @unique
+
+  /// UUID genere par l application collecteur avant l envoi. Garantit l idempotence
+  /// quand une tournee saisie hors ligne est synchronisee plusieurs fois.
+  clientRef String? @unique
+
+  clientId     String
+  client       Client         @relation(fields: [clientId], references: [id])
+  quartierId   String
+  quartier     Quartier       @relation(fields: [quartierId], references: [id])
+  collecteurId String?
+  collecteur   Collecteur?    @relation(fields: [collecteurId], references: [id])
+  origine      OrigineMission @default(PLANIFIEE)
+  statut       StatutMission  @default(EN_ATTENTE)
+
+  datePlanifiee  DateTime // date + heure planifiee (08:00)
+  fenetreFin     DateTime? // fin du creneau annonce au client (10:00)
+  accepteeA      DateTime?
+  enRouteA       DateTime?
+  arriveeA       DateTime?
+  termineeA      DateTime?
+  etaMinutes     Int? // "Arrivee estimee 12 min"
+
+  latitude    Float?
+  longitude   Float?
+  photoUrl    String? // photo du bac prise a la collecte
+  poidsTotalKg Float   @default(0)
+  commentaire String?
+  motifAnnulation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bacs       MissionBac[]
+  pesees     Pesee[]
+  evaluation Evaluation?
+
+  @@index([clientId])
+  @@index([collecteurId])
+  @@index([statut])
+  @@index([datePlanifiee])
+}
+
+/// Une mission peut porter sur plusieurs bacs (colonne "Bac(s)" du back-office).
+model MissionBac {
+  missionId String
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  bacId     String
+  bac       Bac     @relation(fields: [bacId], references: [id])
+
+  @@id([missionId, bacId])
+}
+
+model Pesee {
+  id        String          @id @default(cuid())
+  missionId String
+  mission   Mission         @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  bacId     String?
+  bac       Bac?            @relation(fields: [bacId], references: [id])
+  categorie CategorieDechet
+  poidsKg   Float
+
+  /// false = saisie manuelle au lieu de la balance Bluetooth : a controler.
+  peseeCertifiee   Boolean @default(true)
+  contaminationPct Float?
+  /// Contamination superieure a 15% : les points sont ramenes a 50%.
+  declassee        Boolean @default(false)
+  photoUrl         String?
+  createdAt        DateTime @default(now())
+
+  mouvementPoints MouvementPoints?
+
+  @@index([missionId])
+  @@index([categorie])
+}
+
+model Evaluation {
+  id           String     @id @default(cuid())
+  missionId    String     @unique
+  mission      Mission    @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  collecteurId String
+  collecteur   Collecteur @relation(fields: [collecteurId], references: [id])
+  note         Int // 1 a 5
+  commentaire  String?
+  createdAt    DateTime   @default(now())
+
+  @@index([collecteurId])
+}
+
+// ---------------------------------------------------------------------------
+// Programme Points Clean
+// ---------------------------------------------------------------------------
+
+model BaremePoints {
+  id          String          @id @default(cuid())
+  categorie   CategorieDechet @unique
+  pointsParKg Int
+  actif       Boolean         @default(true)
+  dateEffet   DateTime        @default(now())
+}
+
+model SoldePoints {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  solde        Int      @default(0)
+  cumule12Mois Int      @default(0)
+  niveau       String   @default("BRONZE") // BRONZE / ARGENT / OR / CHAMPION
+  updatedAt    DateTime @updatedAt
+}
+
+model MouvementPoints {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sens       SensPoints
+  points     Int
+  motif      String // "Pesee plastique 8,5 kg", "Bonus regularite"
+  peseeId    String?         @unique
+  pesee      Pesee?          @relation(fields: [peseeId], references: [id])
+  conversion TypeConversion?
+  /// Les points expirent 18 mois apres leur credit.
+  expireLe   DateTime?
+  createdAt  DateTime        @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Paiements
+// ---------------------------------------------------------------------------
+
+model Paiement {
+  id           String     @id @default(cuid())
+  reference    String     @unique
+  clientId     String
+  client       Client     @relation(fields: [clientId], references: [id])
+  abonnementId String?
+  abonnement   Abonnement? @relation(fields: [abonnementId], references: [id])
+
+  montantGnf      Int
+  /// Part reglee en Points Clean convertis en reduction.
+  remisePointsGnf Int            @default(0)
+  moyen           MoyenPaiement
+  statut          StatutPaiement @default(EN_ATTENTE)
+  periodeDebut    DateTime
+  periodeFin      DateTime
+  /// Identifiant renvoye par Orange Money / MTN MoMo.
+  refOperateur    String?
+  payeLe          DateTime?
+  createdAt       DateTime       @default(now())
+
+  @@index([clientId])
+  @@index([statut])
+}
+
+// ---------------------------------------------------------------------------
+// Centre de tri, stock et ventes
+// ---------------------------------------------------------------------------
+
+model CentreTri {
+  id                 String   @id @default(cuid())
+  nom                String   @unique
+  adresse            String
+  capaciteTonnesMois Int
+  actif              Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  stocks Stock[]
+  lots   Lot[]
+}
+
+/// Alimente le bloc "Stock par categorie" du tableau de bord.
+model Stock {
+  id            String          @id @default(cuid())
+  centreTriId   String
+  centreTri     CentreTri       @relation(fields: [centreTriId], references: [id])
+  categorie     CategorieDechet
+  quantiteKg    Float           @default(0)
+  capaciteKg    Float // sert a calculer le taux de remplissage et l alerte
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([centreTriId, categorie])
+}
+
+model Lot {
+  id          String          @id @default(cuid())
+  reference   String          @unique // LOT-PLA-2026-001
+  centreTriId String
+  centreTri   CentreTri       @relation(fields: [centreTriId], references: [id])
+  categorie   CategorieDechet
+  poidsKg     Float
+  venteId     String?
+  vente       Vente?          @relation(fields: [venteId], references: [id])
+  createdAt   DateTime        @default(now())
+
+  @@index([categorie])
+}
+
+model Acheteur {
+  id        String   @id @default(cuid())
+  nom       String   @unique
+  contact   String?
+  matieres  String?
+  createdAt DateTime @default(now())
+
+  ventes Vente[]
+}
+
+model Vente {
+  id           String   @id @default(cuid())
+  reference    String   @unique
+  acheteurId   String
+  acheteur     Acheteur @relation(fields: [acheteurId], references: [id])
+  poidsTotalKg Float
+  prixKgGnf    Int
+  montantGnf   Int
+  dateVente    DateTime @default(now())
+  paye         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  lots Lot[]
+
+  @@index([dateVente])
+}
+
+// ---------------------------------------------------------------------------
+// Alertes du back-office
+// ---------------------------------------------------------------------------
+
+model Alerte {
+  id        String       @id @default(cuid())
+  niveau    NiveauAlerte @default(INFO)
+  titre     String // "Stock plastique presque plein"
+  message   String // "Capacite restante : 8%"
+  lien      String? // route du back-office a ouvrir
+  lue       Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  @@index([lue])
+  @@index([createdAt])
+}

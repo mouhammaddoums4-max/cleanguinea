@@ -1,0 +1,21 @@
+Categorie;Hypothese;Unite;A1;A2;A3;A4;A5;Commentaire
+Change;Taux de conversion;GNF pour 1 USD;8600;8600;8600;8600;8600;Constant sur la periode
+Tarifs;Tarif moyen menage;GNF/mois;32000;32000;32000;32000;32000;Mix 60% Essentiel 25000 / 40% Confort 40000
+Tarifs;Tarif moyen PRO;GNF/mois;200000;200000;200000;200000;200000;Entree de gamme commerces
+Clients;Menages fin exercice;abonnes;2400;5000;12000;24000;40000;
+Clients;Menages moyenne annuelle;abonnes;1200;3700;8500;18000;32000;Moyenne debut/fin
+Clients;PRO fin exercice;clients;60;130;300;600;950;
+Clients;PRO moyenne annuelle;clients;30;95;215;450;775;Moyenne debut/fin
+Volumes;Dechets par menage;t/an;1,1;1,1;1,1;1,1;1,1;6,3 pers x 0,48 kg/jour
+Volumes;Dechets par client PRO;t/an;5,5;5,5;5,5;5,5;5,5;15 kg par jour ouvre
+Volumes;Tonnage collecte;t;1485;4593;10533;22275;39463;
+Valorisation;Taux de valorisation;%;8;12;16;20;24;Progression liee au programme Points Clean
+Valorisation;Tonnage valorise;t;119;551;1685;4455;9471;
+Valorisation;Prix moyen de vente;GNF/kg;1200;1200;1050;950;900;Baisse liee a la montee du compost
+Exploitation;Effectif total;personnes;20;52;108;198;335;
+Exploitation;Taux de recouvrement;%;88;88;88;88;88;Prelevement Mobile Money automatique
+Exploitation;Churn mensuel;%;3,5;3,0;2,5;2,1;1,8;Effet du programme de fidelite
+Charges;Charges sociales employeur;% masse salariale;18;18;18;18;18;CNSS
+Fiscalite;Impot sur les societes;%;25;25;25;25;25;Avec report deficitaire
+Amortissement;Duree;annees;5;5;5;5;5;Lineaire prorata temporis
+Investissement;Capex de croissance;M GNF;0;850;1400;2200;2600;Hors investissement initial de 1242 M GNF
