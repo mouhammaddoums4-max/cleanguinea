@@ -15,6 +15,42 @@ function normaliserTelephone(brut) {
   return `+224${chiffres.replace(/^0+/, '')}`;
 }
 
+/**
+ * Resout un identifiant de connexion vers un utilisateur.
+ *
+ * Trois formes acceptees, dans cet ordre :
+ *   1. numero d abonnement du client   -> CG-2026-000001
+ *   2. numero employe du collecteur    -> COL-001
+ *   3. numero de telephone             -> +224 6XX XX XX XX
+ *
+ * Le numero de telephone reste accepte : c est ce que les premiers abonnes
+ * connaissent, et le retirer les enfermerait dehors.
+ */
+async function resoudreIdentifiant(brut) {
+  const saisi = String(brut).trim();
+  if (!saisi) return null;
+
+  // Les references sont saisies sans egard a la casse ni aux espaces.
+  const reference = saisi.toUpperCase().replace(/\s+/g, '');
+
+  const abonnement = await prisma.abonnement.findUnique({
+    where: { reference },
+    include: { client: { include: { user: true } } },
+  });
+  if (abonnement) return abonnement.client.user;
+
+  const collecteur = await prisma.collecteur.findUnique({
+    where: { matricule: reference },
+    include: { user: true },
+  });
+  if (collecteur) return collecteur.user;
+
+  // Un identifiant sans chiffre ne peut pas etre un numero : inutile d aller plus loin.
+  if (!/\d/.test(saisi)) return null;
+
+  return prisma.user.findUnique({ where: { telephone: normaliserTelephone(saisi) } });
+}
+
 const inscriptionSchema = z.object({
   nom: z.string().min(2, 'Le nom complet est requis'),
   telephone: z.string().min(8, 'Numero de telephone invalide'),
@@ -120,13 +156,18 @@ router.post(
       utilisateur: {
         id: user.id, nom: user.nom, telephone: user.telephone,
         role: user.role, langue: user.langue,
+        // C est avec ce numero que le client se connectera ensuite.
+        identifiant: reference,
       },
+      numeroAbonnement: reference,
     });
   }),
 );
 
 const connexionSchema = z.object({
-  telephone: z.string().min(8),
+  // `telephone` reste accepte pour ne pas casser les clients deja deployes.
+  identifiant: z.string().min(3).optional(),
+  telephone: z.string().min(3).optional(),
   motDePasse: z.string().min(1),
 });
 
@@ -134,17 +175,20 @@ const connexionSchema = z.object({
 router.post(
   '/connexion',
   asyncHandler(async (req, res) => {
-    const { telephone, motDePasse } = connexionSchema.parse(req.body);
+    const donnees = connexionSchema.parse(req.body);
+    const saisi = donnees.identifiant ?? donnees.telephone;
 
-    const user = await prisma.user.findUnique({
-      where: { telephone: normaliserTelephone(telephone) },
-    });
-
-    // Message identique dans les deux cas : ne pas reveler si le compte existe.
-    if (!user || !(await bcrypt.compare(motDePasse, user.motDePasse))) {
-      return res.status(401).json({ erreur: 'Telephone ou mot de passe incorrect' });
+    if (!saisi) {
+      return res.status(400).json({ erreur: 'Identifiant requis' });
     }
-    if (!user.actif) {
+
+    const user = await resoudreIdentifiant(saisi);
+
+    // Message identique dans tous les cas : ne pas reveler si le compte existe.
+    if (!user || !(await bcrypt.compare(donnees.motDePasse, user.motDePasse))) {
+      return res.status(401).json({ erreur: 'Identifiant ou mot de passe incorrect' });
+    }
+    if (!user.actif || user.supprimeLe) {
       return res.status(403).json({ erreur: 'Compte desactive' });
     }
 
@@ -153,10 +197,28 @@ router.post(
       utilisateur: {
         id: user.id, nom: user.nom, telephone: user.telephone,
         role: user.role, langue: user.langue,
+        identifiant: await identifiantDe(user),
       },
     });
   }),
 );
+
+/** Identifiant de connexion a rappeler a l utilisateur apres sa connexion. */
+async function identifiantDe(user) {
+  if (user.role === 'CLIENT') {
+    const abonnement = await prisma.abonnement.findFirst({
+      where: { client: { userId: user.id }, statut: 'ACTIF' },
+      select: { reference: true },
+    });
+    return abonnement?.reference ?? null;
+  }
+
+  const collecteur = await prisma.collecteur.findUnique({
+    where: { userId: user.id },
+    select: { matricule: true },
+  });
+  return collecteur?.matricule ?? null;
+}
 
 /** GET /api/auth/moi — profil complet de l utilisateur connecte. */
 router.get(
@@ -183,7 +245,17 @@ router.get(
       });
     }
 
-    res.json({ utilisateur: user, client, points: solde });
+    let collecteur = null;
+    if (user.collecteur) {
+      collecteur = await prisma.collecteur.findUnique({ where: { id: user.collecteur.id } });
+    }
+
+    res.json({
+      utilisateur: { ...user, identifiant: await identifiantDe(user) },
+      client,
+      collecteur,
+      points: solde,
+    });
   }),
 );
 

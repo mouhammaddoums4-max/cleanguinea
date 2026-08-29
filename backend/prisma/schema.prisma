@@ -93,6 +93,14 @@ enum TypeConversion {
   DON_ASSOCIATION
 }
 
+/// Etat d une zone confiee a un collecteur pour la journee.
+enum StatutTournee {
+  A_FAIRE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
 enum NiveauAlerte {
   INFO
   ATTENTION
@@ -119,6 +127,7 @@ model Quartier {
   longitude Float?
   clients   Client[]
   missions  Mission[]
+  tournees  Tournee[]
   createdAt DateTime  @default(now())
 
   @@unique([communeId, nom])
@@ -187,6 +196,7 @@ model Collecteur {
   createdAt    DateTime @default(now())
 
   missions    Mission[]
+  tournees    Tournee[]
   evaluations Evaluation[]
 }
 
@@ -252,6 +262,56 @@ model Bac {
 }
 
 // ---------------------------------------------------------------------------
+// Tournees de zone
+//
+// C est l unite de travail du collecteur : une zone (quartier) a collecter dans
+// la journee. Il la demarre, la collecte, puis la confirme en saisissant les
+// poids releves. Les missions individuelles du quartier sont cloturees avec elle.
+// ---------------------------------------------------------------------------
+
+model Tournee {
+  id        String @id @default(cuid())
+  /// Reference affichee au collecteur : Z-2026-0001
+  reference String @unique
+
+  /// UUID genere par l application avant l envoi : garantit qu une zone confirmee
+  /// hors reseau puis synchronisee deux fois ne compte qu une seule fois.
+  clientRef String? @unique
+
+  date         DateTime      @db.Date
+  quartierId   String
+  quartier     Quartier      @relation(fields: [quartierId], references: [id])
+  collecteurId String
+  collecteur   Collecteur    @relation(fields: [collecteurId], references: [id])
+  statut       StatutTournee @default(A_FAIRE)
+
+  /// Creneau annonce, repris de la planification.
+  heureDebutPrevue DateTime?
+  heureFinPrevue   DateTime?
+
+  demarreeA  DateTime?
+  termineeA  DateTime?
+
+  /// Renseignes a la confirmation.
+  nbFoyersServis Int    @default(0)
+  poidsTotalKg   Float  @default(0)
+  latitude       Float?
+  longitude      Float?
+  photoUrl       String?
+  commentaire    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  missions Mission[]
+  pesees   Pesee[]
+
+  @@unique([date, quartierId, collecteurId])
+  @@index([collecteurId, date])
+  @@index([statut])
+}
+
+// ---------------------------------------------------------------------------
 // Missions de collecte
 // ---------------------------------------------------------------------------
 
@@ -270,6 +330,9 @@ model Mission {
   quartier     Quartier       @relation(fields: [quartierId], references: [id])
   collecteurId String?
   collecteur   Collecteur?    @relation(fields: [collecteurId], references: [id])
+  /// Renseigne quand la mission est cloturee par la confirmation d une zone.
+  tourneeId    String?
+  tournee      Tournee?       @relation(fields: [tourneeId], references: [id])
   origine      OrigineMission @default(PLANIFIEE)
   statut       StatutMission  @default(EN_ATTENTE)
 
@@ -311,10 +374,14 @@ model MissionBac {
   @@id([missionId, bacId])
 }
 
+/// Une pesee provient soit d une mission individuelle (demande d un foyer),
+/// soit de la confirmation d une zone entiere. Exactement l une des deux.
 model Pesee {
   id        String          @id @default(cuid())
-  missionId String
-  mission   Mission         @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionId String?
+  mission   Mission?        @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  tourneeId String?
+  tournee   Tournee?        @relation(fields: [tourneeId], references: [id], onDelete: Cascade)
   bacId     String?
   bac       Bac?            @relation(fields: [bacId], references: [id])
   categorie CategorieDechet
@@ -331,6 +398,7 @@ model Pesee {
   mouvementPoints MouvementPoints?
 
   @@index([missionId])
+  @@index([tourneeId])
   @@index([categorie])
 }
 
