@@ -5,12 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type Bac, type Mission, type SoldePoints } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { useConfig } from '../../src/config';
+import { useI18n, useFormat } from '../../src/i18n';
 import { Bouton, Carte, Chargement, Ecran, PastilleBac } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement, formaterHeure, rayon } from '../../src/theme';
+import { colors, espacement, rayon } from '../../src/theme';
 
 export default function Accueil() {
   const router = useRouter();
   const { utilisateur } = useAuth();
+  const { categorie, parametre, devise } = useConfig();
+  const { t, langue } = useI18n();
+  const format = useFormat();
+
+  const niveauMax = parametre<number>('bac.niveauMaxTiers', 3);
 
   const profil = useQuery({
     queryKey: ['moi'],
@@ -30,8 +37,8 @@ export default function Accueil() {
   });
 
   const points = useQuery({
-    queryKey: ['points'],
-    queryFn: () => api<SoldePoints>('/api/points/mon-solde'),
+    queryKey: ['points', langue],
+    queryFn: () => api<SoldePoints>(`/api/points/mon-solde?langue=${langue}`),
   });
 
   const enChargement = bacs.isLoading || prochaine.isLoading;
@@ -53,33 +60,35 @@ export default function Accueil() {
       >
         <View style={styles.enTete}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.bonjour}>Bonjour {utilisateur?.nom.split(' ')[0]} 👋</Text>
+            <Text style={styles.bonjour}>
+              {t('accueil.bonjour')} {utilisateur?.nom.split(' ')[0]} 👋
+            </Text>
             <Text style={styles.lieu}>{profil.data?.client?.adresse ?? 'Conakry'}</Text>
           </View>
           <Ionicons name="notifications-outline" size={24} color={colors.texte} />
         </View>
 
         {enChargement ? (
-          <Chargement />
+          <Chargement texte={t('commun.chargement')} />
         ) : (
           <>
             {/* Prochain passage */}
             <Carte style={styles.carteVerte}>
               <Text style={styles.carteVerteLibelle}>
-                {prochaine.data ? 'Collecte en cours' : 'Prochain passage'}
+                {prochaine.data ? t('accueil.collecteEnCours') : t('accueil.prochainPassage')}
               </Text>
               {prochaine.data ? (
                 <>
                   <Text style={styles.carteVerteValeur}>
-                    {prochaine.data.reference} · {libelleStatut(prochaine.data.statut)}
+                    {prochaine.data.reference} · {t(`statuts.${prochaine.data.statut}`)}
                   </Text>
                   <Text style={styles.carteVerteHeure}>
                     {prochaine.data.etaMinutes
-                      ? `Arrivée estimée ${prochaine.data.etaMinutes} min`
-                      : formaterHeure(prochaine.data.datePlanifiee)}
+                      ? `${t('accueil.arriveeEstimee')} ${prochaine.data.etaMinutes} ${t('suivi.minutes')}`
+                      : format.heure(prochaine.data.datePlanifiee)}
                   </Text>
                   <Bouton
-                    titre="Suivre en temps réel"
+                    titre={t('accueil.suivreTempsReel')}
                     variante="contour"
                     style={styles.boutonSuivi}
                     onPress={() => router.push('/(client)/suivi')}
@@ -87,10 +96,8 @@ export default function Accueil() {
                 </>
               ) : (
                 <>
-                  <Text style={styles.carteVerteValeur}>Aucune collecte planifiée</Text>
-                  <Text style={styles.carteVerteHeure}>
-                    Signalez un bac plein pour demander un passage
-                  </Text>
+                  <Text style={styles.carteVerteValeur}>{t('accueil.aucuneCollecte')}</Text>
+                  <Text style={styles.carteVerteHeure}>{t('accueil.signalerBacPlein')}</Text>
                 </>
               )}
             </Carte>
@@ -103,11 +110,11 @@ export default function Accueil() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.pointsValeur}>
-                    {points.data?.solde ?? 0} points Clean
+                    {points.data?.solde ?? 0} {t('accueil.pointsClean')}
                   </Text>
                   <Text style={styles.petit}>
-                    Niveau {points.data?.niveau ?? 'BRONZE'} ·{' '}
-                    {(points.data?.valeurGnf ?? 0).toLocaleString('fr-FR')} GNF
+                    {t('accueil.niveau')} {points.data?.niveauLibelle ?? points.data?.niveau ?? '—'}{' '}
+                    · {format.montant(points.data?.valeurGnf ?? 0, devise)}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
@@ -116,33 +123,39 @@ export default function Accueil() {
 
             {/* Mes bacs */}
             <View style={styles.ligneTitre}>
-              <Text style={styles.titreSection}>Mes bacs</Text>
+              <Text style={styles.titreSection}>{t('accueil.mesBacs')}</Text>
               <Text style={styles.lien} onPress={() => router.push('/(client)/collectes')}>
-                Voir tout
+                {t('commun.voirTout')}
               </Text>
             </View>
 
             <View style={{ gap: espacement.sm }}>
               {bacs.data?.map((bac) => {
-                const c = couleursCategorie[bac.categorie] ?? couleursCategorie.AUTRES;
+                const c = categorie(bac.categorie);
                 return (
                   <Carte key={bac.id} style={styles.carteBac}>
-                    <PastilleBac categorie={bac.categorie} />
+                    <PastilleBac
+                      couleur={c.couleur}
+                      couleurFond={c.couleurFond}
+                      icone={c.icone}
+                    />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.bacNom}>{c.libelle}</Text>
-                      <Text style={styles.petit}>Bac {bac.numero}</Text>
+                      <Text style={styles.petit}>
+                        {t('bacs.bac')} {bac.numero}
+                      </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={[styles.bacNiveau, { color: c.teinte }]}>
-                        {bac.niveauTiers}/3 plein
+                      <Text style={[styles.bacNiveau, { color: c.couleur }]}>
+                        {bac.niveauTiers}/{niveauMax} {t('bacs.plein')}
                       </Text>
                       <View style={styles.jauge}>
                         <View
                           style={[
                             styles.jaugeRemplie,
                             {
-                              width: `${(bac.niveauTiers / 3) * 100}%`,
-                              backgroundColor: c.teinte,
+                              width: `${(bac.niveauTiers / niveauMax) * 100}%`,
+                              backgroundColor: c.couleur,
                             },
                           ]}
                         />
@@ -154,7 +167,7 @@ export default function Accueil() {
             </View>
 
             <Bouton
-              titre="Ma poubelle est pleine"
+              titre={t('accueil.poubellePleine')}
               icone="trash-outline"
               onPress={() => router.push('/(client)/demande')}
             />
@@ -162,20 +175,6 @@ export default function Accueil() {
         )}
       </ScrollView>
     </Ecran>
-  );
-}
-
-function libelleStatut(statut: string) {
-  return (
-    {
-      EN_ATTENTE: 'En attente',
-      ACCEPTEE: 'Acceptée',
-      EN_ROUTE: 'En route',
-      ARRIVE: 'Arrivé',
-      TERMINEE: 'Terminée',
-      ANNULEE: 'Annulée',
-      MANQUEE: 'Manquée',
-    }[statut] ?? statut
   );
 }
 
@@ -211,7 +210,12 @@ const styles = StyleSheet.create({
   titreSection: { fontSize: 16, fontWeight: '700', color: colors.texte },
   lien: { fontSize: 13, fontWeight: '600', color: colors.primary },
 
-  carteBac: { flexDirection: 'row', alignItems: 'center', gap: espacement.md, paddingVertical: espacement.md },
+  carteBac: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacement.md,
+    paddingVertical: espacement.md,
+  },
   bacNom: { fontSize: 15, fontWeight: '600', color: colors.texte },
   bacNiveau: { fontSize: 13, fontWeight: '600' },
   jauge: { width: 56, height: 4, borderRadius: 2, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },

@@ -8,6 +8,8 @@ import * as NavigationBar from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 
 import { AuthProvider } from '../src/auth';
+import { I18nProvider } from '../src/i18n';
+import { ConfigProvider } from '../src/config';
 import { colors } from '../src/theme';
 
 const queryClient = new QueryClient({
@@ -36,20 +38,25 @@ export default function RootLayout() {
     // useSafeAreaInsets() renvoie 0 et la barre d'onglets passe sous la barre systeme.
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.fond },
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(client)" />
-            <Stack.Screen name="(collecteur)" />
-          </Stack>
-        </AuthProvider>
+        {/* I18n avant Config : la configuration est demandee dans la langue choisie. */}
+        <I18nProvider>
+          <ConfigProvider>
+            <AuthProvider>
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.fond },
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(client)" />
+                <Stack.Screen name="(collecteur)" />
+              </Stack>
+            </AuthProvider>
+          </ConfigProvider>
+        </I18nProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

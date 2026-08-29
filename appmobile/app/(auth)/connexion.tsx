@@ -6,10 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth';
 import { Bouton, Champ, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
+import { useConfig } from '../../src/config';
 
 export default function Connexion() {
   const router = useRouter();
   const { connexion } = useAuth();
+  const { t } = useI18n();
+  const { indicatif } = useConfig();
 
   const [telephone, setTelephone] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -24,7 +28,7 @@ export default function Connexion() {
       const u = await connexion({ telephone, motDePasse });
       router.replace(u.role === 'CLIENT' ? '/(client)/accueil' : '/(collecteur)/missions');
     } catch (e) {
-      setErreur(e instanceof Error ? e.message : 'Connexion impossible');
+      setErreur(e instanceof Error ? e.message : t('connexion.echec'));
     } finally {
       setEnvoi(false);
     }
@@ -32,20 +36,18 @@ export default function Connexion() {
 
   return (
     <Ecran bas>
-      <EnTete titre="Se connecter" retour />
+      <EnTete titre={t('connexion.titre')} retour />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Contenu>
-          <Text style={styles.intro}>
-            Entrez le numéro de téléphone associé à votre abonnement Clean Guinée.
-          </Text>
+          <Text style={styles.intro}>{t('connexion.intro')}</Text>
 
           <Champ
-            libelle="Téléphone"
+            libelle={t('connexion.telephone')}
             icone="call-outline"
-            placeholder="+224 6XX XX XX XX"
+            placeholder={`${indicatif} 6XX XX XX XX`}
             keyboardType="phone-pad"
             autoComplete="tel"
             value={telephone}
@@ -54,9 +56,9 @@ export default function Connexion() {
 
           <View>
             <Champ
-              libelle="Mot de passe"
+              libelle={t('connexion.motDePasse')}
               icone="lock-closed-outline"
-              placeholder="Mot de passe"
+              placeholder={t('connexion.motDePasse')}
               secureTextEntry={!visible}
               autoComplete="current-password"
               value={motDePasse}
@@ -66,7 +68,9 @@ export default function Connexion() {
               onPress={() => setVisible((v) => !v)}
               style={styles.oeil}
               hitSlop={10}
-              accessibilityLabel={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              accessibilityLabel={
+                visible ? t('connexion.masquerMotDePasse') : t('connexion.afficherMotDePasse')
+              }
             >
               <Ionicons
                 name={visible ? 'eye-off-outline' : 'eye-outline'}
@@ -79,14 +83,14 @@ export default function Connexion() {
           {!!erreur && <Text style={styles.erreur}>{erreur}</Text>}
 
           <Bouton
-            titre="Se connecter"
+            titre={t('connexion.valider')}
             onPress={valider}
             charge={envoi}
             desactive={!telephone || !motDePasse}
           />
 
           <Bouton
-            titre="Créer un compte"
+            titre={t('connexion.pasDeCompte')}
             variante="texte"
             onPress={() => router.replace('/(auth)/inscription')}
           />

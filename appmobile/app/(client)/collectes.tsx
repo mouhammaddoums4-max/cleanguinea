@@ -5,12 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type Bac } from '../../src/api';
 import { Bouton, Carte, Chargement, Contenu, Ecran, EnTete, PastilleBac } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
+import { useConfig } from '../../src/config';
+import { useI18n } from '../../src/i18n';
 
 /** Gestion des bacs : le client declare le remplissage, ce qui declenche la collecte. */
 export default function Collectes() {
   const router = useRouter();
   const client = useQueryClient();
+  const { categorie, parametre } = useConfig();
+  const { t } = useI18n();
+
+  const niveauMax = parametre<number>('bac.niveauMaxTiers', 3);
+  const seuilAlerte = parametre<number>('bac.seuilAlerteTiers', 2);
 
   const bacs = useQuery({ queryKey: ['mes-bacs'], queryFn: () => api<Bac[]>('/api/bacs/mes-bacs') });
 
@@ -22,30 +29,35 @@ export default function Collectes() {
 
   return (
     <Ecran>
-      <EnTete titre="Mes bacs" sousTitre="Indiquez le niveau de remplissage" />
+      <EnTete titre={t('bacs.titre')} sousTitre={t('bacs.sousTitre')} />
       {bacs.isLoading ? (
         <Chargement />
       ) : (
         <Contenu>
           {bacs.data?.map((bac) => {
-            const c = couleursCategorie[bac.categorie] ?? couleursCategorie.AUTRES;
+            const c = categorie(bac.categorie);
             return (
               <Carte key={bac.id} style={{ gap: espacement.md }}>
                 <View style={styles.ligne}>
-                  <PastilleBac categorie={bac.categorie} taille={40} />
+                  <PastilleBac
+                    couleur={c.couleur}
+                    couleurFond={c.couleurFond}
+                    icone={c.icone}
+                    taille={40}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.nom}>{c.libelle}</Text>
                     <Text style={styles.petit}>
-                      Bac {bac.numero} · {bac.codeQr}
+                      {t('bacs.bac')} {bac.numero} · {bac.codeQr}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.niveaux}>
-                  {[0, 1, 2, 3].map((n) => (
+                  {Array.from({ length: niveauMax + 1 }, (_, n) => n).map((n) => (
                     <Bouton
                       key={n}
-                      titre={`${n}/3`}
+                      titre={`${n}/${niveauMax}`}
                       variante={bac.niveauTiers === n ? 'plein' : 'contour'}
                       style={{ flex: 1, height: 40 }}
                       onPress={() => majNiveau.mutate({ id: bac.id, niveauTiers: n })}
@@ -53,10 +65,10 @@ export default function Collectes() {
                   ))}
                 </View>
 
-                {bac.niveauTiers >= 2 && (
+                {bac.niveauTiers >= seuilAlerte && (
                   <View style={styles.avis}>
                     <Ionicons name="alert-circle" size={16} color={colors.alerte} />
-                    <Text style={styles.avisTexte}>Ce bac est presque plein</Text>
+                    <Text style={styles.avisTexte}>{t('bacs.presquePlein')}</Text>
                   </View>
                 )}
               </Carte>
@@ -64,7 +76,7 @@ export default function Collectes() {
           })}
 
           <Bouton
-            titre="Demander une collecte"
+            titre={t('bacs.demanderCollecte')}
             icone="trash-outline"
             onPress={() => router.push('/(client)/demande')}
           />

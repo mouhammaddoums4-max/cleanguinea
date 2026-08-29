@@ -1,0 +1,247 @@
+/**
+ * Textes français. Fichier de référence : `en.ts` doit avoir exactement les mêmes clés
+ * (le contrôle de type de `Traductions` dans index.tsx l'impose à la compilation).
+ *
+ * Ne mettez ici que des textes d'interface. Tout ce qui est métier — libellés de
+ * catégories, tarifs, niveaux de fidélité — vient de l'API (`/api/config`), pas d'ici.
+ */
+export const fr = {
+  commun: {
+    chargement: 'Chargement…',
+    reessayer: 'Réessayer',
+    annuler: 'Annuler',
+    confirmer: 'Confirmer',
+    enregistrer: 'Enregistrer',
+    supprimer: 'Supprimer',
+    fermer: 'Fermer',
+    retour: 'Retour',
+    voirTout: 'Voir tout',
+    voirPlus: 'Voir plus',
+    aucuneDonnee: 'Aucune donnée',
+    erreurReseau: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
+    obligatoire: 'Champ obligatoire',
+    oui: 'Oui',
+    non: 'Non',
+  },
+
+  bienvenue: {
+    slogan: 'Du déchet à la valeur',
+    seConnecter: 'Se connecter',
+    creerCompte: 'Créer un compte',
+  },
+
+  connexion: {
+    titre: 'Se connecter',
+    intro: 'Entrez le numéro de téléphone associé à votre abonnement Clean Guinée.',
+    telephone: 'Téléphone',
+    motDePasse: 'Mot de passe',
+    afficherMotDePasse: 'Afficher le mot de passe',
+    masquerMotDePasse: 'Masquer le mot de passe',
+    valider: 'Se connecter',
+    pasDeCompte: 'Créer un compte',
+    echec: 'Connexion impossible',
+  },
+
+  inscription: {
+    titre: 'Créer un compte',
+    nomComplet: 'Nom complet',
+    telephone: 'Téléphone',
+    email: 'Email (optionnel)',
+    adresse: 'Adresse',
+    commune: 'Commune',
+    quartier: 'Quartier',
+    motDePasse: 'Mot de passe (6 caractères minimum)',
+    accepterCgu: "J'accepte les CGU",
+    valider: "S'inscrire",
+    dejaCompte: "J'ai déjà un compte",
+    echec: 'Inscription impossible',
+  },
+
+  accueil: {
+    bonjour: 'Bonjour',
+    prochainPassage: 'Prochain passage',
+    collecteEnCours: 'Collecte en cours',
+    aucuneCollecte: 'Aucune collecte planifiée',
+    signalerBacPlein: 'Signalez un bac plein pour demander un passage',
+    suivreTempsReel: 'Suivre en temps réel',
+    arriveeEstimee: 'Arrivée estimée',
+    mesBacs: 'Mes bacs',
+    poubellePleine: 'Ma poubelle est pleine',
+    pointsClean: 'points Clean',
+    niveau: 'Niveau',
+  },
+
+  bacs: {
+    titre: 'Mes bacs',
+    sousTitre: 'Indiquez le niveau de remplissage',
+    bac: 'Bac',
+    plein: 'plein',
+    presquePlein: 'Ce bac est presque plein',
+    demanderCollecte: 'Demander une collecte',
+  },
+
+  demande: {
+    titre: 'Demander une collecte',
+    question: 'Quel bac souhaitez-vous faire collecter ?',
+    typeDemande: 'Type de demande',
+    immediate: 'Immédiate',
+    immediateDetail: 'Un collecteur est affecté au plus vite',
+    programmer: 'Programmer',
+    programmerDetail: 'À la prochaine tournée de votre quartier',
+    valider: 'Valider la demande',
+    echec: 'Demande impossible',
+  },
+
+  suivi: {
+    titre: 'Suivi de collecte',
+    collecteurAssigne: 'Collecteur assigné',
+    enAffectation: 'En cours d’affectation',
+    arriveeEstimee: 'Arrivée estimée',
+    localisation: 'Localisation',
+    aucuneEnCours: 'Aucune collecte en cours',
+    aucuneEnCoursDetail:
+      "Vos demandes en cours s'affichent ici avec la position du collecteur.",
+    minutes: 'min',
+  },
+
+  statuts: {
+    EN_ATTENTE: 'En attente',
+    ACCEPTEE: 'Acceptée',
+    EN_ROUTE: 'En route',
+    ARRIVE: 'Arrivé',
+    TERMINEE: 'Terminée',
+    ANNULEE: 'Annulée',
+    MANQUEE: 'Manquée',
+  },
+
+  historique: {
+    titre: 'Historique des collectes',
+    aucune: 'Aucune collecte terminée',
+    aucuneDetail: 'Vos passages apparaîtront ici.',
+    poids: 'Poids',
+  },
+
+  paiements: {
+    titre: 'Paiements',
+    aucunAbonnement: 'Aucun abonnement',
+    parMois: '/ mois',
+    prochainPrelevement: 'Prochain prélèvement',
+    historique: 'Historique des paiements',
+    paye: 'Payé',
+    echoue: 'Échoué',
+    enAttente: 'En attente',
+    note:
+      'Paiement par Orange Money, MTN MoMo, Visa ou Mastercard. Vos points Clean peuvent couvrir tout ou partie de l’abonnement.',
+  },
+
+  points: {
+    titre: 'Points Clean',
+    soldeDisponible: 'Solde disponible',
+    soit: 'soit',
+    bonusSurGains: 'sur vos gains',
+    encorePts: 'Encore {n} pts pour le niveau {niveau}',
+    baremeParMatiere: 'Barème par matière',
+    ptsParKg: 'pts / kg',
+    note:
+      '{taux} points = 1 000 GNF · convertibles en réduction d’abonnement, crédit Orange Money ou bons d’achat.',
+    derniersMouvements: 'Derniers mouvements',
+  },
+
+  profil: {
+    titre: 'Profil',
+    mesInformations: 'Mes informations',
+    monAbonnement: 'Mon abonnement',
+    mesBacs: 'Mes bacs',
+    mesPoints: 'Mes points Clean',
+    notifications: 'Notifications',
+    langue: 'Langue',
+    aide: 'Aide & FAQ',
+    parametres: 'Paramètres',
+    seDeconnecter: 'Se déconnecter',
+    confirmerDeconnexion: 'Voulez-vous vraiment quitter votre session ?',
+    supprimerCompte: 'Supprimer mon compte',
+    version: 'version',
+  },
+
+  langue: {
+    titre: 'Langue',
+    fr: 'Français',
+    en: 'English',
+    changee: 'Langue modifiée',
+  },
+
+  suppression: {
+    titre: 'Supprimer mon compte',
+    avertissement: 'Cette action est définitive',
+    ceQuiEstSupprime: 'Ce qui est supprimé immédiatement',
+    listeSupprime: [
+      'Votre nom, téléphone, email et photo',
+      'Votre adresse et les consignes d’accès à votre domicile',
+      'Votre solde de points Clean et son historique',
+      'Votre accès à l’application',
+    ],
+    ceQuiEstConserve: 'Ce qui est conservé, sans lien avec vous',
+    listeConserve: [
+      'Les montants facturés et payés, pour la comptabilité',
+      'Les tonnages collectés, qui alimentent les rapports d’impact',
+    ],
+    consequences: 'Votre abonnement sera résilié et vos bacs récupérés.',
+    exporter: 'Télécharger mes données avant suppression',
+    exportReussi: 'Vos données ont été préparées',
+    motDePasse: 'Votre mot de passe',
+    tapezPourConfirmer: 'Tapez {mot} pour confirmer',
+    motConfirmation: 'SUPPRIMER',
+    supprimerDefinitivement: 'Supprimer définitivement',
+    confirmationTitre: 'Dernière confirmation',
+    confirmationTexte:
+      'Votre compte et vos données personnelles vont être supprimés. Cette action ne peut pas être annulée.',
+    succes: 'Votre compte a été supprimé.',
+    echec: 'Suppression impossible',
+  },
+
+  collecteur: {
+    missions: 'Missions',
+    carte: 'Carte',
+    historique: 'Historique',
+    profil: 'Profil',
+    toutes: 'Toutes',
+    enCours: 'En cours',
+    terminees: 'Terminées',
+    prochaineMission: 'Prochaine mission',
+    aucuneMission: 'Aucune mission',
+    aucuneMissionDetail: 'Rien à afficher pour ce filtre.',
+    detailMission: 'Détail mission',
+    bacsACollecter: 'Bac(s) à collecter',
+    notesClient: 'Notes client',
+    accepter: 'Accepter la mission',
+    demarrer: 'Démarrer la mission',
+    suisArrive: 'Je suis arrivé',
+    pesee: 'Pesée',
+    poidsKg: 'Poids (kg)',
+    peseeAide: 'Poids relevé sur la balance. Photographiez le bac avant de confirmer.',
+    confirmerCollecte: 'Confirmer la collecte',
+    collecteConfirmee: 'Collecte confirmée',
+    kgEnregistres: '{poids} kg enregistrés. {points} points crédités au client.',
+    annulerMission: 'Annuler la mission',
+    confirmerAnnulation: 'Confirmer l’annulation de cette mission ?',
+    missionTerminee: 'Mission terminée',
+    kgCollectes: 'kg collectés',
+    maTournee: 'Ma tournée',
+    groupeeParCommune: 'Regroupée par commune',
+    arrets: 'arrêt(s)',
+    matricule: 'Matricule',
+    vehicule: 'Véhicule',
+    evaluations: 'Évaluations reçues',
+    collectesJour: 'collecte(s)',
+    aujourdhui: "aujourd'hui",
+  },
+
+  onglets: {
+    accueil: 'Accueil',
+    collectes: 'Collectes',
+    historique: 'Historique',
+    profil: 'Profil',
+    missions: 'Missions',
+    carte: 'Carte',
+  },
+} as const;

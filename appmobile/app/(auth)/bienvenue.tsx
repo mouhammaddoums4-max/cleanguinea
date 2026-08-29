@@ -1,15 +1,17 @@
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Bouton, Ecran } from '../../src/components/ui';
 import { Logo } from '../../src/components/Logo';
 import { colors, espacement } from '../../src/theme';
+import { useI18n, LANGUES, type Langue } from '../../src/i18n';
+import { useConfig } from '../../src/config';
 
 /** Ecran 1 des maquettes : logo, deux actions, bascule FR / EN. */
 export default function Bienvenue() {
   const router = useRouter();
-  const [langue, setLangue] = useState<'FR' | 'EN'>('FR');
+  const { langue, changerLangue, t } = useI18n();
+  const { slogan } = useConfig();
 
   return (
     // bas: true — ecran sans onglets, la zone systeme doit etre respectee ici.
@@ -20,23 +22,33 @@ export default function Bienvenue() {
           <View style={{ height: espacement.lg }} />
           <Text style={styles.nom}>CLEAN</Text>
           <Text style={styles.nomSecond}>GUINÉE</Text>
-          <Text style={styles.slogan}>Du déchet à la valeur ♻</Text>
+          <Text style={styles.slogan}>{slogan} ♻</Text>
         </View>
 
         <View style={styles.actions}>
-          <Bouton titre="Se connecter" onPress={() => router.push('/(auth)/connexion')} />
           <Bouton
-            titre="Créer un compte"
+            titre={t('bienvenue.seConnecter')}
+            onPress={() => router.push('/(auth)/connexion')}
+          />
+          <Bouton
+            titre={t('bienvenue.creerCompte')}
             variante="contour"
             onPress={() => router.push('/(auth)/inscription')}
           />
 
           <View style={styles.langues}>
-            {(['FR', 'EN'] as const).map((l, i) => (
-              <View key={l} style={styles.langueLigne}>
+            {LANGUES.map((l, i) => (
+              <View key={l.code} style={styles.langueLigne}>
                 {i > 0 && <Text style={styles.separateur}>|</Text>}
-                <Pressable onPress={() => setLangue(l)} hitSlop={10}>
-                  <Text style={[styles.langue, langue === l && styles.langueActive]}>{l}</Text>
+                <Pressable
+                  onPress={() => changerLangue(l.code as Langue)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={l.libelle}
+                >
+                  <Text style={[styles.langue, langue === l.code && styles.langueActive]}>
+                    {l.code.toUpperCase()}
+                  </Text>
                 </Pressable>
               </View>
             ))}

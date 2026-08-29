@@ -4,82 +4,86 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type SoldePoints } from '../../src/api';
 import { Carte, Chargement, Contenu, Ecran, EnTete } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement, formaterDate } from '../../src/theme';
+import { colors, espacement, formaterDate } from '../../src/theme';
+import { useConfig } from '../../src/config';
+import { useI18n, useFormat } from '../../src/i18n';
 
 type Bareme = {
   gnfParPoint: number;
-  bareme: { categorie: string; pointsParKg: number }[];
-  niveaux: { nom: string; seuil: number; bonusPct: number }[];
+  validiteMois: number;
+  bareme: { categorie: string; libelle: string; couleur: string; pointsParKg: number }[];
+  niveaux: { code: string; libelle: string; seuil: number; bonusPct: number }[];
 };
 
 export default function Points() {
+  const { t, langue } = useI18n();
+  const format = useFormat();
   const solde = useQuery({
     queryKey: ['points'],
     queryFn: () => api<SoldePoints>('/api/points/mon-solde'),
   });
   const bareme = useQuery({
-    queryKey: ['bareme'],
-    queryFn: () => api<Bareme>('/api/points/bareme'),
+    queryKey: ['bareme', langue],
+    queryFn: () => api<Bareme>(`/api/points/bareme?langue=${langue}`),
   });
 
   if (solde.isLoading) {
     return (
       <Ecran bas>
-        <EnTete titre="Points Clean" retour />
-        <Chargement />
+        <EnTete titre={t('points.titre')} retour />
+        <Chargement texte={t('commun.chargement')} />
       </Ecran>
     );
   }
 
   return (
     <Ecran bas>
-      <EnTete titre="Points Clean" retour />
+      <EnTete titre={t('points.titre')} retour />
       <Contenu>
         <Carte style={styles.carteVerte}>
-          <Text style={styles.libelleClair}>Solde disponible</Text>
+          <Text style={styles.libelleClair}>{t('points.soldeDisponible')}</Text>
           <Text style={styles.solde}>{solde.data?.solde ?? 0} pts</Text>
           <Text style={styles.libelleClair}>
-            soit {(solde.data?.valeurGnf ?? 0).toLocaleString('fr-FR')} GNF
+            {t('points.soit')} {format.montant(solde.data?.valeurGnf ?? 0)}
           </Text>
 
           <View style={styles.niveauLigne}>
             <Ionicons name="trophy" size={15} color={colors.blanc} />
             <Text style={styles.niveauTexte}>
-              Niveau {solde.data?.niveau} (+{solde.data?.bonusPct} % sur vos gains)
+              {t('accueil.niveau')} {solde.data?.niveauLibelle ?? solde.data?.niveau} (+
+              {solde.data?.bonusPct} % {t('points.bonusSurGains')})
             </Text>
           </View>
 
           {!!solde.data?.prochainNiveau && (
             <Text style={styles.libelleClair}>
-              Encore {solde.data.prochainNiveau.pointsRestants} pts pour le niveau{' '}
-              {solde.data.prochainNiveau.nom}
+              {t('points.encorePts', {
+                n: solde.data.prochainNiveau.pointsRestants,
+                niveau: solde.data.prochainNiveau.libelle,
+              })}
             </Text>
           )}
         </Carte>
 
-        <Text style={styles.titre}>Barème par matière</Text>
+        <Text style={styles.titre}>{t('points.baremeParMatiere')}</Text>
         <Carte style={{ gap: espacement.sm }}>
           {bareme.data?.bareme
             .filter((b) => b.pointsParKg > 0)
-            .map((b) => {
-              const c = couleursCategorie[b.categorie];
-              return (
-                <View key={b.categorie} style={styles.baremeLigne}>
-                  <View
-                    style={[styles.pastille, { backgroundColor: c?.teinte ?? colors.texteTertiaire }]}
-                  />
-                  <Text style={styles.baremeNom}>{c?.libelle ?? b.categorie}</Text>
-                  <Text style={styles.baremePts}>{b.pointsParKg} pts / kg</Text>
-                </View>
-              );
-            })}
+            .map((b) => (
+              <View key={b.categorie} style={styles.baremeLigne}>
+                <View style={[styles.pastille, { backgroundColor: b.couleur }]} />
+                <Text style={styles.baremeNom}>{b.libelle}</Text>
+                <Text style={styles.baremePts}>
+                  {b.pointsParKg} {t('points.ptsParKg')}
+                </Text>
+              </View>
+            ))}
           <Text style={styles.note}>
-            100 points = 1 000 GNF · convertibles en réduction d'abonnement, crédit Orange Money
-            ou bons d'achat.
+            {t('points.note', { taux: 1000 / (bareme.data?.gnfParPoint ?? 10) })}
           </Text>
         </Carte>
 
-        <Text style={styles.titre}>Derniers mouvements</Text>
+        <Text style={styles.titre}>{t('points.derniersMouvements')}</Text>
         <View style={{ gap: espacement.sm }}>
           {solde.data?.mouvements.slice(0, 15).map((m) => (
             <Carte key={m.id} style={styles.mouvement}>
@@ -90,7 +94,7 @@ export default function Points() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={styles.motif}>{m.motif}</Text>
-                <Text style={styles.petit}>{formaterDate(m.createdAt)}</Text>
+                <Text style={styles.petit}>{format.date(m.createdAt)}</Text>
               </View>
               <Text
                 style={[styles.points, { color: m.sens === 'CREDIT' ? colors.primary : colors.danger }]}

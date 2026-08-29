@@ -6,7 +6,7 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { colors, espacement, rayon, ombre, couleursCategorie } from '../theme';
+import { colors, espacement, rayon, ombre } from '../theme';
 
 /**
  * Conteneur d'ecran.
@@ -134,21 +134,35 @@ export function Champ({
   );
 }
 
-/** Pastille coloree d'une categorie de dechet (Plastiques, Metaux / Fer, Autres). */
-export function PastilleBac({ categorie, taille = 36 }: { categorie: string; taille?: number }) {
-  const c = couleursCategorie[categorie] ?? couleursCategorie.AUTRES;
+/**
+ * Pastille coloree d'une categorie de dechet.
+ * Les couleurs viennent de l'API : passez-les en props depuis `useConfig().categorie(code)`,
+ * pour qu'un changement fait dans le back-office se voie sans nouvelle version.
+ */
+export function PastilleBac({
+  couleur, couleurFond, icone = 'trash', taille = 36,
+}: {
+  couleur: string;
+  couleurFond: string;
+  icone?: string;
+  taille?: number;
+}) {
   return (
     <View
       style={{
         width: taille,
         height: taille,
         borderRadius: rayon.sm,
-        backgroundColor: c.fond,
+        backgroundColor: couleurFond,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Ionicons name="trash" size={taille * 0.5} color={c.teinte} />
+      <Ionicons
+        name={icone as keyof typeof Ionicons.glyphMap}
+        size={taille * 0.5}
+        color={couleur}
+      />
     </View>
   );
 }

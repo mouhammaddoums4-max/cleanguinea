@@ -37,16 +37,11 @@ export const colors = {
   noir: '#000000',
 } as const;
 
-/** Couleurs des trois bacs, telles qu'elles apparaissent dans les maquettes. */
-export const couleursCategorie: Record<string, { fond: string; teinte: string; libelle: string }> = {
-  PLASTIQUE: { fond: '#DBEAFE', teinte: '#2563EB', libelle: 'Plastiques' },
-  METAL_FER: { fond: '#FEF3C7', teinte: '#F59E0B', libelle: 'Métaux / Fer' },
-  AUTRES: { fond: '#F3F4F6', teinte: '#4B5563', libelle: 'Autres déchets' },
-  CARTON: { fond: '#DCFCE7', teinte: '#16A34A', libelle: 'Carton' },
-  VERRE: { fond: '#EDE9FE', teinte: '#7C3AED', libelle: 'Verre' },
-  ORGANIQUE: { fond: '#FEE2E2', teinte: '#DC2626', libelle: 'Déchets organiques' },
-  REFUS: { fond: '#F3F4F6', teinte: '#6B7280', libelle: 'Refus' },
-};
+/**
+ * Les couleurs et libelles des categories NE SONT PLUS ici : ils viennent de
+ * l'API (`/api/config`), via `useConfig().categorie(code)` dans src/config.tsx.
+ * Les modifier depuis le back-office suffit, sans nouvelle version de l'app.
+ */
 
 export const espacement = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 

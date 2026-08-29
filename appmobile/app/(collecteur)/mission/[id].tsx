@@ -9,7 +9,8 @@ import { api, type Mission, type StatutMission } from '../../../src/api';
 import {
   Bouton, Carte, Champ, Chargement, Contenu, Ecran, EnTete, Etiquette, PastilleBac,
 } from '../../../src/components/ui';
-import { colors, couleursCategorie, espacement, formaterHeure } from '../../../src/theme';
+import { colors, espacement, formaterHeure } from '../../../src/theme';
+import { useConfig } from '../../../src/config';
 
 /** Ecrans 3 et 4 de l'application collecteur : detail de mission puis pesee. */
 const SUIVANT: Partial<Record<StatutMission, { statut: StatutMission; libelle: string }>> = {

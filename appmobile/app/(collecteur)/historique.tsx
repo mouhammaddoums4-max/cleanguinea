@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, type Mission } from '../../src/api';
 import { Carte, Chargement, Ecran, EnTete, PastilleBac, Vide } from '../../src/components/ui';
 import { colors, espacement, formaterDate, formaterHeure } from '../../src/theme';
+import { useConfig } from '../../src/config';
 
 type Reponse = { missions: Mission[] };
 

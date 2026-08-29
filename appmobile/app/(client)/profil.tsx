@@ -5,12 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { useI18n, LANGUES } from '../../src/i18n';
 import { Carte, Contenu, Ecran, EnTete } from '../../src/components/ui';
-import { colors, espacement, rayon } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
 
 type Entree = {
   icone: keyof typeof Ionicons.glyphMap;
   libelle: string;
+  valeur?: string;
   route?: string;
   danger?: boolean;
   action?: () => void;
@@ -20,6 +22,7 @@ type Entree = {
 export default function Profil() {
   const router = useRouter();
   const { utilisateur, deconnexion } = useAuth();
+  const { t, langue } = useI18n();
 
   const profil = useQuery({
     queryKey: ['moi'],
@@ -27,10 +30,10 @@ export default function Profil() {
   });
 
   function confirmerDeconnexion() {
-    Alert.alert('Se déconnecter', 'Voulez-vous vraiment quitter votre session ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('profil.seDeconnecter'), t('profil.confirmerDeconnexion'), [
+      { text: t('commun.annuler'), style: 'cancel' },
       {
-        text: 'Se déconnecter',
+        text: t('profil.seDeconnecter'),
         style: 'destructive',
         onPress: async () => {
           await deconnexion();
@@ -40,20 +43,33 @@ export default function Profil() {
     ]);
   }
 
+  const libelleLangue = LANGUES.find((l) => l.code === langue)?.libelle ?? langue;
+
   const entrees: Entree[] = [
-    { icone: 'person-outline', libelle: 'Mes informations' },
-    { icone: 'card-outline', libelle: 'Mon abonnement', route: '/(client)/paiements' },
-    { icone: 'cube-outline', libelle: 'Mes bacs', route: '/(client)/collectes' },
-    { icone: 'leaf-outline', libelle: 'Mes points Clean', route: '/(client)/points' },
-    { icone: 'notifications-outline', libelle: 'Notifications' },
-    { icone: 'help-circle-outline', libelle: 'Aide & FAQ' },
-    { icone: 'settings-outline', libelle: 'Paramètres' },
-    { icone: 'log-out-outline', libelle: 'Se déconnecter', danger: true, action: confirmerDeconnexion },
+    { icone: 'person-outline', libelle: t('profil.mesInformations') },
+    { icone: 'card-outline', libelle: t('profil.monAbonnement'), route: '/(client)/paiements' },
+    { icone: 'cube-outline', libelle: t('profil.mesBacs'), route: '/(client)/collectes' },
+    { icone: 'leaf-outline', libelle: t('profil.mesPoints'), route: '/(client)/points' },
+    {
+      icone: 'language-outline',
+      libelle: t('profil.langue'),
+      valeur: libelleLangue,
+      route: '/(client)/langue',
+    },
+    { icone: 'notifications-outline', libelle: t('profil.notifications') },
+    { icone: 'help-circle-outline', libelle: t('profil.aide') },
+    { icone: 'settings-outline', libelle: t('profil.parametres') },
+    {
+      icone: 'log-out-outline',
+      libelle: t('profil.seDeconnecter'),
+      danger: true,
+      action: confirmerDeconnexion,
+    },
   ];
 
   return (
     <Ecran>
-      <EnTete titre="Profil" />
+      <EnTete titre={t('profil.titre')} />
       <Contenu>
         <Carte style={styles.identite}>
           <View style={styles.avatar}>
@@ -88,6 +104,7 @@ export default function Profil() {
               <Text style={[styles.entreeLibelle, e.danger && { color: colors.danger }]}>
                 {e.libelle}
               </Text>
+              {!!e.valeur && <Text style={styles.entreeValeur}>{e.valeur}</Text>}
               {!e.danger && (
                 <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
               )}
@@ -95,7 +112,18 @@ export default function Profil() {
           ))}
         </Carte>
 
-        <Text style={styles.version}>Clean Guinée · version 1.0.0</Text>
+        {/* Isole du reste : une suppression de compte ne doit pas voisiner
+            avec des reglages anodins. */}
+        <Pressable
+          onPress={() => router.push('/(client)/supprimer-compte')}
+          style={({ pressed }) => [styles.suppression, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+        >
+          <Ionicons name="trash-outline" size={16} color={colors.danger} />
+          <Text style={styles.suppressionTexte}>{t('profil.supprimerCompte')}</Text>
+        </Pressable>
+
+        <Text style={styles.version}>Clean Guinée · {t('profil.version')} 1.0.0</Text>
       </Contenu>
     </Ecran>
   );
@@ -122,5 +150,14 @@ const styles = StyleSheet.create({
   },
   separateur: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.bordure },
   entreeLibelle: { flex: 1, fontSize: 15, color: colors.texte },
+  entreeValeur: { fontSize: 13, color: colors.texteSecondaire },
+  suppression: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: espacement.sm,
+    paddingVertical: espacement.md,
+  },
+  suppressionTexte: { fontSize: 13, color: colors.danger, fontWeight: '500' },
   version: { fontSize: 12, color: colors.texteTertiaire, textAlign: 'center' },
 });

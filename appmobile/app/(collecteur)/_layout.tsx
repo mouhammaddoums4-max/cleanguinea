@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { BarreOnglets } from '../../src/components/BarreOnglets';
+import { useI18n } from '../../src/i18n';
 
 const ICONES: Record<string, keyof typeof Ionicons.glyphMap> = {
   missions: 'list',
@@ -11,6 +12,8 @@ const ICONES: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function CollecteurLayout() {
+  const { t } = useI18n();
+
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
@@ -18,10 +21,10 @@ export default function CollecteurLayout() {
       // la barre systeme ne recouvre jamais les onglets.
       tabBar={(props) => <BarreOnglets {...props} icones={ICONES} />}
     >
-      <Tabs.Screen name="missions" options={{ title: 'Missions' }} />
-      <Tabs.Screen name="carte" options={{ title: 'Carte' }} />
-      <Tabs.Screen name="historique" options={{ title: 'Historique' }} />
-      <Tabs.Screen name="profil" options={{ title: 'Profil' }} />
+      <Tabs.Screen name="missions" options={{ title: t('onglets.missions') }} />
+      <Tabs.Screen name="carte" options={{ title: t('onglets.carte') }} />
+      <Tabs.Screen name="historique" options={{ title: t('onglets.historique') }} />
+      <Tabs.Screen name="profil" options={{ title: t('onglets.profil') }} />
 
       <Tabs.Screen name="mission/[id]" options={{ href: null }} />
     </Tabs>

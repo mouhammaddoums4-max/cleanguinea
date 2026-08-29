@@ -6,11 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth';
 import { Bouton, Champ, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
+import { useConfig } from '../../src/config';
 
 /** Ecran 2 des maquettes : creation de compte client. */
 export default function Inscription() {
   const router = useRouter();
   const { inscription } = useAuth();
+  const { t, langue } = useI18n();
+  const { indicatif } = useConfig();
 
   const [f, setF] = useState({
     nom: '', telephone: '', email: '', adresse: '', commune: '', quartier: '', motDePasse: '',
@@ -35,10 +39,10 @@ export default function Inscription() {
     setErreur(null);
     setEnvoi(true);
     try {
-      await inscription({ ...f, email: f.email || undefined, cguAcceptees: true });
+      await inscription({ ...f, email: f.email || undefined, langue, cguAcceptees: true });
       router.replace('/(client)/accueil');
     } catch (e) {
-      setErreur(e instanceof Error ? e.message : 'Inscription impossible');
+      setErreur(e instanceof Error ? e.message : t('inscription.echec'));
     } finally {
       setEnvoi(false);
     }
@@ -46,7 +50,7 @@ export default function Inscription() {
 
   return (
     <Ecran bas>
-      <EnTete titre="Créer un compte" retour />
+      <EnTete titre={t('inscription.titre')} retour />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -54,7 +58,7 @@ export default function Inscription() {
         <Contenu>
           <Champ
             icone="person-outline"
-            placeholder="Nom complet"
+            placeholder={t('inscription.nomComplet')}
             value={f.nom}
             onChangeText={maj('nom')}
             autoComplete="name"
@@ -62,12 +66,12 @@ export default function Inscription() {
 
           <View style={styles.ligneTel}>
             <View style={styles.indicatif}>
-              <Text style={styles.indicatifTexte}>+224</Text>
+              <Text style={styles.indicatifTexte}>{indicatif}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Champ
                 icone="call-outline"
-                placeholder="Téléphone"
+                placeholder={t('inscription.telephone')}
                 keyboardType="phone-pad"
                 value={f.telephone}
                 onChangeText={maj('telephone')}
@@ -77,7 +81,7 @@ export default function Inscription() {
 
           <Champ
             icone="mail-outline"
-            placeholder="Email (optionnel)"
+            placeholder={t('inscription.email')}
             keyboardType="email-address"
             autoCapitalize="none"
             value={f.email}
@@ -85,19 +89,19 @@ export default function Inscription() {
           />
           <Champ
             icone="location-outline"
-            placeholder="Adresse"
+            placeholder={t('inscription.adresse')}
             value={f.adresse}
             onChangeText={maj('adresse')}
           />
           <Champ
             icone="business-outline"
-            placeholder="Commune (Ratoma, Matam, Dixinn...)"
+            placeholder={t('inscription.commune')}
             value={f.commune}
             onChangeText={maj('commune')}
           />
           <Champ
             icone="map-outline"
-            placeholder="Quartier"
+            placeholder={t('inscription.quartier')}
             value={f.quartier}
             onChangeText={maj('quartier')}
           />
@@ -105,7 +109,7 @@ export default function Inscription() {
           <View>
             <Champ
               icone="lock-closed-outline"
-              placeholder="Mot de passe (6 caractères minimum)"
+              placeholder={t('inscription.motDePasse')}
               secureTextEntry={!visible}
               value={f.motDePasse}
               onChangeText={maj('motDePasse')}
@@ -128,15 +132,20 @@ export default function Inscription() {
             <View style={[styles.case, cgu && styles.caseCochee]}>
               {cgu && <Ionicons name="checkmark" size={14} color={colors.blanc} />}
             </View>
-            <Text style={styles.cguTexte}>J'accepte les CGU</Text>
+            <Text style={styles.cguTexte}>{t('inscription.accepterCgu')}</Text>
           </Pressable>
 
           {!!erreur && <Text style={styles.erreur}>{erreur}</Text>}
 
-          <Bouton titre="S'inscrire" onPress={valider} charge={envoi} desactive={!complet} />
+          <Bouton
+            titre={t('inscription.valider')}
+            onPress={valider}
+            charge={envoi}
+            desactive={!complet}
+          />
 
           <Bouton
-            titre="J'ai déjà un compte"
+            titre={t('inscription.dejaCompte')}
             variante="texte"
             onPress={() => router.replace('/(auth)/connexion')}
           />

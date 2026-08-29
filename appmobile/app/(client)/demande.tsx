@@ -6,12 +6,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type Bac } from '../../src/api';
 import { Bouton, Carte, Chargement, Contenu, Ecran, EnTete, PastilleBac } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
+import { useConfig } from '../../src/config';
+import { useI18n } from '../../src/i18n';
 
 /** Ecran 4 des maquettes : "Demander une collecte". */
 export default function Demande() {
   const router = useRouter();
   const client = useQueryClient();
+
+  const { categorie, parametre } = useConfig();
+  const { t } = useI18n();
+  const niveauMax = parametre<number>('bac.niveauMaxTiers', 3);
 
   const [selection, setSelection] = useState<string[]>([]);
   const [immediate, setImmediate] = useState(true);
@@ -39,9 +45,9 @@ export default function Demande() {
 
   return (
     <Ecran bas>
-      <EnTete titre="Demander une collecte" retour />
+      <EnTete titre={t('demande.titre')} retour />
       <Contenu>
-        <Text style={styles.question}>Quel bac souhaitez-vous faire collecter ?</Text>
+        <Text style={styles.question}>{t('demande.question')}</Text>
 
         {bacs.isLoading ? (
           <Chargement />
@@ -49,18 +55,23 @@ export default function Demande() {
           <View style={{ gap: espacement.sm }}>
             {bacs.data?.map((bac) => {
               const choisi = selection.includes(bac.id);
-              const c = couleursCategorie[bac.categorie] ?? couleursCategorie.AUTRES;
+              const c = categorie(bac.categorie);
               return (
                 <Carte
                   key={bac.id}
                   onPress={() => basculer(bac.id)}
                   style={[styles.option, choisi && styles.optionChoisie]}
                 >
-                  <PastilleBac categorie={bac.categorie} />
+                  <PastilleBac
+                    couleur={c.couleur}
+                    couleurFond={c.couleurFond}
+                    icone={c.icone}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.optionNom}>{c.libelle}</Text>
                     <Text style={styles.petit}>
-                      Bac {bac.numero} · {bac.niveauTiers}/3 plein
+                      {t('bacs.bac')} {bac.numero} · {bac.niveauTiers}/{niveauMax}{' '}
+                      {t('bacs.plein')}
                     </Text>
                   </View>
                   <Ionicons
@@ -74,11 +85,11 @@ export default function Demande() {
           </View>
         )}
 
-        <Text style={styles.titreSection}>Type de demande</Text>
+        <Text style={styles.titreSection}>{t('demande.typeDemande')}</Text>
         <View style={{ gap: espacement.sm }}>
           {[
-            { valeur: true, libelle: 'Immédiate', detail: 'Un collecteur est affecté au plus vite' },
-            { valeur: false, libelle: 'Programmer', detail: 'À la prochaine tournée de votre quartier' },
+            { valeur: true, libelle: t('demande.immediate'), detail: t('demande.immediateDetail') },
+            { valeur: false, libelle: t('demande.programmer'), detail: t('demande.programmerDetail') },
           ].map((o) => (
             <Pressable
               key={String(o.valeur)}
@@ -101,7 +112,7 @@ export default function Demande() {
         {!!erreur && <Text style={styles.erreur}>{erreur}</Text>}
 
         <Bouton
-          titre="Valider la demande"
+          titre={t('demande.valider')}
           onPress={() => envoyer.mutate()}
           charge={envoyer.isPending}
           desactive={selection.length === 0}

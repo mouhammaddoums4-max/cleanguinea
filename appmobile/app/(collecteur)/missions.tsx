@@ -9,7 +9,8 @@ import { useAuth } from '../../src/auth';
 import {
   Carte, Chargement, Ecran, Etiquette, PastilleBac, Vide,
 } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement, formaterHeure, rayon } from '../../src/theme';
+import { colors, espacement, formaterHeure, rayon } from '../../src/theme';
+import { useConfig } from '../../src/config';
 
 type Reponse = { missions: Mission[]; resume: { total: number; terminees: number; enCours: number } };
 

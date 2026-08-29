@@ -5,16 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, type Mission, type StatutMission } from '../../src/api';
 import { Carte, Chargement, Contenu, Ecran, EnTete, Vide } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
 
 /** Ecran 5 des maquettes : suivi de collecte en temps reel. */
-const ETAPES: { cle: StatutMission; libelle: string }[] = [
-  { cle: 'ACCEPTEE', libelle: 'Acceptée' },
-  { cle: 'EN_ROUTE', libelle: 'En route' },
-  { cle: 'ARRIVE', libelle: 'Arrivé' },
-  { cle: 'TERMINEE', libelle: 'Terminée' },
-];
+const ETAPES: StatutMission[] = ['ACCEPTEE', 'EN_ROUTE', 'ARRIVE', 'TERMINEE'];
 
 export default function Suivi() {
+  const { t } = useI18n();
   const mission = useQuery({
     queryKey: ['mission-en-cours'],
     queryFn: () => api<Mission | null>('/api/missions/en-cours'),
@@ -23,32 +20,32 @@ export default function Suivi() {
   });
 
   const indexActuel = mission.data
-    ? Math.max(0, ETAPES.findIndex((e) => e.cle === mission.data!.statut))
+    ? Math.max(0, ETAPES.indexOf(mission.data!.statut))
     : -1;
 
   return (
     <Ecran bas>
-      <EnTete titre="Suivi de collecte" retour />
+      <EnTete titre={t('suivi.titre')} retour />
       {mission.isLoading ? (
-        <Chargement />
+        <Chargement texte={t('commun.chargement')} />
       ) : !mission.data ? (
         <Vide
           icone="checkmark-done-outline"
-          titre="Aucune collecte en cours"
-          message="Vos demandes en cours s'affichent ici avec la position du collecteur."
+          titre={t('suivi.aucuneEnCours')}
+          message={t('suivi.aucuneEnCoursDetail')}
         />
       ) : (
         <Contenu>
           {/* Collecteur assigné */}
           <Carte>
-            <Text style={styles.libelle}>Collecteur assigné</Text>
+            <Text style={styles.libelle}>{t('suivi.collecteurAssigne')}</Text>
             <View style={styles.ligneCollecteur}>
               <View style={styles.avatar}>
                 <Ionicons name="person" size={22} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.nom}>
-                  {mission.data.collecteur?.user.nom ?? 'En cours d’affectation'}
+                  {mission.data.collecteur?.user.nom ?? t('suivi.enAffectation')}
                 </Text>
                 <Text style={styles.petit}>{mission.data.reference}</Text>
               </View>
@@ -70,7 +67,7 @@ export default function Suivi() {
                 const atteinte = i <= indexActuel;
                 const actuelle = i === indexActuel;
                 return (
-                  <View key={etape.cle} style={styles.etape}>
+                  <View key={etape} style={styles.etape}>
                     <View style={styles.etapeHaut}>
                       {i > 0 && (
                         <View style={[styles.trait, atteinte && styles.traitActif]} />
@@ -91,7 +88,7 @@ export default function Suivi() {
                       )}
                     </View>
                     <Text style={[styles.etapeLibelle, atteinte && styles.etapeLibelleActif]}>
-                      {etape.libelle}
+                      {t(`statuts.${etape}`)}
                     </Text>
                   </View>
                 );
@@ -101,15 +98,17 @@ export default function Suivi() {
 
           {!!mission.data.etaMinutes && (
             <Carte style={styles.carteEta}>
-              <Text style={styles.libelle}>Arrivée estimée</Text>
-              <Text style={styles.eta}>{mission.data.etaMinutes} min</Text>
+              <Text style={styles.libelle}>{t('suivi.arriveeEstimee')}</Text>
+              <Text style={styles.eta}>
+                {mission.data.etaMinutes} {t('suivi.minutes')}
+              </Text>
             </Carte>
           )}
 
           {/* Emplacement de la carte : brancher react-native-maps une fois la cle Google Maps
               obtenue. En attendant, on affiche l'adresse plutot qu'un cadre vide. */}
           <Carte>
-            <Text style={styles.libelle}>Localisation</Text>
+            <Text style={styles.libelle}>{t('suivi.localisation')}</Text>
             <View style={styles.lignePosition}>
               <Ionicons name="location" size={18} color={colors.primary} />
               <Text style={styles.adresse}>{mission.data.client.adresse}</Text>

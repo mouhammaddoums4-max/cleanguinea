@@ -5,10 +5,16 @@ import { api, type Mission } from '../../src/api';
 import {
   Carte, Chargement, Ecran, EnTete, Etiquette, PastilleBac, Vide,
 } from '../../src/components/ui';
-import { colors, couleursCategorie, espacement, formaterDate, formaterHeure } from '../../src/theme';
+import { colors, espacement, formaterDate, formaterHeure } from '../../src/theme';
+import { useConfig } from '../../src/config';
+import { useI18n, useFormat } from '../../src/i18n';
 
 /** Ecran 6 des maquettes : historique des collectes. */
 export default function Historique() {
+  const { categorie } = useConfig();
+  const { t } = useI18n();
+  const format = useFormat();
+
   const missions = useQuery({
     queryKey: ['mes-collectes'],
     queryFn: () => api<Mission[]>('/api/missions/mes-collectes'),
@@ -18,11 +24,11 @@ export default function Historique() {
 
   return (
     <Ecran>
-      <EnTete titre="Historique des collectes" />
+      <EnTete titre={t('historique.titre')} />
       {missions.isLoading ? (
         <Chargement />
       ) : terminees.length === 0 ? (
-        <Vide titre="Aucune collecte terminée" message="Vos passages apparaîtront ici." />
+        <Vide titre={t('historique.aucune')} message={t('historique.aucuneDetail')} />
       ) : (
         <FlatList
           data={terminees}
@@ -32,21 +38,23 @@ export default function Historique() {
           refreshing={missions.isRefetching}
           onRefresh={() => missions.refetch()}
           renderItem={({ item }) => {
-            const categorie = item.bacs[0]?.bac.categorie ?? 'AUTRES';
-            const c = couleursCategorie[categorie] ?? couleursCategorie.AUTRES;
+            const code = item.bacs[0]?.bac.categorie ?? 'AUTRES';
+            const c = categorie(code);
             return (
               <Carte style={styles.carte}>
-                <PastilleBac categorie={categorie} />
+                <PastilleBac couleur={c.couleur} couleurFond={c.couleurFond} icone={c.icone} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.date}>
-                    {formaterDate(item.datePlanifiee)} · {formaterHeure(item.datePlanifiee)}
+                    {format.date(item.datePlanifiee)} · {format.heure(item.datePlanifiee)}
                   </Text>
                   <Text style={styles.matiere}>
-                    {c.libelle} (Bac {item.bacs[0]?.bac.numero ?? '-'})
+                    {c.libelle} ({t('bacs.bac')} {item.bacs[0]?.bac.numero ?? '-'})
                   </Text>
-                  <Text style={styles.poids}>Poids : {item.poidsTotalKg} kg</Text>
+                  <Text style={styles.poids}>
+                    {t('historique.poids')} : {item.poidsTotalKg} kg
+                  </Text>
                 </View>
-                <Etiquette texte="Terminée" />
+                <Etiquette texte={t('statuts.TERMINEE')} />
               </Carte>
             );
           }}

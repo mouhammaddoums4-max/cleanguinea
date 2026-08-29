@@ -116,6 +116,7 @@ export type Utilisateur = {
   nom: string;
   telephone: string;
   role: Role;
+  langue?: 'fr' | 'en';
 };
 
 export type Bac = {
@@ -163,7 +164,8 @@ export type SoldePoints = {
   valeurGnf: number;
   cumule12Mois: number;
   niveau: string;
+  niveauLibelle: string;
   bonusPct: number;
-  prochainNiveau: { nom: string; pointsRestants: number } | null;
+  prochainNiveau: { code: string; libelle: string; pointsRestants: number } | null;
   mouvements: { id: string; sens: 'CREDIT' | 'DEBIT'; points: number; motif: string; createdAt: string }[];
 };

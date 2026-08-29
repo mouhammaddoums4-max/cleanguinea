@@ -13,6 +13,7 @@ type Inscription = {
   adresse: string;
   commune: string;
   quartier: string;
+  langue?: 'fr' | 'en';
   cguAcceptees: true;
 };
 
