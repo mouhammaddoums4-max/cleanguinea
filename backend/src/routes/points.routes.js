@@ -3,9 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
-import {
-  debiterPoints, niveauPour, BAREME_DEFAUT, GNF_PAR_POINT, NIVEAUX,
-} from '../lib/points.js';
+import { debiterPoints, niveauPour, gnfParPoint } from '../lib/points.js';
+import { chargerConfig, traduire } from '../lib/config.js';
 
 const router = Router();
 router.use(authentifier);
@@ -24,16 +23,27 @@ router.get(
     ]);
 
     const cumule = solde?.cumule12Mois ?? 0;
-    const niveau = niveauPour(cumule);
-    const suivant = [...NIVEAUX].reverse().find((n) => n.seuil > cumule);
+    const niveau = await niveauPour(cumule);
+    const suffixe = req.query.langue === 'en' ? 'En' : 'Fr';
+
+    const { niveaux } = await chargerConfig();
+    // niveaux est trie par seuil decroissant : on le remonte pour trouver le suivant.
+    const suivant = [...niveaux].reverse().find((n) => n.seuil > cumule);
 
     res.json({
       solde: solde?.solde ?? 0,
-      valeurGnf: (solde?.solde ?? 0) * GNF_PAR_POINT,
+      valeurGnf: (solde?.solde ?? 0) * (await gnfParPoint()),
       cumule12Mois: cumule,
-      niveau: niveau.nom,
+      niveau: niveau.code,
+      niveauLibelle: niveau['libelle' + suffixe],
       bonusPct: niveau.bonusPct,
-      prochainNiveau: suivant ? { nom: suivant.nom, pointsRestants: suivant.seuil - cumule } : null,
+      prochainNiveau: suivant
+        ? {
+            code: suivant.code,
+            libelle: suivant['libelle' + suffixe],
+            pointsRestants: suivant.seuil - cumule,
+          }
+        : null,
       mouvements,
     });
   }),
@@ -42,15 +52,28 @@ router.get(
 /** GET /api/points/bareme — grille affichee dans l application. */
 router.get(
   '/bareme',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const langue = req.query.langue === 'en' ? 'en' : 'fr';
+    const config = await chargerConfig();
+    const traduit = traduire(config, langue);
+
     const enBase = await prisma.baremePoints.findMany({ where: { actif: true } });
 
-    const bareme = Object.entries(BAREME_DEFAUT).map(([categorie, defaut]) => ({
-      categorie,
-      pointsParKg: enBase.find((b) => b.categorie === categorie)?.pointsParKg ?? defaut,
+    // Le bareme suit l'ordre et les libelles du referentiel des categories.
+    const bareme = traduit.categories.map((c) => ({
+      categorie: c.code,
+      libelle: c.libelle,
+      couleur: c.couleur,
+      pointsParKg: enBase.find((b) => b.categorie === c.code)?.pointsParKg ?? 0,
     }));
 
-    res.json({ gnfParPoint: GNF_PAR_POINT, bareme, niveaux: NIVEAUX });
+    res.json({
+      gnfParPoint: config.parametres['points.gnfParPoint'],
+      validiteMois: config.parametres['points.validiteMois'],
+      bareme,
+      niveaux: traduit.niveaux,
+      conversions: traduit.conversions,
+    });
   }),
 );
 
@@ -59,16 +82,11 @@ router.get(
  * Les taux different selon la destination : le credit Mobile Money coute plus cher
  * en points car il supporte la commission de l operateur.
  */
-const TAUX = {
-  REDUCTION_ABONNEMENT: 100,
-  CREDIT_MOBILE_MONEY: 110,
-  BON_PARTENAIRE: 95,
-  CADEAU_CATALOGUE: 100,
-  DON_ASSOCIATION: 90,
-};
-
 const conversionSchema = z.object({
-  type: z.enum(Object.keys(TAUX)),
+  type: z.enum([
+    'REDUCTION_ABONNEMENT', 'CREDIT_MOBILE_MONEY', 'BON_PARTENAIRE',
+    'CADEAU_CATALOGUE', 'DON_ASSOCIATION',
+  ]),
   montantGnf: z.number().int().positive(),
 });
 
@@ -77,12 +95,26 @@ router.post(
   asyncHandler(async (req, res) => {
     const { type, montantGnf } = conversionSchema.parse(req.body);
 
-    // Plafond de 150 000 GNF par mois sur le credit Mobile Money.
-    if (type === 'CREDIT_MOBILE_MONEY' && montantGnf > 150_000) {
-      return res.status(400).json({ erreur: 'Plafond de 150 000 GNF par mois sur ce canal' });
+    // Taux, plafond et solde minimum viennent tous du referentiel.
+    const { taux } = await chargerConfig();
+    const regle = taux.find((t) => t.type === type);
+    if (!regle) {
+      return res.status(400).json({ erreur: 'Ce mode de conversion est indisponible' });
     }
 
-    const pointsRequis = Math.ceil((montantGnf / 1000) * TAUX[type]);
+    if (regle.plafondMensuelGnf !== null && montantGnf > regle.plafondMensuelGnf) {
+      return res.status(400).json({
+        erreur: `Plafond de ${regle.plafondMensuelGnf.toLocaleString('fr-FR')} GNF par mois sur ce canal`,
+      });
+    }
+
+    const pointsRequis = Math.ceil((montantGnf / 1000) * regle.pointsPour1000Gnf);
+
+    if (pointsRequis < regle.soldeMinimumPoints) {
+      return res.status(400).json({
+        erreur: `Minimum de ${regle.soldeMinimumPoints} points requis pour ce canal`,
+      });
+    }
 
     const mouvement = await debiterPoints({
       userId: req.user.id,

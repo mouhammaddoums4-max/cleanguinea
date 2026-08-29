@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
-import { calculerPoints, crediterPoints, poidsRecyclableDuMois, PLAFOND_KG_MOIS } from '../lib/points.js';
+import {
+  calculerPoints, crediterPoints, poidsRecyclableDuMois, plafondKgMois, seuilContamination,
+} from '../lib/points.js';
+import { parametre } from '../lib/config.js';
 
 const router = Router();
 router.use(authentifier);
@@ -297,6 +300,7 @@ router.post(
     }
 
     const poidsTotal = data.pesees.reduce((s, p) => s + p.poidsKg, 0);
+    const seuilContam = await seuilContamination();
 
     const misAJour = await prisma.$transaction(async (tx) => {
       await tx.pesee.createMany({
@@ -307,7 +311,7 @@ router.post(
           poidsKg: p.poidsKg,
           peseeCertifiee: p.peseeCertifiee,
           contaminationPct: p.contaminationPct,
-          declassee: (p.contaminationPct ?? 0) > 15,
+          declassee: (p.contaminationPct ?? 0) > seuilContam,
         })),
       });
 
@@ -329,7 +333,7 @@ router.post(
               centreTriId: centre.id,
               categorie: p.categorie,
               quantiteKg: p.poidsKg,
-              capaciteKg: 5000,
+              capaciteKg: await parametre('tri.capaciteParCategorieKg'),
             },
             update: { quantiteKg: { increment: p.poidsKg } },
           });
@@ -354,14 +358,15 @@ router.post(
       where: { userId: mission.client.userId },
     });
     const dejaPese = await poidsRecyclableDuMois(mission.clientId);
+    const plafond = await plafondKgMois();
 
     let pointsTotal = 0;
     for (const p of data.pesees) {
-      if (dejaPese > PLAFOND_KG_MOIS) break; // plafond anti-fraude atteint
+      if (dejaPese > plafond) break; // plafond anti-fraude atteint
       pointsTotal += await calculerPoints({
         categorie: p.categorie,
         poidsKg: p.poidsKg,
-        declassee: (p.contaminationPct ?? 0) > 15,
+        declassee: (p.contaminationPct ?? 0) > seuilContam,
         cumule12Mois: solde?.cumule12Mois ?? 0,
       });
     }

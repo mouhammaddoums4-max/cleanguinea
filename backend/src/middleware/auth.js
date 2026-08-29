@@ -23,7 +23,7 @@ export async function authentifier(req, res, next) {
       include: { client: true, collecteur: true },
     });
 
-    if (!user || !user.actif) {
+    if (!user || !user.actif || user.supprimeLe) {
       return res.status(401).json({ erreur: 'Compte introuvable ou desactive' });
     }
 

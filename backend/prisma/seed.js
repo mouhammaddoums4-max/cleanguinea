@@ -2,6 +2,7 @@ import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
+import { semerConfig, CATEGORIES } from './config.seed.js';
 
 const prisma = new PrismaClient();
 
@@ -21,15 +22,14 @@ const OFFRES = [
   { type: 'PRO', libelle: 'Abonnement PRO', tarifMensuelGnf: 200_000, passagesParSemaine: 6, nbBacsFournis: 6 },
 ];
 
-const BAREME = [
-  { categorie: 'PLASTIQUE', pointsParKg: 15 },
-  { categorie: 'METAL_FER', pointsParKg: 8 },
-  { categorie: 'CARTON', pointsParKg: 6 },
-  { categorie: 'VERRE', pointsParKg: 4 },
-  { categorie: 'ORGANIQUE', pointsParKg: 1 },
-  { categorie: 'AUTRES', pointsParKg: 2 },
-  { categorie: 'REFUS', pointsParKg: 0 },
-];
+const POINTS_PAR_KG = {
+  PLASTIQUE: 15, METAL_FER: 8, CARTON: 6, VERRE: 4, ORGANIQUE: 1, AUTRES: 2, REFUS: 0,
+};
+
+const BAREME = CATEGORIES.map((c) => ({
+  categorie: c.code,
+  pointsParKg: POINTS_PAR_KG[c.code] ?? 0,
+}));
 
 const CLIENTS = [
   { nom: 'Mariama Diallo', telephone: '+224622123456', commune: 'Ratoma', quartier: 'Cite FOFANA', notes: 'Sortir le bac devant la porte.' },
@@ -47,11 +47,8 @@ const COLLECTEURS = [
   { nom: 'Abdoulaye Traore', telephone: '+224623444555', matricule: 'COL-004', vehicule: 'CAM-001', note: 4.7, nbEvaluations: 28 },
 ];
 
-const BACS = [
-  { numero: 1, categorie: 'PLASTIQUE' },
-  { numero: 2, categorie: 'METAL_FER' },
-  { numero: 3, categorie: 'AUTRES' },
-];
+// Les trois bacs remis a chaque foyer : les trois premieres categories du referentiel.
+const BACS = CATEGORIES.slice(0, 3).map((c, i) => ({ numero: i + 1, categorie: c.code }));
 
 /** Remet la base a zero dans l ordre des dependances. */
 async function vider() {
@@ -71,6 +68,10 @@ async function vider() {
     prisma.centreTri.deleteMany(),
     prisma.alerte.deleteMany(),
     prisma.baremePoints.deleteMany(),
+    prisma.tauxConversion.deleteMany(),
+    prisma.niveauFidelite.deleteMany(),
+    prisma.categorieConfig.deleteMany(),
+    prisma.parametre.deleteMany(),
     prisma.soldePoints.deleteMany(),
     prisma.client.deleteMany(),
     prisma.collecteur.deleteMany(),
@@ -97,6 +98,13 @@ async function main() {
       });
     }
   }
+
+  console.log('Configuration (categories, niveaux, taux, parametres)...');
+  const resume = await semerConfig(prisma);
+  console.log(
+    `  ${resume.categories} categories · ${resume.niveaux} niveaux · ` +
+    `${resume.conversions} conversions · ${resume.parametres} parametres`,
+  );
 
   console.log('Offres et bareme...');
   const offres = {};
@@ -215,7 +223,7 @@ async function main() {
   });
 
   console.log('Missions et pesees sur 30 jours...');
-  const categoriesParBac = { 1: 'PLASTIQUE', 2: 'METAL_FER', 3: 'AUTRES' };
+  const categoriesParBac = Object.fromEntries(BACS.map((b) => [b.numero, b.categorie]));
 
   // Les bacs sont charges une seule fois : la latence du proxy rend toute requete
   // dans la boucle prohibitive (plusieurs centaines d'allers-retours sinon).

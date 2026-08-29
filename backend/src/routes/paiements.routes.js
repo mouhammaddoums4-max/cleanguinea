@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
-import { debiterPoints, GNF_PAR_POINT } from '../lib/points.js';
+import { debiterPoints, gnfParPoint } from '../lib/points.js';
 
 const router = Router();
 router.use(authentifier);
@@ -55,8 +55,9 @@ router.post(
     const tarif = abonnement.offre.tarifMensuelGnf;
 
     // La remise ne peut jamais depasser le montant du mois.
-    const remiseGnf = Math.min(data.pointsAUtiliser * GNF_PAR_POINT, tarif);
-    const pointsReels = Math.floor(remiseGnf / GNF_PAR_POINT);
+    const tauxPoint = await gnfParPoint();
+    const remiseGnf = Math.min(data.pointsAUtiliser * tauxPoint, tarif);
+    const pointsReels = Math.floor(remiseGnf / tauxPoint);
 
     if (pointsReels > 0) {
       await debiterPoints({

@@ -138,6 +138,9 @@ model User {
   photoUrl   String?
   langue     String   @default("fr") // bascule FR / EN de l ecran de bienvenue
   actif      Boolean  @default(true)
+  /// Suppression de compte : les donnees personnelles sont effacees et le compte
+  /// desactive, mais l historique financier est conserve (obligation comptable).
+  supprimeLe DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -354,6 +357,70 @@ model BaremePoints {
   pointsParKg Int
   actif       Boolean         @default(true)
   dateEffet   DateTime        @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Referentiels de configuration
+//
+// Tout ce qui etait auparavant code en dur dans l application vit ici : libelles,
+// couleurs, taux, seuils. Modifiable depuis le back-office sans redeploiement.
+// ---------------------------------------------------------------------------
+
+/// Referentiel des categories de dechets : libelles bilingues et couleur d affichage.
+/// Consomme par l application mobile et le back-office via GET /api/config.
+model CategorieConfig {
+  id        String          @id @default(cuid())
+  code      CategorieDechet @unique
+  libelleFr String
+  libelleEn String
+  couleur   String // hexadecimal, ex. #2563EB
+  couleurFond String // teinte claire pour les pastilles
+  icone     String          @default("trash")
+  /// Compte dans le quota mensuel de recyclables et dans le taux de valorisation.
+  recyclable Boolean        @default(true)
+  ordre     Int             @default(0)
+  actif     Boolean         @default(true)
+}
+
+/// Taux de conversion des Points Clean, par destination.
+/// Le nombre de points requis pour 1 000 GNF varie selon le canal : le credit
+/// Mobile Money coute plus cher car il supporte la commission de l operateur.
+model TauxConversion {
+  id             String         @id @default(cuid())
+  type           TypeConversion @unique
+  libelleFr      String
+  libelleEn      String
+  pointsPour1000Gnf Int
+  /// Plafond mensuel en GNF. null = aucun plafond.
+  plafondMensuelGnf Int?
+  soldeMinimumPoints Int        @default(0)
+  actif          Boolean        @default(true)
+  ordre          Int            @default(0)
+}
+
+/// Niveaux de fidelite du programme Points Clean.
+model NiveauFidelite {
+  id        String @id @default(cuid())
+  code      String @unique // BRONZE / ARGENT / OR / CHAMPION
+  libelleFr String
+  libelleEn String
+  seuil     Int // points cumules sur 12 mois
+  bonusPct  Int    @default(0)
+  ordre     Int    @default(0)
+}
+
+/// Parametres scalaires de l application (cle -> valeur typee).
+/// Evite de multiplier les tables pour des reglages isoles.
+model Parametre {
+  id          String   @id @default(cuid())
+  cle         String   @unique // points.gnfParPoint, fraude.plafondKgMois...
+  valeur      String // toujours stocke en texte, converti par `type`
+  type        String   @default("string") // string | number | boolean | json
+  libelleFr   String
+  libelleEn   String
+  groupe      String   @default("general")
+  modifiable  Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
 }
 
 model SoldePoints {

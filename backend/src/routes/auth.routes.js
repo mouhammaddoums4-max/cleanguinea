@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { signerToken, authentifier } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
+import { chargerConfig, parametre } from '../lib/config.js';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ const inscriptionSchema = z.object({
   commune: z.string().min(2, 'Commune requise'),
   quartier: z.string().min(2, 'Quartier requis'),
   nbPersonnes: z.number().int().positive().optional(),
+  langue: z.enum(['fr', 'en']).default('fr'),
   cguAcceptees: z.literal(true, { errorMap: () => ({ message: 'Vous devez accepter les CGU' }) }),
 });
 
@@ -49,9 +51,11 @@ router.post(
       update: {},
     });
 
-    const offre = await prisma.offre.findUnique({ where: { type: 'STANDARD' } });
+    // L'offre par defaut est un parametre, pas une valeur codee.
+    const typeOffreDefaut = await parametre('abonnement.offreParDefaut');
+    const offre = await prisma.offre.findUnique({ where: { type: typeOffreDefaut } });
     if (!offre) {
-      return res.status(500).json({ erreur: 'Aucune offre Standard configuree' });
+      return res.status(503).json({ erreur: `Offre ${typeOffreDefaut} non configuree` });
     }
 
     const nbClients = await prisma.client.count();
@@ -60,12 +64,13 @@ router.post(
     const prochainPrelevement = new Date();
     prochainPrelevement.setMonth(prochainPrelevement.getMonth() + 1);
 
-    // Les trois bacs remis a chaque foyer, comme sur l ecran d accueil.
-    const bacsParDefaut = [
-      { numero: 1, categorie: 'PLASTIQUE' },
-      { numero: 2, categorie: 'METAL_FER' },
-      { numero: 3, categorie: 'AUTRES' },
-    ];
+    // Les bacs remis a chaque foyer viennent du referentiel des categories :
+    // leur nombre suit nbBacsFournis de l'offre, leur ordre celui du referentiel.
+    const { categories } = await chargerConfig();
+    const bacsParDefaut = categories
+      .filter((c) => c.actif)
+      .slice(0, offre.nbBacsFournis)
+      .map((c, i) => ({ numero: i + 1, categorie: c.code }));
 
     const user = await prisma.$transaction(async (tx) => {
       const cree = await tx.user.create({
@@ -75,6 +80,7 @@ router.post(
           email: data.email || null,
           motDePasse: await bcrypt.hash(data.motDePasse, 10),
           role: 'CLIENT',
+          langue: data.langue,
           client: {
             create: {
               adresse: data.adresse,
@@ -111,7 +117,10 @@ router.post(
 
     res.status(201).json({
       token: signerToken(user),
-      utilisateur: { id: user.id, nom: user.nom, telephone: user.telephone, role: user.role },
+      utilisateur: {
+        id: user.id, nom: user.nom, telephone: user.telephone,
+        role: user.role, langue: user.langue,
+      },
     });
   }),
 );
@@ -141,7 +150,10 @@ router.post(
 
     res.json({
       token: signerToken(user),
-      utilisateur: { id: user.id, nom: user.nom, telephone: user.telephone, role: user.role },
+      utilisateur: {
+        id: user.id, nom: user.nom, telephone: user.telephone,
+        role: user.role, langue: user.langue,
+      },
     });
   }),
 );

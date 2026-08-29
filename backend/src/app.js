@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import authRoutes from './routes/auth.routes.js';
+import configRoutes from './routes/config.routes.js';
+import compteRoutes from './routes/compte.routes.js';
 import bacsRoutes from './routes/bacs.routes.js';
 import missionsRoutes from './routes/missions.routes.js';
 import paiementsRoutes from './routes/paiements.routes.js';
@@ -29,7 +31,9 @@ export function creerApp() {
     res.json({ service: 'cleanguinea-api', statut: 'ok', heure: new Date().toISOString() }),
   );
 
+  app.use('/api/config', configRoutes);
   app.use('/api/auth', authRoutes);
+  app.use('/api/compte', compteRoutes);
   app.use('/api/bacs', bacsRoutes);
   app.use('/api/missions', missionsRoutes);
   app.use('/api/paiements', paiementsRoutes);

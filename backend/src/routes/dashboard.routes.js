@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
+import { parametre } from '../lib/config.js';
 
 const router = Router();
 router.use(authentifier, exigerRole('ADMIN', 'SUPERVISEUR'));
@@ -67,6 +68,7 @@ router.get(
     const revenusRecyclage = caRecyclage._sum.montantGnf ?? 0;
     const revenusAboPrec = caAboPrec._sum.montantGnf ?? 0;
     const revenusRecyclagePrec = caRecyclagePrec._sum.montantGnf ?? 0;
+    const tauxDepenses = await parametre('finance.tauxDepensesEstime');
 
     res.json({
       periode: { debut, fin },
@@ -92,9 +94,10 @@ router.get(
       resumeFinancier: {
         revenusAbonnements: revenusAbo,
         revenusRecyclage,
-        // Approximation : 26% du CA, a remplacer par la comptabilite reelle.
-        depenses: Math.round((revenusAbo + revenusRecyclage) * 0.26),
-        beneficeNet: Math.round((revenusAbo + revenusRecyclage) * 0.74),
+        // Ratio provisoire, regle par parametre, en attendant la comptabilite analytique.
+        depenses: Math.round((revenusAbo + revenusRecyclage) * tauxDepenses),
+        beneficeNet: Math.round((revenusAbo + revenusRecyclage) * (1 - tauxDepenses)),
+        tauxDepensesApplique: tauxDepenses,
       },
     });
   }),
