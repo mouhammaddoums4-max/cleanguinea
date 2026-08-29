@@ -2,8 +2,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
 import { api, type Paiement } from '../../src/api';
+import { useConfig } from '../../src/config';
+import { useI18n, useFormat } from '../../src/i18n';
 import { Carte, Chargement, Contenu, Ecran, EnTete, Etiquette } from '../../src/components/ui';
-import { colors, espacement, formaterDate, formaterGnf } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
 
 type Reponse = {
   abonnement: {
@@ -16,6 +18,10 @@ type Reponse = {
 
 /** Ecran 7 des maquettes : abonnement et historique des paiements. */
 export default function Paiements() {
+  const { t } = useI18n();
+  const format = useFormat();
+  const { devise } = useConfig();
+
   const donnees = useQuery({
     queryKey: ['mes-paiements'],
     queryFn: () => api<Reponse>('/api/paiements/mes-paiements'),
@@ -24,41 +30,50 @@ export default function Paiements() {
   if (donnees.isLoading) {
     return (
       <Ecran bas>
-        <EnTete titre="Paiements" retour />
-        <Chargement />
+        <EnTete titre={t('paiements.titre')} retour />
+        <Chargement texte={t('commun.chargement')} />
       </Ecran>
     );
   }
 
   const abo = donnees.data?.abonnement;
 
+  const libelleStatut = (statut: Paiement['statut']) =>
+    statut === 'PAYE'
+      ? t('paiements.paye')
+      : statut === 'ECHOUE'
+        ? t('paiements.echoue')
+        : t('paiements.enAttente');
+
   return (
     <Ecran bas>
-      <EnTete titre="Paiements" retour />
+      <EnTete titre={t('paiements.titre')} retour />
       <Contenu>
         <Carte style={styles.carteVerte}>
-          <Text style={styles.libelleClair}>{abo?.offre.libelle ?? 'Aucun abonnement'}</Text>
+          <Text style={styles.libelleClair}>
+            {abo?.offre.libelle ?? t('paiements.aucunAbonnement')}
+          </Text>
           <Text style={styles.montant}>
-            {abo ? `${formaterGnf(abo.offre.tarifMensuelGnf)} / mois` : '—'}
+            {abo
+              ? `${format.montant(abo.offre.tarifMensuelGnf, devise)} ${t('paiements.parMois')}`
+              : '—'}
           </Text>
           {!!abo?.prochainPrelevement && (
             <Text style={styles.libelleClair}>
-              Prochain prélèvement {formaterDate(abo.prochainPrelevement)}
+              {t('paiements.prochainPrelevement')} {format.date(abo.prochainPrelevement)}
             </Text>
           )}
         </Carte>
 
-        <Text style={styles.titre}>Historique des paiements</Text>
+        <Text style={styles.titre}>{t('paiements.historique')}</Text>
 
         <View style={{ gap: espacement.sm }}>
           {donnees.data?.paiements.map((p) => (
             <Carte key={p.id} style={styles.ligne}>
-              <Text style={styles.datePaiement}>{formaterDate(p.payeLe ?? p.periodeDebut)}</Text>
-              <Text style={styles.montantLigne}>{formaterGnf(p.montantGnf)}</Text>
+              <Text style={styles.datePaiement}>{format.date(p.payeLe ?? p.periodeDebut)}</Text>
+              <Text style={styles.montantLigne}>{format.montant(p.montantGnf, devise)}</Text>
               <Etiquette
-                texte={
-                  p.statut === 'PAYE' ? 'Payé' : p.statut === 'ECHOUE' ? 'Échoué' : 'En attente'
-                }
+                texte={libelleStatut(p.statut)}
                 teinte={p.statut === 'PAYE' ? colors.primaryTexte : colors.danger}
                 fond={p.statut === 'PAYE' ? colors.primaryClair : colors.dangerClair}
               />
@@ -66,10 +81,7 @@ export default function Paiements() {
           ))}
         </View>
 
-        <Text style={styles.note}>
-          Paiement par Orange Money, MTN MoMo, Visa ou Mastercard. Vos points Clean peuvent
-          couvrir tout ou partie de l'abonnement.
-        </Text>
+        <Text style={styles.note}>{t('paiements.note')}</Text>
       </Contenu>
     </Ecran>
   );

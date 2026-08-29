@@ -63,19 +63,3 @@ export const ombre = {
   elevation: 2,
 };
 
-/** 50 000 GNF -> "50 000 GNF" */
-export function formaterGnf(montant: number): string {
-  return `${montant.toLocaleString('fr-FR').replace(/ | /g, ' ')} GNF`;
-}
-
-export function formaterDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-export function formaterHeure(date: string | Date): string {
-  return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}

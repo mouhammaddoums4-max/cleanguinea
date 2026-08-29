@@ -9,20 +9,24 @@ import { api, type Mission, type StatutMission } from '../../../src/api';
 import {
   Bouton, Carte, Champ, Chargement, Contenu, Ecran, EnTete, Etiquette, PastilleBac,
 } from '../../../src/components/ui';
-import { colors, espacement, formaterHeure } from '../../../src/theme';
+import { colors, espacement } from '../../../src/theme';
 import { useConfig } from '../../../src/config';
+import { useI18n, useFormat } from '../../../src/i18n';
 
 /** Ecrans 3 et 4 de l'application collecteur : detail de mission puis pesee. */
-const SUIVANT: Partial<Record<StatutMission, { statut: StatutMission; libelle: string }>> = {
-  EN_ATTENTE: { statut: 'ACCEPTEE', libelle: 'Accepter la mission' },
-  ACCEPTEE: { statut: 'EN_ROUTE', libelle: 'Démarrer la mission' },
-  EN_ROUTE: { statut: 'ARRIVE', libelle: 'Je suis arrivé' },
+const SUIVANT: Partial<Record<StatutMission, { statut: StatutMission; cle: string }>> = {
+  EN_ATTENTE: { statut: 'ACCEPTEE', cle: 'collecteur.accepter' },
+  ACCEPTEE: { statut: 'EN_ROUTE', cle: 'collecteur.demarrer' },
+  EN_ROUTE: { statut: 'ARRIVE', cle: 'collecteur.suisArrive' },
 };
 
 export default function DetailMission() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const client = useQueryClient();
+  const { categorie, parametre } = useConfig();
+  const { t } = useI18n();
+  const format = useFormat();
 
   const [poids, setPoids] = useState('');
 
@@ -38,9 +42,13 @@ export default function DetailMission() {
 
   const avancer = useMutation({
     mutationFn: (statut: StatutMission) =>
-      api(`/api/missions/${id}/statut`, { method: 'PATCH', body: { statut, etaMinutes: 12 } }),
+      api(`/api/missions/${id}/statut`, {
+        method: 'PATCH',
+        body: { statut, etaMinutes: parametre<number>('collecte.etaDefautMinutes', 12) },
+      }),
     onSuccess: invalider,
-    onError: (e) => Alert.alert('Erreur', e instanceof Error ? e.message : 'Action impossible'),
+    onError: (e) =>
+      Alert.alert(t('commun.erreurReseau'), e instanceof Error ? e.message : ''),
   });
 
   const confirmer = useMutation({
@@ -65,19 +73,20 @@ export default function DetailMission() {
     onSuccess: (rep) => {
       invalider();
       Alert.alert(
-        'Collecte confirmée',
-        `${poids} kg enregistrés. ${rep.pointsCredites} points crédités au client.`,
+        t('collecteur.collecteConfirmee'),
+        t('collecteur.kgEnregistres', { poids, points: rep.pointsCredites }),
         [{ text: 'OK', onPress: () => router.back() }],
       );
     },
-    onError: (e) => Alert.alert('Erreur', e instanceof Error ? e.message : 'Envoi impossible'),
+    onError: (e) =>
+      Alert.alert(t('commun.erreurReseau'), e instanceof Error ? e.message : ''),
   });
 
   if (mission.isLoading || !mission.data) {
     return (
       <Ecran bas>
-        <EnTete titre="Détail mission" retour />
-        <Chargement />
+        <EnTete titre={t('collecteur.detailMission')} retour />
+        <Chargement texte={t('commun.chargement')} />
       </Ecran>
     );
   }
@@ -88,11 +97,11 @@ export default function DetailMission() {
 
   return (
     <Ecran bas>
-      <EnTete titre="Détail mission" sousTitre={m.reference} retour />
+      <EnTete titre={t('collecteur.detailMission')} sousTitre={m.reference} retour />
       <Contenu>
         <View style={styles.ligneHaut}>
-          <Text style={styles.heure}>{formaterHeure(m.datePlanifiee)}</Text>
-          <Etiquette texte={libelleStatut(m.statut)} />
+          <Text style={styles.heure}>{format.heure(m.datePlanifiee)}</Text>
+          <Etiquette texte={t(`statuts.${m.statut}`)} />
         </View>
 
         {/* Client */}
@@ -116,24 +125,32 @@ export default function DetailMission() {
 
         {/* Bacs a collecter */}
         <Carte style={{ gap: espacement.sm }}>
-          <Text style={styles.libelle}>Bac(s) à collecter</Text>
-          {m.bacs.map(({ bac }) => (
-            <View key={bac.id} style={styles.ligneBac}>
-              <PastilleBac categorie={bac.categorie} taille={32} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bacNom}>
-                  {couleursCategorie[bac.categorie]?.libelle ?? bac.categorie}
-                </Text>
-                <Text style={styles.petit}>Bac {bac.numero} · {bac.codeQr}</Text>
+          <Text style={styles.libelle}>{t('collecteur.bacsACollecter')}</Text>
+          {m.bacs.map(({ bac }) => {
+            const c = categorie(bac.categorie);
+            return (
+              <View key={bac.id} style={styles.ligneBac}>
+                <PastilleBac
+                  couleur={c.couleur}
+                  couleurFond={c.couleurFond}
+                  icone={c.icone}
+                  taille={32}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.bacNom}>{c.libelle}</Text>
+                  <Text style={styles.petit}>
+                    {t('bacs.bac')} {bac.numero} · {bac.codeQr}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </Carte>
 
         {/* Notes du client */}
         {!!m.client.notes && (
           <Carte style={styles.notes}>
-            <Text style={styles.libelle}>Notes client</Text>
+            <Text style={styles.libelle}>{t('collecteur.notesClient')}</Text>
             <Text style={styles.notesTexte}>{m.client.notes}</Text>
           </Carte>
         )}
@@ -141,7 +158,7 @@ export default function DetailMission() {
         {/* Action selon l'etape */}
         {etape && (
           <Bouton
-            titre={etape.libelle}
+            titre={t(etape.cle)}
             onPress={() => avancer.mutate(etape.statut)}
             charge={avancer.isPending}
           />
@@ -150,20 +167,18 @@ export default function DetailMission() {
         {/* Pesee : disponible une fois arrive sur place */}
         {m.statut === 'ARRIVE' && (
           <Carte style={{ gap: espacement.md }}>
-            <Text style={styles.libelle}>Pesée</Text>
+            <Text style={styles.libelle}>{t('collecteur.pesee')}</Text>
             <Champ
-              libelle="Poids (kg)"
+              libelle={t('collecteur.poidsKg')}
               icone="scale-outline"
               placeholder="0.0"
               keyboardType="decimal-pad"
               value={poids}
               onChangeText={setPoids}
             />
-            <Text style={styles.petit}>
-              Poids relevé sur la balance. Photographiez le bac avant de confirmer.
-            </Text>
+            <Text style={styles.petit}>{t('collecteur.peseeAide')}</Text>
             <Bouton
-              titre="Confirmer la collecte"
+              titre={t('collecteur.confirmerCollecte')}
               onPress={() => confirmer.mutate()}
               charge={confirmer.isPending}
               desactive={!poidsValide}
@@ -175,19 +190,23 @@ export default function DetailMission() {
           <Carte style={styles.termine}>
             <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
             <Text style={styles.termineTexte}>
-              Mission terminée · {m.poidsTotalKg} kg collectés
+              {t('collecteur.missionTerminee')} · {m.poidsTotalKg} {t('collecteur.kgCollectes')}
             </Text>
           </Carte>
         )}
 
         {!['TERMINEE', 'ANNULEE'].includes(m.statut) && (
           <Bouton
-            titre="Annuler la mission"
+            titre={t('collecteur.annulerMission')}
             variante="texte"
             onPress={() =>
-              Alert.alert('Annuler', 'Confirmer l’annulation de cette mission ?', [
-                { text: 'Non', style: 'cancel' },
-                { text: 'Oui', style: 'destructive', onPress: () => avancer.mutate('ANNULEE') },
+              Alert.alert(t('commun.annuler'), t('collecteur.confirmerAnnulation'), [
+                { text: t('commun.non'), style: 'cancel' },
+                {
+                  text: t('commun.oui'),
+                  style: 'destructive',
+                  onPress: () => avancer.mutate('ANNULEE'),
+                },
               ])
             }
           />
@@ -197,19 +216,6 @@ export default function DetailMission() {
   );
 }
 
-function libelleStatut(statut: StatutMission) {
-  return (
-    {
-      EN_ATTENTE: 'En attente',
-      ACCEPTEE: 'Acceptée',
-      EN_ROUTE: 'En route',
-      ARRIVE: 'Arrivé',
-      TERMINEE: 'Terminée',
-      ANNULEE: 'Annulée',
-      MANQUEE: 'Manquée',
-    }[statut] ?? statut
-  );
-}
 
 const styles = StyleSheet.create({
   ligneHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

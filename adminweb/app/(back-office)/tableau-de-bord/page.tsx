@@ -9,10 +9,11 @@ import {
 } from 'lucide-react';
 
 import {
-  api, categorie, dateCourte, gnf, heure, nombre,
+  api,
   type Alerte, type CollecteEnCours, type Dashboard, type MissionsDuJour,
   type PointCourbe, type Repartition, type Stock, type Zone,
 } from '@/lib/api';
+import { useConfig, useFormat } from '@/lib/config';
 
 type Tout = {
   dashboard: Dashboard;
@@ -26,6 +27,9 @@ type Tout = {
 };
 
 export default function TableauDeBord() {
+  const { t, categorie, statut } = useConfig();
+  const format = useFormat();
+
   const [d, setD] = useState<Tout | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -43,7 +47,7 @@ export default function TableauDeBord() {
       .then(([dashboard, courbe, repartition, zones, missions, collectes, stock, alertes]) =>
         setD({ dashboard, courbe, repartition, zones, missions, collectes, stock, alertes }),
       )
-      .catch((e) => setErreur(e instanceof Error ? e.message : 'Chargement impossible'));
+      .catch((e) => setErreur(e instanceof Error ? e.message : 'Erreur'));
   }, []);
 
   if (erreur) {
@@ -55,7 +59,7 @@ export default function TableauDeBord() {
   }
 
   if (!d) {
-    return <div className="py-20 text-center text-sm text-gray-500">Chargement…</div>;
+    return <div className="py-20 text-center text-sm text-gray-500">{t('chargement')}</div>;
   }
 
   const c = d.dashboard.cartes;
@@ -66,11 +70,12 @@ export default function TableauDeBord() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-          <p className="text-sm text-gray-500">Vue d&apos;ensemble de votre activité</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('tableauDeBord')}</h1>
+          <p className="text-sm text-gray-500">{t('vueEnsemble')}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600">
-          {dateCourte(d.dashboard.periode.debut)} — {dateCourte(d.dashboard.periode.fin)}
+          {format.dateCourte(d.dashboard.periode.debut)} —{' '}
+          {format.dateCourte(d.dashboard.periode.fin)}
         </div>
       </div>
 
@@ -79,43 +84,48 @@ export default function TableauDeBord() {
         <CarteKpi
           icone={<Users className="h-5 w-5" />}
           teinte="bg-blue-50 text-blue-600"
-          libelle="Clients actifs"
-          valeur={nombre(c.clientsActifs.valeur)}
+          libelle={t('clientsActifs')}
+          valeur={format.nombre(c.clientsActifs.valeur)}
           evolution={c.clientsActifs.evolution}
+          suffixe={t('vsPeriodePrecedente')}
         />
         <CarteKpi
           icone={<CreditCard className="h-5 w-5" />}
           teinte="bg-violet-50 text-violet-600"
-          libelle="Abonnements actifs"
-          valeur={nombre(c.abonnementsActifs.valeur)}
+          libelle={t('abonnementsActifs')}
+          valeur={format.nombre(c.abonnementsActifs.valeur)}
           evolution={c.abonnementsActifs.evolution}
+          suffixe={t('vsPeriodePrecedente')}
         />
         <CarteKpi
           icone={<Truck className="h-5 w-5" />}
           teinte="bg-indigo-50 text-indigo-600"
-          libelle="Collectes réalisées"
-          valeur={nombre(c.collectesRealisees.valeur)}
+          libelle={t('collectesRealisees')}
+          valeur={format.nombre(c.collectesRealisees.valeur)}
           evolution={c.collectesRealisees.evolution}
+          suffixe={t('vsPeriodePrecedente')}
         />
         <CarteKpi
           icone={<Trash2 className="h-5 w-5" />}
           teinte="bg-amber-50 text-amber-600"
-          libelle="Déchets collectés"
+          libelle={t('dechetsCollectes')}
           valeur={`${c.dechetsCollectesTonnes.valeur} t`}
           evolution={c.dechetsCollectesTonnes.evolution}
+          suffixe={t('vsPeriodePrecedente')}
         />
         <CarteKpi
           icone={<DollarSign className="h-5 w-5" />}
           teinte="bg-primaire-100 text-primaire-600"
-          libelle="Chiffre d'affaires"
-          valeur={gnf(c.chiffreAffairesGnf.valeur)}
+          libelle={t('chiffreAffaires')}
+          valeur={format.montant(c.chiffreAffairesGnf.valeur)}
           evolution={c.chiffreAffairesGnf.evolution}
+          suffixe={t('vsPeriodePrecedente')}
         />
       </div>
 
       {/* Graphiques */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Bloc titre="Collectes sur la période" className="lg:col-span-1">
+        <Bloc titre={t('collectesSurPeriode')}>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={d.courbe} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
@@ -127,7 +137,7 @@ export default function TableauDeBord() {
                 </defs>
                 <XAxis
                   dataKey="date"
-                  tickFormatter={dateCourte}
+                  tickFormatter={format.dateCourte}
                   tick={{ fontSize: 11, fill: '#9CA3AF' }}
                   axisLine={false}
                   tickLine={false}
@@ -140,8 +150,8 @@ export default function TableauDeBord() {
                   width={40}
                 />
                 <Tooltip
-                  labelFormatter={(v) => dateCourte(String(v))}
-                  formatter={(v) => [`${v} collectes`, '']}
+                  labelFormatter={(v) => format.dateCourte(String(v))}
+                  formatter={(v) => [`${v}`, t('collectesRealisees')]}
                   contentStyle={{ borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 12 }}
                 />
                 <Area
@@ -156,7 +166,7 @@ export default function TableauDeBord() {
           </div>
         </Bloc>
 
-        <Bloc titre="Répartition des déchets collectés">
+        <Bloc titre={t('repartitionDechets')}>
           <div className="flex items-center gap-4">
             <div className="relative h-40 w-40 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -184,7 +194,7 @@ export default function TableauDeBord() {
                 <span className="text-xl font-bold text-gray-900">
                   {d.repartition.totalTonnes}
                 </span>
-                <span className="text-[11px] text-gray-500">Tonnes</span>
+                <span className="text-[11px] text-gray-500">{t('tonnes')}</span>
               </div>
             </div>
 
@@ -209,7 +219,7 @@ export default function TableauDeBord() {
           </div>
         </Bloc>
 
-        <Bloc titre="Top 5 des zones" sousTitre="Par quantité collectée">
+        <Bloc titre={t('topZones')} sousTitre={t('parQuantite')}>
           <ol className="space-y-3">
             {d.zones.map((z, i) => (
               <li key={z.zone} className="flex items-center gap-3 text-sm">
@@ -230,18 +240,18 @@ export default function TableauDeBord() {
 
       {/* Tables */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Bloc titre="Collectes en cours" className="lg:col-span-1">
+        <Bloc titre={t('collectesEnCours')}>
           <div className="table-scroll">
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-gray-400">
                 <tr>
-                  <th className="pb-2 pr-3 font-medium">Mission</th>
-                  <th className="pb-2 pr-3 font-medium">Client</th>
-                  <th className="pb-2 pr-3 font-medium">Zone</th>
-                  <th className="pb-2 pr-3 font-medium">Bac(s)</th>
-                  <th className="pb-2 pr-3 font-medium">Collecteur</th>
-                  <th className="pb-2 pr-3 font-medium">Heure</th>
-                  <th className="pb-2 font-medium">Statut</th>
+                  <th className="pb-2 pr-3 font-medium">{t('mission')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t('client')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t('zone')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t('bacs')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t('collecteur')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t('heure')}</th>
+                  <th className="pb-2 font-medium">{t('statut')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -263,10 +273,10 @@ export default function TableauDeBord() {
                       </span>
                     </td>
                     <td className="py-2.5 pr-3 text-gray-700">{m.collecteur ?? '—'}</td>
-                    <td className="py-2.5 pr-3 text-gray-500">{heure(m.heurePlanifiee)}</td>
+                    <td className="py-2.5 pr-3 text-gray-500">{format.heure(m.heurePlanifiee)}</td>
                     <td className="py-2.5">
                       <span className="rounded-full bg-primaire-100 px-2 py-0.5 text-xs font-medium text-primaire-700">
-                        {libelleStatut(m.statut)}
+                        {statut(m.statut)}
                       </span>
                     </td>
                   </tr>
@@ -274,12 +284,12 @@ export default function TableauDeBord() {
               </tbody>
             </table>
             {d.collectes.length === 0 && (
-              <p className="py-6 text-center text-sm text-gray-400">Aucune collecte en cours</p>
+              <p className="py-6 text-center text-sm text-gray-400">{t('aucuneCollecte')}</p>
             )}
           </div>
         </Bloc>
 
-        <Bloc titre="Stock par catégorie" sousTitre="Quantité en stock">
+        <Bloc titre={t('stockParCategorie')} sousTitre={t('quantiteEnStock')}>
           <ul className="space-y-3">
             {d.stock.map((s) => {
               const meta = categorie(s.categorie);
@@ -308,7 +318,7 @@ export default function TableauDeBord() {
           </ul>
         </Bloc>
 
-        <Bloc titre="Alertes & notifications">
+        <Bloc titre={t('alertes')}>
           <ul className="space-y-3">
             {d.alertes.slice(0, 5).map((a) => (
               <li key={a.id} className="flex gap-3">
@@ -335,26 +345,29 @@ export default function TableauDeBord() {
 
       {/* Bas de page */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Bloc titre="Résumé financier" sousTitre="Sur la période sélectionnée" className="lg:col-span-2">
+        <Bloc
+          titre={t('resumeFinancier')}
+          sousTitre={t('surPeriodeSelectionnee')}
+          className="lg:col-span-2"
+        >
           <div className="grid gap-4 sm:grid-cols-4">
-            <Chiffre libelle="Revenus abonnements" valeur={gnf(f.revenusAbonnements)} />
-            <Chiffre libelle="Revenus recyclage" valeur={gnf(f.revenusRecyclage)} />
-            <Chiffre libelle="Dépenses" valeur={gnf(f.depenses)} />
-            <Chiffre libelle="Bénéfice net" valeur={gnf(f.beneficeNet)} accent />
+            <Chiffre libelle={t('revenusAbonnements')} valeur={format.montant(f.revenusAbonnements)} />
+            <Chiffre libelle={t('revenusRecyclage')} valeur={format.montant(f.revenusRecyclage)} />
+            <Chiffre libelle={t('depenses')} valeur={format.montant(f.depenses)} />
+            <Chiffre libelle={t('beneficeNet')} valeur={format.montant(f.beneficeNet)} accent />
           </div>
           <p className="mt-4 text-xs text-gray-400">
-            Les dépenses sont estimées à 26 % du chiffre d&apos;affaires tant que la
-            comptabilité analytique n&apos;est pas branchée.
+            {t('noteDepenses')} ({Math.round(f.tauxDepensesApplique * 100)} %)
           </p>
         </Bloc>
 
-        <Bloc titre="Missions aujourd'hui">
+        <Bloc titre={t('missionsAujourdhui')}>
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
-              { libelle: 'Total', valeur: d.missions.total, classe: 'text-gray-900' },
-              { libelle: 'En cours', valeur: d.missions.enCours, classe: 'text-blue-600' },
-              { libelle: 'Terminées', valeur: d.missions.terminees, classe: 'text-primaire-600' },
-              { libelle: 'Annulées', valeur: d.missions.annulees, classe: 'text-red-600' },
+              { libelle: t('total'), valeur: d.missions.total, classe: 'text-gray-900' },
+              { libelle: t('enCours'), valeur: d.missions.enCours, classe: 'text-blue-600' },
+              { libelle: t('terminees'), valeur: d.missions.terminees, classe: 'text-primaire-600' },
+              { libelle: t('annulees'), valeur: d.missions.annulees, classe: 'text-red-600' },
             ].map((m) => (
               <div key={m.libelle} className="rounded-lg bg-gray-50 py-3">
                 <div className={`text-xl font-bold ${m.classe}`}>{m.valeur}</div>
@@ -369,13 +382,14 @@ export default function TableauDeBord() {
 }
 
 function CarteKpi({
-  icone, teinte, libelle, valeur, evolution,
+  icone, teinte, libelle, valeur, evolution, suffixe,
 }: {
   icone: React.ReactNode;
   teinte: string;
   libelle: string;
   valeur: string;
   evolution: number | null;
+  suffixe: string;
 }) {
   const positive = (evolution ?? 0) >= 0;
   return (
@@ -399,7 +413,7 @@ function CarteKpi({
           <span className={positive ? 'font-medium text-primaire-600' : 'font-medium text-red-600'}>
             {Math.abs(evolution)} %
           </span>
-          <span className="text-gray-400">vs période précédente</span>
+          <span className="text-gray-400">{suffixe}</span>
         </div>
       )}
     </div>
@@ -431,25 +445,9 @@ function Chiffre({
   return (
     <div className={`rounded-lg p-3 ${accent ? 'bg-primaire-50' : 'bg-gray-50'}`}>
       <div className="text-xs text-gray-500">{libelle}</div>
-      <div
-        className={`mt-1 text-base font-bold ${accent ? 'text-primaire-600' : 'text-gray-900'}`}
-      >
+      <div className={`mt-1 text-base font-bold ${accent ? 'text-primaire-600' : 'text-gray-900'}`}>
         {valeur}
       </div>
     </div>
-  );
-}
-
-function libelleStatut(statut: string) {
-  return (
-    {
-      EN_ATTENTE: 'En attente',
-      ACCEPTEE: 'Acceptée',
-      EN_ROUTE: 'En route',
-      ARRIVE: 'Arrivé',
-      TERMINEE: 'Terminée',
-      ANNULEE: 'Annulée',
-      MANQUEE: 'Manquée',
-    }[statut] ?? statut
   );
 }

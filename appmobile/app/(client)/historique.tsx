@@ -5,7 +5,7 @@ import { api, type Mission } from '../../src/api';
 import {
   Carte, Chargement, Ecran, EnTete, Etiquette, PastilleBac, Vide,
 } from '../../src/components/ui';
-import { colors, espacement, formaterDate, formaterHeure } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
 

@@ -30,6 +30,14 @@ cleanguinea/
 **Correctif barre de navigation Android** (barre système qui recouvrait la barre d'onglets) :
 [`appmobile/NAVBAR.md`](appmobile/NAVBAR.md).
 
+### Trois principes tenus dans tout le dépôt
+
+| Principe | Comment |
+|---|---|
+| **Aucune donnée métier en dur** | Libellés, couleurs, tarifs, taux, seuils et plafonds vivent en base (`CategorieConfig`, `TauxConversion`, `NiveauFidelite`, `Parametre`) et sont servis par `GET /api/config`. Les modifier depuis le back-office ne demande **ni redéploiement ni nouvelle version de l'app**. |
+| **Bilingue français / anglais** | Les deux applications basculent FR ⇄ EN. Le choix est mémorisé sur l'appareil et sur le compte, et s'applique aussi aux SMS. Les libellés métier sont traduits **en base** (`libelleFr` / `libelleEn`), les textes d'interface dans des dictionnaires typés. |
+| **Suppression de compte** | `DELETE /api/compte` efface immédiatement toutes les données personnelles et désactive le compte, en conservant l'historique comptable anonymisé. Export des données possible avant suppression. |
+
 ---
 
 ## Démarrage rapide
@@ -54,6 +62,10 @@ cd ../appmobile
 npm install
 npx expo start                # scanner le QR code avec Expo Go
 ```
+
+> `npm run seed:config` (dans `backend/`) met à jour les seuls référentiels de
+> configuration, sans toucher aux données : à lancer après chaque déploiement qui
+> ajoute un paramètre.
 
 ### Comptes de démonstration
 

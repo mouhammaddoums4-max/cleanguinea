@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type SoldePoints } from '../../src/api';
 import { Carte, Chargement, Contenu, Ecran, EnTete } from '../../src/components/ui';
-import { colors, espacement, formaterDate } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
 

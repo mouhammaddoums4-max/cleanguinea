@@ -6,20 +6,23 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, ChevronDown, LogOut, Recycle } from 'lucide-react';
 
 import { api, effacerJeton, lireJeton } from '@/lib/api';
+import { useConfig, type CleTexte, type Langue } from '@/lib/config';
 
-const NAVIGATION = [
-  { libelle: 'Tableau de bord', href: '/tableau-de-bord' },
-  { libelle: 'Clients', href: '/clients' },
-  { libelle: 'Abonnements', href: '/abonnements' },
-  { libelle: 'Collectes', href: '/collectes' },
-  { libelle: 'Collecteurs', href: '/collecteurs' },
-  { libelle: 'Déchets', href: '/dechets' },
-  { libelle: 'Stock & Tri', href: '/stock' },
-  { libelle: 'Ventes', href: '/ventes' },
-  { libelle: 'Finance', href: '/finance' },
-  { libelle: 'Rapports', href: '/rapports' },
-  { libelle: 'Paramètres', href: '/parametres' },
+const NAVIGATION: { cle: CleTexte; href: string }[] = [
+  { cle: 'tableauDeBord', href: '/tableau-de-bord' },
+  { cle: 'clients', href: '/clients' },
+  { cle: 'abonnements', href: '/abonnements' },
+  { cle: 'collectes', href: '/collectes' },
+  { cle: 'collecteurs', href: '/collecteurs' },
+  { cle: 'dechets', href: '/dechets' },
+  { cle: 'stock', href: '/stock' },
+  { cle: 'ventes', href: '/ventes' },
+  { cle: 'finance', href: '/finance' },
+  { cle: 'rapports', href: '/rapports' },
+  { cle: 'parametres', href: '/parametres' },
 ];
+
+const LANGUES: Langue[] = ['fr', 'en'];
 
 type Moi = { utilisateur: { nom: string; role: string } };
 
@@ -27,6 +30,7 @@ type Moi = { utilisateur: { nom: string; role: string } };
 export function Coquille({ children }: { children: React.ReactNode }) {
   const chemin = usePathname();
   const router = useRouter();
+  const { t, langue, changerLangue } = useConfig();
   const [moi, setMoi] = useState<Moi | null>(null);
   const [verifie, setVerifie] = useState(false);
 
@@ -52,7 +56,7 @@ export function Coquille({ children }: { children: React.ReactNode }) {
   if (!verifie) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
-        Vérification de la session…
+        {t('verificationSession')}
       </div>
     );
   }
@@ -85,7 +89,7 @@ export function Coquille({ children }: { children: React.ReactNode }) {
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                   )}
                 >
-                  {entree.libelle}
+                  {t(entree.cle)}
                 </Link>
               );
             })}
@@ -103,10 +107,26 @@ export function Coquille({ children }: { children: React.ReactNode }) {
               <div className="text-right leading-tight">
                 <div className="text-sm font-semibold text-gray-900">{moi?.utilisateur.nom}</div>
                 <div className="text-xs text-gray-500">
-                  {moi?.utilisateur.role === 'ADMIN' ? 'Administrateur' : 'Superviseur'}
+                  {moi?.utilisateur.role === 'ADMIN' ? t('administrateur') : t('superviseur')}
                 </div>
               </div>
               <ChevronDown className="h-4 w-4 text-gray-400" />
+            </div>
+
+            <div className="flex items-center rounded-md border border-gray-200 text-xs">
+              {LANGUES.map((l) => (
+                <button
+                  key={l}
+                  onClick={() => changerLangue(l)}
+                  className={clsxLocal(
+                    'px-2 py-1 font-semibold uppercase transition',
+                    langue === l ? 'bg-primaire-500 text-white' : 'text-gray-500 hover:bg-gray-50',
+                    l === 'fr' ? 'rounded-l-md' : 'rounded-r-md',
+                  )}
+                >
+                  {l}
+                </button>
+              ))}
             </div>
 
             <button
@@ -114,7 +134,7 @@ export function Coquille({ children }: { children: React.ReactNode }) {
                 effacerJeton();
                 router.replace('/connexion');
               }}
-              aria-label="Se déconnecter"
+              aria-label={t('deconnexion')}
               className="rounded-md p-2 text-gray-500 hover:bg-gray-50 hover:text-red-600"
             >
               <LogOut className="h-4 w-4" />

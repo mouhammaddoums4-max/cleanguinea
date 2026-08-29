@@ -4,13 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type Mission } from '../../src/api';
 import { Carte, Chargement, Ecran, EnTete, PastilleBac, Vide } from '../../src/components/ui';
-import { colors, espacement, formaterDate, formaterHeure } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
 import { useConfig } from '../../src/config';
+import { useI18n, useFormat } from '../../src/i18n';
 
 type Reponse = { missions: Mission[] };
 
 /** Ecran 5 de l'application collecteur : collectes realisees. */
 export default function HistoriqueCollecteur() {
+  const { categorie } = useConfig();
+  const { t } = useI18n();
+  const format = useFormat();
+
   const donnees = useQuery({
     queryKey: ['mes-missions'],
     queryFn: () => api<Reponse>('/api/missions/mes-missions'),
@@ -22,13 +27,13 @@ export default function HistoriqueCollecteur() {
   return (
     <Ecran>
       <EnTete
-        titre="Historique"
-        sousTitre={`${terminees.length} collecte(s) · ${total.toFixed(1)} kg aujourd'hui`}
+        titre={t('collecteur.historique')}
+        sousTitre={`${terminees.length} ${t('collecteur.collectesJour')} · ${total.toFixed(1)} kg ${t('collecteur.aujourdhui')}`}
       />
       {donnees.isLoading ? (
-        <Chargement />
+        <Chargement texte={t('commun.chargement')} />
       ) : terminees.length === 0 ? (
-        <Vide icone="time-outline" titre="Aucune collecte terminée" />
+        <Vide icone="time-outline" titre={t('historique.aucune')} />
       ) : (
         <FlatList
           data={terminees}
@@ -37,16 +42,19 @@ export default function HistoriqueCollecteur() {
           showsVerticalScrollIndicator={false}
           refreshing={donnees.isRefetching}
           onRefresh={() => donnees.refetch()}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const c = categorie(item.bacs[0]?.bac.categorie ?? 'AUTRES');
+            return (
             <Carte style={styles.carte}>
-              <PastilleBac categorie={item.bacs[0]?.bac.categorie ?? 'AUTRES'} />
+              <PastilleBac couleur={c.couleur} couleurFond={c.couleurFond} icone={c.icone} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.date}>
-                  {formaterDate(item.datePlanifiee)} · {formaterHeure(item.datePlanifiee)}
+                  {format.date(item.datePlanifiee)} · {format.heure(item.datePlanifiee)}
                 </Text>
                 <Text style={styles.nom}>{item.client.user.nom}</Text>
                 <Text style={styles.petit}>
-                  {item.client.quartier.commune.nom} · Bac {item.bacs[0]?.bac.numero ?? '-'}
+                  {item.client.quartier.commune.nom} · {t('bacs.bac')}{' '}
+                  {item.bacs[0]?.bac.numero ?? '-'}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -54,7 +62,8 @@ export default function HistoriqueCollecteur() {
                 <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
               </View>
             </Carte>
-          )}
+            );
+          }}
         />
       )}
     </Ecran>

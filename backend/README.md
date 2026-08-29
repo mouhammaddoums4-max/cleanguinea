@@ -27,6 +27,7 @@ Vérification : `curl http://localhost:4000/health`
 | `npm run dev` | Serveur en rechargement automatique |
 | `npm start` | Serveur en production |
 | `npm run seed` | **Vide** puis repeuple la base de démonstration |
+| `npm run seed:config` | Met à jour **uniquement** les référentiels de configuration, sans toucher aux données |
 | `npm run prisma:studio` | Explorateur de base dans le navigateur |
 | `npm run prisma:migrate` | Crée une migration versionnée |
 
@@ -108,6 +109,83 @@ Vérification : `curl http://localhost:4000/health`
 
 `/` · `/collectes-par-jour` · `/repartition-dechets` · `/top-zones` ·
 `/missions-du-jour` · `/collectes-en-cours` · `/alertes`
+
+### Configuration — `/api/config`
+
+| Méthode | Route | Description |
+|---|---|---|
+| `GET` | `/?langue=fr\|en` | **Public.** Catégories, couleurs, offres, taux, niveaux, paramètres |
+| `GET` | `/admin` | Configuration brute bilingue (admin) |
+| `PUT` | `/parametres/:cle` | Modifier un paramètre |
+| `PUT` | `/categories/:code` | Libellés et couleurs d'une catégorie |
+| `PUT` | `/conversions/:type` | Taux et plafond d'un mode de conversion |
+| `PUT` | `/niveaux/:code` | Seuil et bonus d'un niveau de fidélité |
+| `PUT` | `/offres/:type` | Tarif et fréquence d'une offre |
+
+### Compte — `/api/compte`
+
+| Méthode | Route | Description |
+|---|---|---|
+| `PATCH` | `/langue` | Bascule FR / EN, mémorisée sur le compte |
+| `PATCH` | `/profil` | Nom, email, adresse, consignes d'accès |
+| `POST` | `/mot-de-passe` | Changement de mot de passe |
+| `GET` | `/donnees` | **Export** de toutes les données personnelles |
+| `DELETE` | `/` | **Suppression du compte** — voir ci-dessous |
+
+---
+
+## Aucune donnée métier codée en dur
+
+Libellés, couleurs, tarifs, taux, seuils et plafonds vivent **en base**, dans quatre
+tables : `CategorieConfig`, `TauxConversion`, `NiveauFidelite` et `Parametre`.
+
+`src/lib/config.js` les charge avec un cache de 5 minutes et les expose au reste du
+code. Les modifier depuis le back-office ne demande **aucun redéploiement** ni nouvelle
+version de l'application mobile.
+
+| Ce qui était en dur | Où c'est désormais |
+|---|---|
+| Barème de points par matière | Table `BaremePoints` |
+| Valeur d'un point, validité | `points.gnfParPoint`, `points.validiteMois` |
+| Plafond anti-fraude, déclassement | `fraude.plafondKgMois`, `fraude.facteurDeclassement` |
+| Seuil de contamination | `qualite.seuilContaminationPct` |
+| Taux de conversion et plafonds | Table `TauxConversion` |
+| Niveaux et bonus de fidélité | Table `NiveauFidelite` |
+| Libellés et couleurs des catégories | Table `CategorieConfig` (FR + EN) |
+| Offre attribuée à l'inscription | `abonnement.offreParDefaut` |
+| Ratio de dépenses du tableau de bord | `finance.tauxDepensesEstime` |
+| ETA par défaut, durée du créneau | `collecte.etaDefautMinutes`, `collecte.dureeCreneauHeures` |
+| Crans de remplissage des bacs | `bac.niveauMaxTiers`, `bac.seuilAlerteTiers` |
+
+> Si les référentiels sont vides, l'API répond **503** avec un message explicite plutôt
+> que de retomber sur des valeurs implicites : une base non initialisée doit se voir
+> tout de suite, pas en production.
+
+---
+
+## Suppression de compte
+
+`DELETE /api/compte` supprime le compte **par anonymisation**.
+
+**Pourquoi pas un `DELETE` en base** : les paiements et les pesées alimentent la
+comptabilité et les rapports remis aux communes et aux bailleurs. Les effacer fausserait
+des données déjà publiées et contreviendrait aux obligations de conservation comptable.
+
+**Ce qui est réellement fait :**
+
+- toutes les données personnelles sont écrasées — nom, téléphone, email, adresse,
+  coordonnées GPS, photo, consignes d'accès au domicile ;
+- le compte est désactivé : plus aucune connexion possible, et les jetons déjà émis
+  sont rejetés (`supprimeLe` est vérifié à chaque requête) ;
+- l'abonnement est résilié, les bacs sont libérés pour réaffectation ;
+- le solde de points est remis à zéro et les mouvements supprimés ;
+- missions et paiements restent, rattachés à un client devenu anonyme.
+
+**Garde-fous** — mot de passe exigé, saisie exacte du mot `SUPPRIMER`, refus si un
+paiement est en attente ou si une collecte est en cours. Le numéro de téléphone
+redevient disponible pour une nouvelle inscription.
+
+`GET /api/compte/donnees` permet d'exporter toutes ses données avant de supprimer.
 
 ---
 

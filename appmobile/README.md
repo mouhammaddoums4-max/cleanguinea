@@ -55,7 +55,9 @@ EXPO_PUBLIC_API_URL=http://192.168.1.20:4000 npx expo start
 | `(client)/historique` | Collectes passées avec poids et statut |
 | `(client)/paiements` | Abonnement, prochain prélèvement, historique |
 | `(client)/points` | Solde, niveau, barème par matière, mouvements |
-| `(client)/profil` | Informations, abonnement, bacs, aide, déconnexion |
+| `(client)/langue` | Choix Français / English |
+| `(client)/supprimer-compte` | Suppression du compte, avec export préalable des données |
+| `(client)/profil` | Informations, abonnement, bacs, langue, aide, déconnexion |
 
 ### Espace collecteur
 
@@ -68,6 +70,38 @@ EXPO_PUBLIC_API_URL=http://192.168.1.20:4000 npx expo start
 | `(collecteur)/profil` | Matricule, véhicule, note moyenne |
 
 ---
+
+## Bilingue français / anglais
+
+- Dictionnaires : [`src/i18n/fr.ts`](src/i18n/fr.ts) et [`src/i18n/en.ts`](src/i18n/en.ts).
+  `en.ts` est typé d'après `fr.ts` : **une clé manquante casse la compilation**, ce qui
+  évite les textes non traduits qui passent en production.
+- Usage : `const { t } = useI18n()` puis `t('accueil.mesBacs')`.
+  Interpolation : `t('points.encorePts', { n: 120, niveau: 'Or' })`.
+- Listes : `tListe('suppression.listeSupprime')`.
+- Nombres, montants et dates : `useFormat()` — la locale suit la langue choisie.
+- La langue par défaut est celle du téléphone si elle est supportée, français sinon.
+  Le choix est stocké sur l'appareil **et** sur le compte (`PATCH /api/compte/langue`),
+  pour que les SMS partent dans la bonne langue.
+- Bascule : écran de bienvenue (FR | EN) et Profil › Langue.
+
+> Ne mettez dans les dictionnaires que des **textes d'interface**. Les libellés métier —
+> catégories de déchets, tarifs, niveaux de fidélité — viennent de l'API.
+
+## Aucune donnée métier codée en dur
+
+`src/config.tsx` charge `GET /api/config?langue=…` et expose :
+
+```tsx
+const { categorie, parametre, devise, indicatif, slogan } = useConfig();
+
+const c = categorie('PLASTIQUE');   // { libelle, couleur, couleurFond, icone }
+const max = parametre<number>('bac.niveauMaxTiers', 3);
+```
+
+Les couleurs et libellés des bacs, les tarifs, le nombre de crans de remplissage,
+l'indicatif téléphonique et le slogan viennent tous de là. Une modification faite dans
+le back-office se voit **sans nouvelle version de l'application**.
 
 ## Barre de navigation Android
 

@@ -66,25 +66,8 @@ export async function api<T = unknown>(chemin: string, options: Options = {}): P
   return donnees as T;
 }
 
-// ---------------------------------------------------------------------------
-// Formatage
-// ---------------------------------------------------------------------------
-
-export function gnf(montant: number): string {
-  return `${montant.toLocaleString('fr-FR').replace(/ | /g, ' ')} GNF`;
-}
-
-export function nombre(valeur: number): string {
-  return valeur.toLocaleString('fr-FR').replace(/ | /g, ' ');
-}
-
-export function dateCourte(valeur: string | Date): string {
-  return new Date(valeur).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-}
-
-export function heure(valeur: string | Date): string {
-  return new Date(valeur).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
+// Le formatage des nombres, montants et dates depend de la langue :
+// voir useFormat() dans src/lib/config.tsx.
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,6 +89,7 @@ export type Dashboard = {
     revenusRecyclage: number;
     depenses: number;
     beneficeNet: number;
+    tauxDepensesApplique: number;
   };
 };
 
@@ -153,17 +137,7 @@ export type Alerte = {
   createdAt: string;
 };
 
-/** Libelles et couleurs des categories, alignes sur l'application mobile. */
-export const CATEGORIES: Record<string, { libelle: string; couleur: string }> = {
-  PLASTIQUE: { libelle: 'Plastiques', couleur: '#2563EB' },
-  METAL_FER: { libelle: 'Métaux / Fer', couleur: '#F59E0B' },
-  CARTON: { libelle: 'Carton', couleur: '#16A34A' },
-  ORGANIQUE: { libelle: 'Déchets organiques', couleur: '#DC2626' },
-  VERRE: { libelle: 'Verre', couleur: '#7C3AED' },
-  AUTRES: { libelle: 'Autres déchets', couleur: '#4B5563' },
-  REFUS: { libelle: 'Refus', couleur: '#9CA3AF' },
-};
-
-export function categorie(cle: string) {
-  return CATEGORIES[cle] ?? { libelle: cle, couleur: '#9CA3AF' };
-}
+/**
+ * Les libelles et couleurs des categories ne sont plus ici : ils viennent de
+ * l'API (`GET /api/config`), via `useConfig().categorie(code)` dans src/lib/config.tsx.
+ */

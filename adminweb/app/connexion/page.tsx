@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Recycle } from 'lucide-react';
 
 import { api, ecrireJeton } from '@/lib/api';
+import { useConfig } from '@/lib/config';
 
 export default function Connexion() {
   const router = useRouter();
+  const { t, langue, changerLangue } = useConfig();
   const [telephone, setTelephone] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export default function Connexion() {
       );
 
       if (!['ADMIN', 'SUPERVISEUR'].includes(rep.utilisateur.role)) {
-        setErreur("Ce compte n'a pas accès au back-office.");
+        setErreur(t('accesRefuse'));
         return;
       }
 
@@ -46,7 +48,23 @@ export default function Connexion() {
           </span>
           <div className="text-center">
             <h1 className="text-xl font-bold text-gray-900">CleanGuinée</h1>
-            <p className="text-xs text-gray-500">Du déchet à la valeur</p>
+            <p className="text-xs text-gray-500">
+              {langue === 'en' ? 'From waste to value' : 'Du déchet à la valeur'}
+            </p>
+          </div>
+
+          <div className="flex items-center rounded-md border border-gray-200 text-xs">
+            {(['fr', 'en'] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => changerLangue(l)}
+                className={`px-2.5 py-1 font-semibold uppercase transition ${
+                  langue === l ? 'bg-primaire-500 text-white' : 'text-gray-500 hover:bg-gray-50'
+                } ${l === 'fr' ? 'rounded-l-md' : 'rounded-r-md'}`}
+              >
+                {l}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -55,12 +73,12 @@ export default function Connexion() {
           className="space-y-4 rounded-xl border border-gray-200 bg-white p-6"
         >
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Back-office</h2>
-            <p className="text-xs text-gray-500">Réservé aux administrateurs et superviseurs.</p>
+            <h2 className="text-base font-semibold text-gray-900">{t('backOffice')}</h2>
+            <p className="text-xs text-gray-500">{t('reserveA')}</p>
           </div>
 
           <label className="block space-y-1">
-            <span className="text-xs font-medium text-gray-600">Téléphone</span>
+            <span className="text-xs font-medium text-gray-600">{t('telephone')}</span>
             <input
               type="tel"
               required
@@ -72,7 +90,7 @@ export default function Connexion() {
           </label>
 
           <label className="block space-y-1">
-            <span className="text-xs font-medium text-gray-600">Mot de passe</span>
+            <span className="text-xs font-medium text-gray-600">{t('motDePasse')}</span>
             <input
               type="password"
               required
@@ -91,7 +109,7 @@ export default function Connexion() {
             disabled={envoi}
             className="w-full rounded-lg bg-primaire-500 py-2.5 text-sm font-semibold text-white transition hover:bg-primaire-600 disabled:opacity-50"
           >
-            {envoi ? 'Connexion…' : 'Se connecter'}
+            {envoi ? `${t('connexion')}…` : t('connexion')}
           </button>
         </form>
       </div>

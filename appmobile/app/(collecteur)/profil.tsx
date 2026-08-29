@@ -7,6 +7,7 @@ import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { Bouton, Carte, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
 
 type Moi = {
   utilisateur: { nom: string; telephone: string };
@@ -16,13 +17,14 @@ type Moi = {
 export default function ProfilCollecteur() {
   const router = useRouter();
   const { utilisateur, deconnexion } = useAuth();
+  const { t } = useI18n();
 
   const moi = useQuery({ queryKey: ['moi'], queryFn: () => api<Moi>('/api/auth/moi') });
   const c = moi.data?.collecteur;
 
   return (
     <Ecran>
-      <EnTete titre="Profil" />
+      <EnTete titre={t('profil.titre')} />
       <Contenu>
         <Carte style={styles.identite}>
           <View style={styles.avatar}>
@@ -43,9 +45,9 @@ export default function ProfilCollecteur() {
         {!!c && (
           <Carte style={{ gap: espacement.md }}>
             {[
-              { libelle: 'Matricule', valeur: c.matricule },
-              { libelle: 'Véhicule', valeur: c.vehicule ?? '—' },
-              { libelle: 'Évaluations reçues', valeur: String(c.nbEvaluations) },
+              { libelle: t('collecteur.matricule'), valeur: c.matricule },
+              { libelle: t('collecteur.vehicule'), valeur: c.vehicule ?? '—' },
+              { libelle: t('collecteur.evaluations'), valeur: String(c.nbEvaluations) },
             ].map((l) => (
               <View key={l.libelle} style={styles.ligne}>
                 <Text style={styles.libelle}>{l.libelle}</Text>
@@ -56,14 +58,14 @@ export default function ProfilCollecteur() {
         )}
 
         <Bouton
-          titre="Se déconnecter"
+          titre={t('profil.seDeconnecter')}
           variante="contour"
           icone="log-out-outline"
           onPress={() =>
-            Alert.alert('Se déconnecter', 'Quitter votre session ?', [
-              { text: 'Annuler', style: 'cancel' },
+            Alert.alert(t('profil.seDeconnecter'), t('profil.confirmerDeconnexion'), [
+              { text: t('commun.annuler'), style: 'cancel' },
               {
-                text: 'Se déconnecter',
+                text: t('profil.seDeconnecter'),
                 style: 'destructive',
                 onPress: async () => {
                   await deconnexion();

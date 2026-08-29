@@ -87,13 +87,24 @@ Ordre d'implémentation conseillé : **Collectes** → **Clients** → **Stock &
 
 ---
 
+## Bilingue et configuration distante
+
+- Bascule **FR / EN** dans l'en-tête et sur l'écran de connexion ; le choix est
+  mémorisé dans le navigateur.
+- Textes d'interface : `TEXTES` dans [`src/lib/config.tsx`](src/lib/config.tsx),
+  accessibles via `const { t } = useConfig()`.
+- Libellés métier (catégories, statuts), couleurs, tarifs et paramètres : chargés depuis
+  `GET /api/config?langue=…`. **Rien n'est écrit en dur** — modifier une couleur ou un
+  libellé dans Paramètres suffit.
+- Nombres, montants et dates : `useFormat()`, dont la locale suit la langue.
+
 ## Notes d'interface
 
 - Le vert d'interface (`primaire`) vient des maquettes ; la palette `marque` reprend les
   teintes du logo (turquoise, lime, vert, ardoise) — voir `tailwind.config.ts`.
-- Les couleurs des catégories de déchets sont définies une seule fois dans
-  `src/lib/api.ts` (`CATEGORIES`) et partagées entre graphiques, tables et pastilles, pour
-  qu'un plastique soit toujours de la même couleur d'un écran à l'autre.
+- Les couleurs des catégories de déchets viennent de l'API et sont partagées entre
+  graphiques, tables et pastilles : un plastique garde la même couleur d'un écran à
+  l'autre, et la même que dans l'application mobile.
 - Les tableaux larges défilent dans leur propre conteneur (`.table-scroll`) : la page ne
   défile jamais horizontalement.
 

@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api, type Mission } from '../../src/api';
 import { Carte, Chargement, Contenu, Ecran, EnTete, Vide } from '../../src/components/ui';
-import { colors, espacement, formaterHeure } from '../../src/theme';
+import { colors, espacement } from '../../src/theme';
+import { useI18n, useFormat } from '../../src/i18n';
 
 type Reponse = { missions: Mission[] };
 
@@ -18,6 +19,8 @@ type Reponse = { missions: Mission[] };
  */
 export default function CarteTournee() {
   const router = useRouter();
+  const { t } = useI18n();
+  const format = useFormat();
 
   const donnees = useQuery({
     queryKey: ['mes-missions'],
@@ -33,11 +36,11 @@ export default function CarteTournee() {
 
   return (
     <Ecran>
-      <EnTete titre="Ma tournée" sousTitre="Regroupée par commune" />
+      <EnTete titre={t('collecteur.maTournee')} sousTitre={t('collecteur.groupeeParCommune')} />
       {donnees.isLoading ? (
-        <Chargement />
+        <Chargement texte={t('commun.chargement')} />
       ) : parCommune.size === 0 ? (
-        <Vide icone="map-outline" titre="Aucune mission aujourd'hui" />
+        <Vide icone="map-outline" titre={t('collecteur.aucuneMission')} />
       ) : (
         <Contenu>
           {[...parCommune.entries()].map(([zone, missions]) => (
@@ -45,7 +48,9 @@ export default function CarteTournee() {
               <View style={styles.ligneZone}>
                 <Ionicons name="location" size={16} color={colors.primary} />
                 <Text style={styles.zone}>{zone}</Text>
-                <Text style={styles.compte}>{missions.length} arrêt(s)</Text>
+                <Text style={styles.compte}>
+                  {missions.length} {t('collecteur.arrets')}
+                </Text>
               </View>
 
               {missions.map((m, i) => (
@@ -60,7 +65,7 @@ export default function CarteTournee() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.nom}>{m.client.user.nom}</Text>
                     <Text style={styles.petit}>
-                      {m.client.quartier.nom} · {formaterHeure(m.datePlanifiee)}
+                      {m.client.quartier.nom} · {format.heure(m.datePlanifiee)}
                     </Text>
                   </View>
                   <Ionicons
