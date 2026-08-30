@@ -48,11 +48,6 @@
     "extra": {
       "apiUrl": "http://localhost:4000"
     },
-    "androidStatusBar": {
-      "translucent": true,
-      "barStyle": "dark-content",
-      "backgroundColor": "#00000000"
-    },
     "backgroundColor": "#F9FAFB"
   }
 }

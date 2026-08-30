@@ -32,8 +32,12 @@ export default function RootLayout() {
         <I18nProvider>
           <ConfigProvider>
             <AuthProvider>
-              {/* translucent + fond transparent : l'application dessine sous la barre. */}
-              <StatusBar style="dark" translucent backgroundColor="transparent" />
+              {/*
+                SDK 57 : StatusBar n'accepte plus que `style`. `translucent` et
+                `backgroundColor` ont disparu — l'edge-to-edge etant impose, la
+                barre est deja transparente et l'application dessine dessous.
+              */}
+              <StatusBar style="dark" />
               {/*
                 Android est en edge-to-edge obligatoire depuis le SDK 54 : l'application
                 se dessine SOUS la barre systeme, qu'on ne peut plus rendre opaque. On
