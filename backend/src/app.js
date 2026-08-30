@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import authRoutes from './routes/auth.routes.js';
 import configRoutes from './routes/config.routes.js';
 import compteRoutes from './routes/compte.routes.js';
+import clientsRoutes from './routes/clients.routes.js';
 import tourneesRoutes from './routes/tournees.routes.js';
 import bacsRoutes from './routes/bacs.routes.js';
 import missionsRoutes from './routes/missions.routes.js';
@@ -35,6 +36,7 @@ export function creerApp() {
   app.use('/api/config', configRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/compte', compteRoutes);
+  app.use('/api/clients', clientsRoutes);
   app.use('/api/bacs', bacsRoutes);
   app.use('/api/tournees', tourneesRoutes);
   app.use('/api/missions', missionsRoutes);

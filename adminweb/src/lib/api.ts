@@ -141,3 +141,69 @@ export type Alerte = {
  * Les libelles et couleurs des categories ne sont plus ici : ils viennent de
  * l'API (`GET /api/config`), via `useConfig().categorie(code)` dans src/lib/config.tsx.
  */
+
+// ---------------------------------------------------------------------------
+// Clients (GET /api/clients)
+// ---------------------------------------------------------------------------
+
+export type ClientResume = {
+  id: string;
+  reference: string | null;
+  nom: string;
+  telephone: string;
+  email: string | null;
+  adresse: string;
+  quartier: string;
+  commune: string;
+  nbPersonnes: number;
+  nbBacs: number;
+  offre: string | null;
+  tarifMensuelGnf: number | null;
+  statutAbonnement: 'ACTIF' | 'SUSPENDU' | 'RESILIE' | null;
+  prochainPrelevement: string | null;
+  actif: boolean;
+  supprime: boolean;
+  inscritLe: string;
+};
+
+export type PageClients = {
+  total: number;
+  page: number;
+  parPage: number;
+  nbPages: number;
+  clients: ClientResume[];
+};
+
+export type ClientDetail = ClientResume & {
+  latitude: number | null;
+  longitude: number | null;
+  notes: string | null;
+  langue: string;
+  bacs: { numero: number; categorie: string; codeQr: string; niveauTiers: number }[];
+  abonnements: {
+    reference: string;
+    offre: string;
+    tarifMensuelGnf: number;
+    statut: string;
+    dateDebut: string;
+    dateFin: string | null;
+    prochainPrelevement: string | null;
+  }[];
+  dernieresMissions: {
+    id: string;
+    reference: string;
+    statut: string;
+    datePlanifiee: string;
+    termineeA: string | null;
+    poidsTotalKg: number;
+    collecteur: string | null;
+  }[];
+  derniersPaiements: {
+    id: string;
+    montantGnf: number;
+    moyen: string;
+    statut: string;
+    payeLe: string | null;
+    createdAt: string;
+  }[];
+};

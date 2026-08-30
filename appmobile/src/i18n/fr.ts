@@ -32,15 +32,11 @@ export const fr = {
 
   connexion: {
     titre: 'Se connecter',
-    profilClient: 'Client',
-    profilCollecteur: 'Collecteur',
-    introClient: 'Entrez le code client reçu par SMS lors de votre inscription.',
-    introCollecteur: 'Entrez votre numéro employé, remis par votre superviseur.',
+    introClient: 'Entrez le numéro de téléphone de votre compte et votre mot de passe.',
     numeroAbonnement: 'Code client',
     numeroEmploye: 'Numéro employé',
     aideClient:
-      "Votre code client commence par CG. Retrouvez-le dans vos SMS ou dans votre profil.",
-    aideCollecteur: 'Votre numéro employé commence par COL. En cas de perte, voyez votre superviseur.',
+      'Utilisez le numéro que vous avez donné à l’inscription. Mot de passe oublié ? Appelez le service client.',
     telephone: 'Téléphone',
     motDePasse: 'Mot de passe',
     afficherMotDePasse: 'Afficher le mot de passe',
@@ -360,12 +356,12 @@ export const fr = {
 
   codeClient: {
     compteCree: 'Compte créé',
-    intro: 'Voici votre code client. Notez-le : c’est avec lui que vous vous connecterez.',
+    intro: 'Voici votre code client. Il figure sur vos bacs et sert au service client.',
     votreCode: 'VOTRE CODE CLIENT',
     copier: 'Copier le code',
     copie: 'Code copié',
-    parSms: 'Nous vous l’avons aussi envoyé par SMS.',
-    pourSeConnecter: 'Il remplace le nom d’utilisateur à la connexion.',
+    parSms: 'Nous vous l’avons envoyé par SMS.',
+    connexionTelephone: 'Pour vous connecter, utilisez votre numéro de téléphone.',
     retrouvable: 'Vous le retrouverez à tout moment dans votre profil.',
     continuer: 'Commencer',
   },

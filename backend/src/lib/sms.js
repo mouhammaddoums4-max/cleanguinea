@@ -190,17 +190,19 @@ export const modeles = {
     `Bienvenue ${nom} ! Votre abonnement Clean Guinee est actif. Du dechet a la valeur.`,
 
   /**
-   * Envoye juste apres l'inscription. C'est le seul endroit ou le client
-   * recoit son code de connexion : il doit pouvoir le retrouver dans ses SMS
-   * meme s'il desinstalle l'application.
+   * Envoye juste apres l'inscription.
+   *
+   * Le code n'est PAS l'identifiant de connexion : le client se connecte avec
+   * son telephone. Le code sert de reference au service client et figure sur
+   * ses bacs. Le SMS le rappelle pour eviter la confusion.
    */
   codeClient: (nom, code) =>
     `Bienvenue ${nom} ! Votre code client Clean Guinee est ${code}. ` +
-    `Conservez-le : il vous servira a vous connecter. Du dechet a la valeur.`,
+    `Connectez-vous avec votre numero de telephone. Du dechet a la valeur.`,
 
   codeClientEn: (nom, code) =>
     `Welcome ${nom}! Your Clean Guinea customer code is ${code}. ` +
-    `Keep it safe: you will use it to sign in. From waste to value.`,
+    `Sign in with your phone number. From waste to value.`,
 
   passagePrevu: (date, creneau) =>
     `Clean Guinee : votre collecte est prevue le ${date} entre ${creneau}. Merci de sortir vos bacs.`,

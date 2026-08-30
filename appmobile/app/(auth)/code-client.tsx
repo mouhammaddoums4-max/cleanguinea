@@ -61,8 +61,8 @@ export default function CodeClient() {
           </Carte>
 
           <View style={styles.rappels}>
+            <Rappel icone="call-outline" texte={t('codeClient.connexionTelephone')} />
             <Rappel icone="chatbubble-outline" texte={t('codeClient.parSms')} />
-            <Rappel icone="lock-closed-outline" texte={t('codeClient.pourSeConnecter')} />
             <Rappel icone="person-outline" texte={t('codeClient.retrouvable')} />
           </View>
         </View>

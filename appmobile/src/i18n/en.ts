@@ -48,16 +48,11 @@ export const en: Traductions = {
 
   connexion: {
     titre: 'Sign in',
-    profilClient: 'Customer',
-    profilCollecteur: 'Collector',
-    introClient: 'Enter the customer code you received by SMS when you signed up.',
-    introCollecteur: 'Enter your staff number, given to you by your supervisor.',
+    introClient: 'Enter the phone number on your account and your password.',
     numeroAbonnement: 'Customer code',
     numeroEmploye: 'Staff number',
     aideClient:
-      'Your customer code starts with CG. Find it in your SMS or in your profile.',
-    aideCollecteur:
-      'Your staff number starts with COL. If you lost it, ask your supervisor.',
+      'Use the number you gave at signup. Forgot your password? Call customer service.',
     telephone: 'Phone number',
     motDePasse: 'Password',
     afficherMotDePasse: 'Show password',
@@ -376,12 +371,12 @@ export const en: Traductions = {
 
   codeClient: {
     compteCree: 'Account created',
-    intro: 'Here is your customer code. Write it down: this is what you will sign in with.',
+    intro: 'Here is your customer code. It is printed on your bins and used by customer service.',
     votreCode: 'YOUR CUSTOMER CODE',
     copier: 'Copy code',
     copie: 'Code copied',
-    parSms: 'We have also sent it to you by SMS.',
-    pourSeConnecter: 'It replaces a username when signing in.',
+    parSms: 'We have sent it to you by SMS.',
+    connexionTelephone: 'To sign in, use your phone number.',
     retrouvable: 'You can find it any time in your profile.',
     continuer: 'Get started',
   },
