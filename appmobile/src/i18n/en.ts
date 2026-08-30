@@ -172,6 +172,12 @@ export const en: Traductions = {
   },
 
   profil: {
+    sectionCompte: 'Account',
+    sectionPreferences: 'Preferences',
+    sectionSupport: 'Help and support',
+    sectionSession: 'Session',
+    contacterService: 'Contact customer service',
+    conditions: 'Terms and conditions',
     titre: 'Profile',
     mesInformations: 'My details',
     monAbonnement: 'My subscription',
@@ -321,7 +327,55 @@ export const en: Traductions = {
     indisponible: 'Location unavailable right now.',
   },
 
+  infos: {
+    domicile: 'My home',
+    consignes: 'Access instructions (optional)',
+    consignesPlaceholder: 'Leave the bin by the door, green gate…',
+    nbPersonnes: 'People in the household',
+    aucunePosition: 'No location saved',
+    telephoneFige:
+      'Your phone number identifies your account. To change it, contact customer service.',
+    enregistre: 'Details saved',
+    echec: 'Could not save',
+  },
+
+  notifs: {
+    passagePrevu: 'Scheduled collection',
+    passagePrevuDetail: 'The day before each planned collection',
+    collecteurEnRoute: 'Collector on the way',
+    collecteurEnRouteDetail: 'When the collector is approaching',
+    collecteTerminee: 'Collection completed',
+    collecteTermineeDetail: 'Weight collected and points earned',
+    pointsClean: 'Clean Points',
+    pointsCleanDetail: 'Tier changes and available rewards',
+    rappelPaiement: 'Payment reminder',
+    rappelPaiementDetail: 'Cannot be turned off: an unpaid bill suspends the service',
+    avisSms:
+      'If you turn a notification off, you may still receive it by SMS depending on your subscription.',
+  },
+
+  aide: {
+    serviceClient: 'Customer service',
+    horaires: 'Monday to Saturday, 8am – 6pm',
+    questionsFrequentes: 'Frequently asked questions',
+    q1: 'How much does the subscription cost?',
+    r1: 'The Standard subscription is {tarif} per month, for {passages} collections per week. Pay with Orange Money, MTN MoMo, Visa or Mastercard.',
+    q2: 'What if the collector did not come?',
+    r2: 'Report it from the Bins screen by tapping "My bin is full". A request is created and a collector is assigned. If it happens again, call customer service.',
+    q3: 'How do Clean Points work?',
+    r3: 'Every kilogram of sorted recyclable waste earns you points. {taux} points are worth 1,000 GNF, redeemable as a subscription discount, Orange Money credit or vouchers.',
+    q4: 'What goes in each bin?',
+    r4: 'Bin 1: plastic bottles and packaging. Bin 2: cans, tins and metals. Bin 3: everything else. The better you sort, the more points you earn.',
+    q5: 'What happens if I do not pay?',
+    r5: 'You receive reminders. After 45 days overdue, the service is suspended until payment. Your bins stay with you.',
+    q6: 'How do I delete my account?',
+    r6: 'From Profile, at the very bottom. Your personal data is erased immediately. Invoiced amounts are kept for accounting, with no link to you.',
+    cguResume:
+      'By subscribing, you agree to put your bins out on collection days and to pay your subscription monthly. Clean Guinée commits to the announced collection frequency and informs you of any delay. Bins remain the property of Clean Guinée and are collected on termination. The full Clean Points programme rules are annexed to the terms and conditions.',
+  },
+
   onglets: {
+    paiements: 'Payments',
     accueil: 'Home',
     collectes: 'Bins',
     historique: 'History',

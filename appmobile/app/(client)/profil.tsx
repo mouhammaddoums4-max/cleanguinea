@@ -1,32 +1,40 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { api } from '../../src/api';
+import { api, type SoldePoints } from '../../src/api';
 import { useAuth } from '../../src/auth';
-import { useI18n, LANGUES } from '../../src/i18n';
-import { Carte, Contenu, Ecran, EnTete } from '../../src/components/ui';
-import { colors, espacement } from '../../src/theme';
+import { useConfig } from '../../src/config';
+import { useI18n, useFormat, LANGUES } from '../../src/i18n';
+import { Carte, Contenu, Ecran, EnTete, Etiquette } from '../../src/components/ui';
+import { colors, espacement, rayon } from '../../src/theme';
 
 type Entree = {
   icone: keyof typeof Ionicons.glyphMap;
   libelle: string;
   valeur?: string;
   route?: string;
-  danger?: boolean;
   action?: () => void;
+  danger?: boolean;
 };
 
-/** Ecran 8 des maquettes : profil et reglages. */
+type Moi = {
+  utilisateur: { identifiant?: string | null };
+  client: { adresse: string; quartier: { nom: string; commune: { nom: string } } } | null;
+};
+
 export default function Profil() {
   const router = useRouter();
   const { utilisateur, deconnexion } = useAuth();
   const { t, langue } = useI18n();
+  const format = useFormat();
+  const { devise } = useConfig();
 
-  const profil = useQuery({
-    queryKey: ['moi'],
-    queryFn: () => api<{ client: { adresse: string } | null }>('/api/auth/moi'),
+  const moi = useQuery({ queryKey: ['moi'], queryFn: () => api<Moi>('/api/auth/moi') });
+  const points = useQuery({
+    queryKey: ['points', langue],
+    queryFn: () => api<SoldePoints>(`/api/points/mon-solde?langue=${langue}`),
   });
 
   function confirmerDeconnexion() {
@@ -45,81 +53,194 @@ export default function Profil() {
 
   const libelleLangue = LANGUES.find((l) => l.code === langue)?.libelle ?? langue;
 
-  const entrees: Entree[] = [
-    { icone: 'person-outline', libelle: t('profil.mesInformations') },
-    { icone: 'card-outline', libelle: t('profil.monAbonnement'), route: '/(client)/paiements' },
-    { icone: 'cube-outline', libelle: t('profil.mesBacs'), route: '/(client)/collectes' },
-    { icone: 'leaf-outline', libelle: t('profil.mesPoints'), route: '/(client)/points' },
+  /**
+   * Réglages groupés par intention plutôt qu'en liste continue : on cherche
+   * « mon abonnement » ou « la langue », pas la douzième ligne d'un menu.
+   */
+  const sections: { titre: string; entrees: Entree[] }[] = [
     {
-      icone: 'language-outline',
-      libelle: t('profil.langue'),
-      valeur: libelleLangue,
-      route: '/(client)/langue',
+      titre: t('profil.sectionCompte'),
+      entrees: [
+        {
+          icone: 'person-outline',
+          libelle: t('profil.mesInformations'),
+          route: '/(client)/mes-informations',
+        },
+        {
+          icone: 'card-outline',
+          libelle: t('profil.monAbonnement'),
+          route: '/(client)/paiements',
+        },
+        { icone: 'cube-outline', libelle: t('profil.mesBacs'), route: '/(client)/collectes' },
+        {
+          icone: 'time-outline',
+          libelle: t('historique.titre'),
+          route: '/(client)/historique',
+        },
+      ],
     },
-    { icone: 'notifications-outline', libelle: t('profil.notifications') },
-    { icone: 'help-circle-outline', libelle: t('profil.aide') },
-    { icone: 'settings-outline', libelle: t('profil.parametres') },
     {
-      icone: 'log-out-outline',
-      libelle: t('profil.seDeconnecter'),
-      danger: true,
-      action: confirmerDeconnexion,
+      titre: t('profil.sectionPreferences'),
+      entrees: [
+        {
+          icone: 'language-outline',
+          libelle: t('profil.langue'),
+          valeur: libelleLangue,
+          route: '/(client)/langue',
+        },
+        {
+          icone: 'notifications-outline',
+          libelle: t('profil.notifications'),
+          route: '/(client)/notifications',
+        },
+      ],
+    },
+    {
+      titre: t('profil.sectionSupport'),
+      entrees: [
+        {
+          icone: 'help-circle-outline',
+          libelle: t('profil.aide'),
+          route: '/(client)/aide',
+        },
+        {
+          icone: 'call-outline',
+          libelle: t('profil.contacterService'),
+          action: () => Linking.openURL('tel:+224621000000'),
+        },
+        {
+          icone: 'document-text-outline',
+          libelle: t('profil.conditions'),
+          route: '/(client)/aide',
+        },
+      ],
+    },
+    {
+      titre: t('profil.sectionSession'),
+      entrees: [
+        {
+          icone: 'log-out-outline',
+          libelle: t('profil.seDeconnecter'),
+          action: confirmerDeconnexion,
+          danger: true,
+        },
+      ],
     },
   ];
+
+  const initiales = (utilisateur?.nom ?? '')
+    .split(' ')
+    .slice(0, 2)
+    .map((m) => m[0])
+    .join('')
+    .toUpperCase();
 
   return (
     <Ecran>
       <EnTete titre={t('profil.titre')} />
       <Contenu>
+        {/* Identité */}
         <Carte style={styles.identite}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={26} color={colors.primary} />
+            <Text style={styles.initiales}>{initiales || '?'}</Text>
           </View>
+
           <View style={{ flex: 1 }}>
             <Text style={styles.nom}>{utilisateur?.nom}</Text>
             <Text style={styles.petit}>{utilisateur?.telephone}</Text>
-            {!!profil.data?.client?.adresse && (
-              <Text style={styles.petit}>{profil.data.client.adresse}</Text>
+            {!!moi.data?.client && (
+              <Text style={styles.petit}>
+                {moi.data.client.quartier.nom} · {moi.data.client.quartier.commune.nom}
+              </Text>
             )}
           </View>
         </Carte>
 
-        <Carte style={{ padding: 0, overflow: 'hidden' }}>
-          {entrees.map((e, i) => (
-            <Pressable
-              key={e.libelle}
-              onPress={e.action ?? (e.route ? () => router.push(e.route as never) : undefined)}
-              style={({ pressed }) => [
-                styles.entree,
-                i > 0 && styles.separateur,
-                pressed && { backgroundColor: colors.surfaceAlt },
-              ]}
-              accessibilityRole="button"
-            >
-              <Ionicons
-                name={e.icone}
-                size={20}
-                color={e.danger ? colors.danger : colors.texteSecondaire}
-              />
-              <Text style={[styles.entreeLibelle, e.danger && { color: colors.danger }]}>
-                {e.libelle}
-              </Text>
-              {!!e.valeur && <Text style={styles.entreeValeur}>{e.valeur}</Text>}
-              {!e.danger && (
-                <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
-              )}
-            </Pressable>
-          ))}
+        {/* Numéro d'abonnement : c'est l'identifiant de connexion, il doit être
+            retrouvable sans fouiller. */}
+        {!!moi.data?.utilisateur.identifiant && (
+          <Carte style={styles.abonnement}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.abonnementLibelle}>{t('connexion.numeroAbonnement')}</Text>
+              <Text style={styles.abonnementValeur}>{moi.data.utilisateur.identifiant}</Text>
+            </View>
+            <Ionicons name="qr-code-outline" size={24} color={colors.primary} />
+          </Carte>
+        )}
+
+        {/* Points Clean */}
+        <Carte onPress={() => router.push('/(client)/points')} style={styles.points}>
+          <View style={styles.iconePoints}>
+            <Ionicons name="leaf" size={20} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pointsValeur}>
+              {points.data?.solde ?? 0} {t('accueil.pointsClean')}
+            </Text>
+            <Text style={styles.petit}>
+              {format.montant(points.data?.valeurGnf ?? 0, devise)}
+            </Text>
+          </View>
+          {!!points.data?.niveauLibelle && <Etiquette texte={points.data.niveauLibelle} />}
+          <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
         </Carte>
 
-        {/* Isole du reste : une suppression de compte ne doit pas voisiner
-            avec des reglages anodins. */}
+        {/* Sections de réglages */}
+        {sections.map((section) => (
+          <View key={section.titre} style={{ gap: espacement.sm }}>
+            <Text style={styles.titreSection}>{section.titre}</Text>
+
+            <Carte style={{ padding: 0, overflow: 'hidden' }}>
+              {section.entrees.map((e, i) => (
+                <Pressable
+                  key={e.libelle}
+                  onPress={
+                    e.action ?? (e.route ? () => router.push(e.route as never) : undefined)
+                  }
+                  disabled={!e.action && !e.route}
+                  style={({ pressed }) => [
+                    styles.entree,
+                    i > 0 && styles.separateur,
+                    pressed && { backgroundColor: colors.surfaceAlt },
+                  ]}
+                  accessibilityRole="button"
+                >
+                  <View
+                    style={[
+                      styles.iconeEntree,
+                      e.danger && { backgroundColor: colors.dangerClair },
+                    ]}
+                  >
+                    <Ionicons
+                      name={e.icone}
+                      size={17}
+                      color={e.danger ? colors.danger : colors.texteSecondaire}
+                    />
+                  </View>
+
+                  <Text style={[styles.entreeLibelle, e.danger && { color: colors.danger }]}>
+                    {e.libelle}
+                  </Text>
+
+                  {!!e.valeur && <Text style={styles.entreeValeur}>{e.valeur}</Text>}
+
+                  {!e.danger && (
+                    <Ionicons name="chevron-forward" size={17} color={colors.texteTertiaire} />
+                  )}
+                </Pressable>
+              ))}
+            </Carte>
+          </View>
+        ))}
+
+        {/* Isolé du reste : une suppression de compte ne doit pas voisiner
+            avec des réglages anodins. */}
         <Pressable
           onPress={() => router.push('/(client)/supprimer-compte')}
           style={({ pressed }) => [styles.suppression, pressed && { opacity: 0.7 }]}
           accessibilityRole="button"
         >
-          <Ionicons name="trash-outline" size={16} color={colors.danger} />
+          <Ionicons name="trash-outline" size={15} color={colors.danger} />
           <Text style={styles.suppressionTexte}>{t('profil.supprimerCompte')}</Text>
         </Pressable>
 
@@ -132,30 +253,77 @@ export default function Profil() {
 const styles = StyleSheet.create({
   identite: { flexDirection: 'row', alignItems: 'center', gap: espacement.md },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initiales: { fontSize: 19, fontWeight: '800', color: colors.blanc },
+  nom: { fontSize: 17, fontWeight: '700', color: colors.texte },
+  petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
+
+  abonnement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacement.md,
+    backgroundColor: colors.primaryClair,
+    borderColor: colors.primaryClair,
+  },
+  abonnementLibelle: { fontSize: 11, color: colors.primaryTexte },
+  abonnementValeur: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: colors.primaryTexte,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+
+  points: { flexDirection: 'row', alignItems: 'center', gap: espacement.md },
+  iconePoints: {
+    width: 38,
+    height: 38,
+    borderRadius: rayon.sm,
     backgroundColor: colors.primaryClair,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nom: { fontSize: 17, fontWeight: '700', color: colors.texte },
-  petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
+  pointsValeur: { fontSize: 15, fontWeight: '700', color: colors.texte },
+
+  titreSection: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.texteTertiaire,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginLeft: 4,
+  },
+
   entree: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: espacement.md,
     paddingHorizontal: espacement.lg,
-    paddingVertical: espacement.lg,
+    paddingVertical: espacement.md,
   },
   separateur: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.bordure },
+  iconeEntree: {
+    width: 32,
+    height: 32,
+    borderRadius: rayon.sm,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   entreeLibelle: { flex: 1, fontSize: 15, color: colors.texte },
   entreeValeur: { fontSize: 13, color: colors.texteSecondaire },
+
   suppression: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: espacement.sm,
+    gap: 6,
     paddingVertical: espacement.md,
   },
   suppressionTexte: { fontSize: 13, color: colors.danger, fontWeight: '500' },

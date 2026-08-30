@@ -157,6 +157,12 @@ export const fr = {
   },
 
   profil: {
+    sectionCompte: 'Compte',
+    sectionPreferences: 'Préférences',
+    sectionSupport: 'Aide et support',
+    sectionSession: 'Session',
+    contacterService: 'Contacter le service client',
+    conditions: 'Conditions générales',
     titre: 'Profil',
     mesInformations: 'Mes informations',
     monAbonnement: 'Mon abonnement',
@@ -306,7 +312,55 @@ export const fr = {
     indisponible: 'Position indisponible pour le moment.',
   },
 
+  infos: {
+    domicile: 'Mon domicile',
+    consignes: "Consignes d'accès (optionnel)",
+    consignesPlaceholder: 'Sortir le bac devant la porte, portail vert…',
+    nbPersonnes: 'Nombre de personnes au foyer',
+    aucunePosition: 'Aucune position enregistrée',
+    telephoneFige:
+      'Le téléphone identifie votre compte. Pour le changer, contactez le service client.',
+    enregistre: 'Informations enregistrées',
+    echec: 'Enregistrement impossible',
+  },
+
+  notifs: {
+    passagePrevu: 'Passage prévu',
+    passagePrevuDetail: 'La veille de chaque collecte planifiée',
+    collecteurEnRoute: 'Collecteur en route',
+    collecteurEnRouteDetail: "Quand le collecteur approche de chez vous",
+    collecteTerminee: 'Collecte terminée',
+    collecteTermineeDetail: 'Poids collecté et points gagnés',
+    pointsClean: 'Points Clean',
+    pointsCleanDetail: 'Changement de niveau et récompenses disponibles',
+    rappelPaiement: 'Rappel de paiement',
+    rappelPaiementDetail: 'Ne peut pas être désactivé : un impayé suspend le service',
+    avisSms:
+      'Si vous désactivez une notification, vous pouvez encore la recevoir par SMS selon votre abonnement.',
+  },
+
+  aide: {
+    serviceClient: 'Service client',
+    horaires: 'Du lundi au samedi, 8h – 18h',
+    questionsFrequentes: 'Questions fréquentes',
+    q1: 'Combien coûte l’abonnement ?',
+    r1: "L'abonnement Standard est à {tarif} par mois, pour {passages} passages par semaine. Le paiement se fait par Orange Money, MTN MoMo, Visa ou Mastercard.",
+    q2: 'Que faire si le collecteur n’est pas passé ?',
+    r2: "Signalez-le depuis l'écran Collectes en appuyant sur « Ma poubelle est pleine ». Une demande est créée et un collecteur est affecté. Si le problème se répète, appelez le service client.",
+    q3: 'Comment fonctionnent les points Clean ?',
+    r3: "Chaque kilogramme de déchet recyclable trié vous rapporte des points. {taux} points valent 1 000 GNF, convertibles en réduction d'abonnement, crédit Orange Money ou bons d'achat.",
+    q4: 'Que mettre dans chaque bac ?',
+    r4: 'Bac 1 : bouteilles et emballages plastiques. Bac 2 : boîtes de conserve, canettes et métaux. Bac 3 : tout le reste. Mieux vous triez, plus vous gagnez de points.',
+    q5: 'Que se passe-t-il si je ne paie pas ?',
+    r5: "Vous recevez des rappels. Après 45 jours d'impayé, le service est suspendu jusqu'à régularisation. Vos bacs restent chez vous.",
+    q6: 'Comment supprimer mon compte ?',
+    r6: "Depuis Profil, tout en bas. Vos données personnelles sont effacées immédiatement. Les montants facturés sont conservés pour la comptabilité, sans lien avec vous.",
+    cguResume:
+      "En souscrivant, vous vous engagez à sortir vos bacs aux jours de passage et à régler votre abonnement mensuellement. Clean Guinée s'engage sur la fréquence de passage annoncée et vous informe de tout retard. Les bacs restent la propriété de Clean Guinée et sont récupérés à la résiliation. Le règlement complet du programme Points Clean est annexé aux conditions générales.",
+  },
+
   onglets: {
+    paiements: 'Paiements',
     accueil: 'Accueil',
     collectes: 'Collectes',
     historique: 'Historique',

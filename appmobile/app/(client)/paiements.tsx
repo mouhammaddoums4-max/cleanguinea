@@ -29,8 +29,8 @@ export default function Paiements() {
 
   if (donnees.isLoading) {
     return (
-      <Ecran bas>
-        <EnTete titre={t('paiements.titre')} retour />
+      <Ecran>
+        <EnTete titre={t('paiements.titre')} />
         <Chargement texte={t('commun.chargement')} />
       </Ecran>
     );
@@ -46,8 +46,8 @@ export default function Paiements() {
         : t('paiements.enAttente');
 
   return (
-    <Ecran bas>
-      <EnTete titre={t('paiements.titre')} retour />
+    <Ecran>
+      <EnTete titre={t('paiements.titre')} />
       <Contenu>
         <Carte style={styles.carteVerte}>
           <Text style={styles.libelleClair}>
