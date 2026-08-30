@@ -25,7 +25,7 @@ function adressesReseau() {
 // 0.0.0.0 et non localhost : sinon le serveur n'ecoute que sur la machine, et
 // le telephone recoit "impossible de joindre le serveur" sans autre indice.
 const serveur = creerApp().listen(port, '0.0.0.0', () => {
-  console.log(`API Clean Guinee sur http://localhost:${port}`);
+  console.log(`API Senyi sur http://localhost:${port}`);
   for (const ip of adressesReseau()) {
     console.log(`  depuis le telephone (meme Wi-Fi) : http://${ip}:${port}`);
   }

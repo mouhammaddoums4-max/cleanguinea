@@ -13,11 +13,16 @@ import { ConfigProvider } from '../src/config';
 import { HorsLigneProvider } from '../src/hors-ligne';
 import { useNotifications } from '../src/notifications';
 import { colors } from '../src/theme';
+import { verifierTransport } from '../src/securite';
 
 // Fond de la vue racine. Appele au chargement du module, hors composant, comme
 // le demande la documentation : dans un useEffect, la fenetre reste noire le
 // temps du premier rendu, d'ou la bande sombre en haut de l'ecran.
 SystemUI.setBackgroundColorAsync(colors.fond);
+
+// Controle au chargement : une API en clair laisserait lire les jetons de
+// session sur n'importe quel wifi partage.
+verifierTransport();
 
 const queryClient = new QueryClient({
   defaultOptions: {

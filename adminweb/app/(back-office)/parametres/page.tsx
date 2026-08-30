@@ -3,7 +3,7 @@ export default function Page() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Parametres</h1>
-        <p className="text-sm text-gray-500">Offres, bareme Points Clean, utilisateurs et roles.</p>
+        <p className="text-sm text-gray-500">Offres, tarifs, utilisateurs et roles.</p>
       </div>
       <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
         <p className="text-sm font-medium text-gray-700">Module a construire</p>

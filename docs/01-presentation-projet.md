@@ -18,7 +18,7 @@ absence de contrat, passages irréguliers, aucune traçabilité, aucun recours p
 
 ## 2. La solution
 
-Clean Guinée est un **service de collecte sur abonnement piloté par une application**.
+Sényi est un **service de collecte sur abonnement piloté par une application**.
 
 1. **Abonnement** — Le ménage souscrit depuis l'application, en USSD ou auprès d'un agent de
    quartier. Il paie par Orange Money, MTN MoMo ou en espèces auprès d'un agent.

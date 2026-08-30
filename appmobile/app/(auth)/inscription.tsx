@@ -9,9 +9,12 @@ import { MarqueEnTete } from '../../src/components/MarqueEnTete';
 import { colors, espacement, rayon } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useConfig } from '../../src/config';
+import { useEcranProtege } from '../../src/securite';
 
 /** Ecran 2 des maquettes : creation de compte client. */
 export default function Inscription() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { inscription } = useAuth();
   const { t, langue } = useI18n();

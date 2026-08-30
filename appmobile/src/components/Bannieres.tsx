@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
   },
-  voile: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.42)' },
+  voile: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' },
   contenu: { padding: espacement.lg, gap: 4 },
   titre: { fontSize: 17, fontWeight: '800', color: colors.blanc },
   sousTitre: { fontSize: 13, color: 'rgba(255,255,255,0.92)', lineHeight: 18 },

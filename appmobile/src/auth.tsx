@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 
-import { api, ecrireJeton, effacerJeton, lireJeton, type Utilisateur } from './api';
+import {
+  api, ecrireJeton, effacerJeton, lireJeton, surSessionExpiree, type Utilisateur,
+} from './api';
 
 type Identifiants = {
   /** Numero d'abonnement (CG-...), numero employe (COL-...) ou telephone. */
@@ -56,6 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })();
   }, []);
+
+  // Le serveur peut invalider une session a tout moment : mot de passe change
+  // depuis un autre telephone, compte desactive par l'admin, jetons revoques.
+  // On vide alors l'etat local, ce qui suffit au garde de navigation pour
+  // ramener sur l'ecran de connexion.
+  useEffect(() => surSessionExpiree(() => setUtilisateur(null)), []);
 
   const connexion = useCallback(async (identifiants: Identifiants) => {
     const rep = await api<{ token: string; utilisateur: Utilisateur }>('/api/auth/connexion', {
@@ -120,7 +128,12 @@ export function useRedirectionSelonRole() {
       return;
     }
 
-    if (dansAuth || segments.length === 0) {
+    // expo-router type les segments comme un tuple non vide, alors qu'ils le
+    // sont a la toute premiere passe : on compare sur un number pour garder le
+    // garde d'execution sans mentir au typage.
+    const nbSegments: number = segments.length;
+
+    if (dansAuth || nbSegments === 0) {
       router.replace(
         utilisateur.role === 'CLIENT'
           ? '/(client)/accueil'

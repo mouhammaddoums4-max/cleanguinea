@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Clean Guinée",
-    "slug": "cleanguinea",
+    "name": "Sényi",
+    "slug": "senyi",
     "owner": "dumsky",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "cleanguinea",
+    "scheme": "senyi",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "gn.cleanguinea.app"
+      "bundleIdentifier": "gn.senyi.app"
     },
     "android": {
-      "package": "gn.cleanguinea.app",
+      "package": "gn.senyi.app",
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -30,24 +30,40 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Clean Guinée utilise l'appareil photo pour scanner le QR code des bacs et photographier la collecte."
+          "cameraPermission": "Sényi utilise l'appareil photo pour scanner le QR code des bacs et photographier la collecte.",
+          "recordAudioAndroidPermission": false
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Clean Guinée utilise votre position pour le suivi des collectes en temps réel."
+          "locationAlwaysAndWhenInUsePermission": "Sényi utilise votre position pour le suivi des collectes en temps réel."
         }
       ],
+      "expo-notifications",
       "expo-status-bar",
       "expo-localization",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "usesCleartextTraffic": false
+          },
+          "ios": {
+            "ccacheEnabled": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:4000"
+      "apiUrl": "http://localhost:4000",
+      "router": {}
     },
     "backgroundColor": "#F9FAFB"
   }

@@ -11,6 +11,7 @@ import {
   Bouton, Carte, Chargement, Contenu, Ecran, EnTete, Etiquette,
 } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 type Formule = {
   periodicite: 'MENSUEL' | 'TRIMESTRIEL' | 'ANNUEL';
@@ -53,6 +54,8 @@ const MOYENS = [
  * jusqu'à la réclamation.
  */
 export default function Abonnement() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const client = useQueryClient();
   const { t, langue } = useI18n();

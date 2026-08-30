@@ -9,6 +9,7 @@ import { useAuth } from '../../src/auth';
 import { useI18n } from '../../src/i18n';
 import { Bouton, Carte, Champ, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 /**
  * Suppression de compte.
@@ -18,6 +19,8 @@ import { colors, espacement } from '../../src/theme';
  * par un appui malheureux.
  */
 export default function SupprimerCompte() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { t, tListe } = useI18n();
   const { deconnexion } = useAuth();

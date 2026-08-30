@@ -1,4 +1,4 @@
-// Clean Guinee - schema de donnees
+// Senyi - schema de donnees
 // Aligne sur les maquettes : application client, application collecteur, back-office web.
 // Base : PostgreSQL. La chaine de connexion vit dans backend/.env (jamais commite).
 
@@ -26,7 +26,7 @@ enum Role {
 enum CategorieDechet {
   PLASTIQUE // Bac 1 - bleu
   METAL_FER // Bac 2 - jaune
-  AUTRES    // Bac 3 - gris
+  AUTRES // Bac 3 - gris
   CARTON
   VERRE
   ORGANIQUE
@@ -42,8 +42,8 @@ enum TypeClient {
 
 enum TypeOffre {
   ESSENTIEL // 2 passages / semaine
-  STANDARD  // 3 passages / semaine - offre mise en avant dans l application
-  PRO       // 6 passages / semaine, volume negocie
+  STANDARD // 3 passages / semaine - offre mise en avant dans l application
+  PRO // 6 passages / semaine, volume negocie
 }
 
 /// Duree d'engagement choisie par le client. Un engagement long est remise :
@@ -135,6 +135,31 @@ enum CanalNotification {
   LES_DEUX
 }
 
+/// Motif choisi par le client en ouvrant une conversation. Une liste courte et
+/// fermee : elle sert a router et a classer, pas a decrire — le detail tient
+/// dans le message lui-meme.
+enum MotifSupport {
+  INCIDENT_COLLECTE
+  BAC
+  FACTURATION
+  ABONNEMENT
+  RECLAMATION
+  AUTRE
+}
+
+enum StatutSupport {
+  OUVERTE // le client attend une reponse
+  REPONDUE // le support a repondu
+  RESOLUE // cloturee par le support
+}
+
+/// Qui a ecrit le message. Le role de l auteur ne suffit pas : un admin peut
+/// avoir un compte client, et l affichage depend du cote, pas de la personne.
+enum EmetteurSupport {
+  CLIENT
+  SUPPORT
+}
+
 enum NiveauAlerte {
   INFO
   ATTENTION
@@ -153,17 +178,17 @@ model Commune {
 }
 
 model Quartier {
-  id        String    @id @default(cuid())
-  nom       String // Cite FOFANA, Cite Faranah, Cite Miniere...
-  communeId String
-  commune   Commune   @relation(fields: [communeId], references: [id])
-  latitude  Float?
-  longitude Float?
+  id          String       @id @default(cuid())
+  nom         String // Cite FOFANA, Cite Faranah, Cite Miniere...
+  communeId   String
+  commune     Commune      @relation(fields: [communeId], references: [id])
+  latitude    Float?
+  longitude   Float?
   clients     Client[]
   collecteurs Collecteur[]
   missions    Mission[]
   tournees    Tournee[]
-  createdAt DateTime  @default(now())
+  createdAt   DateTime     @default(now())
 
   @@unique([communeId, nom])
 }
@@ -173,28 +198,44 @@ model Quartier {
 // ---------------------------------------------------------------------------
 
 model User {
-  id         String   @id @default(cuid())
-  telephone  String   @unique // +224 622 12 34 56
-  email      String?  @unique
+  id         String    @id @default(cuid())
+  telephone  String    @unique // +224 622 12 34 56
+  email      String?   @unique
   nom        String
   motDePasse String // hash bcrypt
-  role       Role     @default(CLIENT)
+  role       Role      @default(CLIENT)
   photoUrl   String?
-  langue     String   @default("fr") // bascule FR / EN de l ecran de bienvenue
-  actif      Boolean  @default(true)
+  langue     String    @default("fr") // bascule FR / EN de l ecran de bienvenue
+  actif      Boolean   @default(true)
   /// Suppression de compte : les donnees personnelles sont effacees et le compte
   /// desactive, mais l historique financier est conserve (obligation comptable).
   supprimeLe DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  client           Client?
-  collecteur       Collecteur?
-  mouvementsPoints MouvementPoints[]
-  notifications    Notification[]
-  appareils        AppareilPush[]
-  preferencesNotif PreferenceNotification[]
-  operationsSync   OperationSync[]
+  client            Client?
+  collecteur        Collecteur?
+  mouvementsPoints  MouvementPoints[]
+  messagesSupport   MessageSupport[]
+  notifications     Notification[]
+  appareils         AppareilPush[]
+  preferencesNotif  PreferenceNotification[]
+  operationsSync    OperationSync[]
+  codesVerification CodeVerification[]
+
+  /// Numero de generation des jetons. Incremente a chaque changement de mot de
+  /// passe, deconnexion globale ou desactivation : tous les JWT emis avant
+  /// deviennent invalides sur-le-champ.
+  ///
+  /// Sans lui, un jeton vole restait valable 30 jours et une reinitialisation
+  /// de mot de passe ne chassait pas l'intrus — elle ne faisait que lui retirer
+  /// le moyen d'en obtenir un nouveau.
+  jetonVersion Int @default(0)
+
+  /// Echecs de connexion consecutifs, remis a zero des qu'une connexion aboutit.
+  echecsConnexion  Int       @default(0)
+  /// Compte verrouille jusqu'a cette date apres trop d'echecs.
+  verrouilleJusqua DateTime?
 
   @@index([role])
 }
@@ -206,17 +247,18 @@ model Client {
   type        TypeClient @default(PARTICULIER)
   adresse     String // "Cite FOFANA, Ratoma"
   quartierId  String
-  quartier    Quartier @relation(fields: [quartierId], references: [id])
+  quartier    Quartier   @relation(fields: [quartierId], references: [id])
   latitude    Float?
   longitude   Float?
-  nbPersonnes Int      @default(6)
+  nbPersonnes Int        @default(6)
   notes       String? // "Sortir le bac devant la porte." - visible par le collecteur
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
 
-  bacs        Bac[]
-  abonnements Abonnement[]
-  missions    Mission[]
-  paiements   Paiement[]
+  bacs          Bac[]
+  abonnements   Abonnement[]
+  missions      Mission[]
+  paiements     Paiement[]
+  conversations ConversationSupport[]
 
   @@index([quartierId])
 }
@@ -231,43 +273,43 @@ enum StatutCollecteur {
 }
 
 model Collecteur {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matricule    String   @unique // COL-001
+  id        String @id @default(cuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricule String @unique // COL-001
 
   // --- Etat civil et coordonnees -------------------------------------------
-  photoUrl       String?
-  dateNaissance  DateTime?
-  adresse        String?
-  quartierId     String?
-  quartier       Quartier? @relation(fields: [quartierId], references: [id])
-  pieceIdentite  String? // numero de CNI ou de passeport
+  photoUrl      String?
+  dateNaissance DateTime?
+  adresse       String?
+  quartierId    String?
+  quartier      Quartier? @relation(fields: [quartierId], references: [id])
+  pieceIdentite String? // numero de CNI ou de passeport
 
   // --- Personne a prevenir -------------------------------------------------
   // Metier a risque : chutes, coupures, accidents de circulation. Un numero
   // joignable immediatement fait partie du minimum.
-  urgenceNom      String?
+  urgenceNom       String?
   urgenceTelephone String?
-  urgenceLien     String? // conjoint, frere, voisin...
+  urgenceLien      String? // conjoint, frere, voisin...
 
   // --- Emploi --------------------------------------------------------------
-  statut        StatutCollecteur @default(ACTIF)
-  dateEmbauche  DateTime?
-  dateSortie    DateTime?
-  typeContrat   String? // CDD, CDI, prestataire
-  vehicule      String? // immatriculation du tricycle ou de la camionnette
+  statut       StatutCollecteur @default(ACTIF)
+  dateEmbauche DateTime?
+  dateSortie   DateTime?
+  typeContrat  String? // CDD, CDI, prestataire
+  vehicule     String? // immatriculation du tricycle ou de la camionnette
 
-  note         Float    @default(5.0) // note moyenne affichee au client (ex. 4,8)
-  nbEvaluations Int     @default(0)
-  disponible   Boolean  @default(true)
-  latitude     Float? // derniere position connue, pour le suivi temps reel
-  longitude    Float?
-  positionMaj  DateTime?
-  createdAt    DateTime @default(now())
+  note          Float     @default(5.0) // note moyenne affichee au client (ex. 4,8)
+  nbEvaluations Int       @default(0)
+  disponible    Boolean   @default(true)
+  latitude      Float? // derniere position connue, pour le suivi temps reel
+  longitude     Float?
+  positionMaj   DateTime?
+  createdAt     DateTime  @default(now())
   // @default en plus de @updatedAt : sans lui, ajouter la colonne sur une table
   // deja peuplee exigerait de vider la table.
-  updatedAt    DateTime @default(now()) @updatedAt
+  updatedAt     DateTime  @default(now()) @updatedAt
 
   missions    Mission[]
   tournees    Tournee[]
@@ -291,19 +333,19 @@ model Offre {
 }
 
 model Abonnement {
-  id            String           @id @default(cuid())
-  reference     String           @unique // CG-2026-000001
-  clientId      String
-  client        Client           @relation(fields: [clientId], references: [id])
-  offreId       String
-  offre         Offre            @relation(fields: [offreId], references: [id])
-  periodicite   Periodicite      @default(MENSUEL)
-  statut        StatutAbonnement @default(ACTIF)
-  dateDebut     DateTime         @default(now())
-  dateFin       DateTime?
+  id                  String           @id @default(cuid())
+  reference           String           @unique // CG-2026-000001
+  clientId            String
+  client              Client           @relation(fields: [clientId], references: [id])
+  offreId             String
+  offre               Offre            @relation(fields: [offreId], references: [id])
+  periodicite         Periodicite      @default(MENSUEL)
+  statut              StatutAbonnement @default(ACTIF)
+  dateDebut           DateTime         @default(now())
+  dateFin             DateTime?
   prochainPrelevement DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
   paiements Paiement[]
 
@@ -370,12 +412,12 @@ model Tournee {
   heureDebutPrevue DateTime?
   heureFinPrevue   DateTime?
 
-  demarreeA  DateTime?
-  termineeA  DateTime?
+  demarreeA DateTime?
+  termineeA DateTime?
 
   /// Renseignes a la confirmation.
-  nbFoyersServis Int    @default(0)
-  poidsTotalKg   Float  @default(0)
+  nbFoyersServis Int     @default(0)
+  poidsTotalKg   Float   @default(0)
   latitude       Float?
   longitude      Float?
   photoUrl       String?
@@ -417,19 +459,19 @@ model Mission {
   origine      OrigineMission @default(PLANIFIEE)
   statut       StatutMission  @default(EN_ATTENTE)
 
-  datePlanifiee  DateTime // date + heure planifiee (08:00)
-  fenetreFin     DateTime? // fin du creneau annonce au client (10:00)
-  accepteeA      DateTime?
-  enRouteA       DateTime?
-  arriveeA       DateTime?
-  termineeA      DateTime?
-  etaMinutes     Int? // "Arrivee estimee 12 min"
+  datePlanifiee DateTime // date + heure planifiee (08:00)
+  fenetreFin    DateTime? // fin du creneau annonce au client (10:00)
+  accepteeA     DateTime?
+  enRouteA      DateTime?
+  arriveeA      DateTime?
+  termineeA     DateTime?
+  etaMinutes    Int? // "Arrivee estimee 12 min"
 
-  latitude    Float?
-  longitude   Float?
-  photoUrl    String? // photo du bac prise a la collecte
-  poidsTotalKg Float   @default(0)
-  commentaire String?
+  latitude        Float?
+  longitude       Float?
+  photoUrl        String? // photo du bac prise a la collecte
+  poidsTotalKg    Float   @default(0)
+  commentaire     String?
   motifAnnulation String?
 
   /// Double confirmation : le collecteur declare avoir collecte, le client
@@ -477,10 +519,10 @@ model Pesee {
   poidsKg   Float
 
   /// false = saisie manuelle au lieu de la balance Bluetooth : a controler.
-  peseeCertifiee   Boolean @default(true)
+  peseeCertifiee   Boolean  @default(true)
   contaminationPct Float?
   /// Contamination superieure a 15% : les points sont ramenes a 50%.
-  declassee        Boolean @default(false)
+  declassee        Boolean  @default(false)
   photoUrl         String?
   createdAt        DateTime @default(now())
 
@@ -526,33 +568,33 @@ model BaremePoints {
 /// Referentiel des categories de dechets : libelles bilingues et couleur d affichage.
 /// Consomme par l application mobile et le back-office via GET /api/config.
 model CategorieConfig {
-  id        String          @id @default(cuid())
-  code      CategorieDechet @unique
-  libelleFr String
-  libelleEn String
-  couleur   String // hexadecimal, ex. #2563EB
+  id          String          @id @default(cuid())
+  code        CategorieDechet @unique
+  libelleFr   String
+  libelleEn   String
+  couleur     String // hexadecimal, ex. #2563EB
   couleurFond String // teinte claire pour les pastilles
-  icone     String          @default("trash")
+  icone       String          @default("trash")
   /// Compte dans le quota mensuel de recyclables et dans le taux de valorisation.
-  recyclable Boolean        @default(true)
-  ordre     Int             @default(0)
-  actif     Boolean         @default(true)
+  recyclable  Boolean         @default(true)
+  ordre       Int             @default(0)
+  actif       Boolean         @default(true)
 }
 
 /// Taux de conversion des Points Clean, par destination.
 /// Le nombre de points requis pour 1 000 GNF varie selon le canal : le credit
 /// Mobile Money coute plus cher car il supporte la commission de l operateur.
 model TauxConversion {
-  id             String         @id @default(cuid())
-  type           TypeConversion @unique
-  libelleFr      String
-  libelleEn      String
-  pointsPour1000Gnf Int
+  id                 String         @id @default(cuid())
+  type               TypeConversion @unique
+  libelleFr          String
+  libelleEn          String
+  pointsPour1000Gnf  Int
   /// Plafond mensuel en GNF. null = aucun plafond.
-  plafondMensuelGnf Int?
-  soldeMinimumPoints Int        @default(0)
-  actif          Boolean        @default(true)
-  ordre          Int            @default(0)
+  plafondMensuelGnf  Int?
+  soldeMinimumPoints Int            @default(0)
+  actif              Boolean        @default(true)
+  ordre              Int            @default(0)
 }
 
 /// Niveaux de fidelite du programme Points Clean.
@@ -583,15 +625,15 @@ model TarifPeriodicite {
 /// Parametres scalaires de l application (cle -> valeur typee).
 /// Evite de multiplier les tables pour des reglages isoles.
 model Parametre {
-  id          String   @id @default(cuid())
-  cle         String   @unique // points.gnfParPoint, fraude.plafondKgMois...
-  valeur      String // toujours stocke en texte, converti par `type`
-  type        String   @default("string") // string | number | boolean | json
-  libelleFr   String
-  libelleEn   String
-  groupe      String   @default("general")
-  modifiable  Boolean  @default(true)
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  cle        String   @unique // points.gnfParPoint, fraude.plafondKgMois...
+  valeur     String // toujours stocke en texte, converti par `type`
+  type       String   @default("string") // string | number | boolean | json
+  libelleFr  String
+  libelleEn  String
+  groupe     String   @default("general")
+  modifiable Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
 }
 
 model SoldePoints {
@@ -626,13 +668,13 @@ model MouvementPoints {
 // ---------------------------------------------------------------------------
 
 model Paiement {
-  id           String     @id @default(cuid())
-  reference    String     @unique
+  id           String      @id @default(cuid())
+  reference    String      @unique
   /// Reprise de l'abonnement au moment du paiement : une periodicite modifiee
   /// plus tard ne doit pas reecrire l'historique comptable.
   periodicite  Periodicite @default(MENSUEL)
   clientId     String
-  client       Client     @relation(fields: [clientId], references: [id])
+  client       Client      @relation(fields: [clientId], references: [id])
   abonnementId String?
   abonnement   Abonnement? @relation(fields: [abonnementId], references: [id])
 
@@ -670,13 +712,13 @@ model CentreTri {
 
 /// Alimente le bloc "Stock par categorie" du tableau de bord.
 model Stock {
-  id            String          @id @default(cuid())
-  centreTriId   String
-  centreTri     CentreTri       @relation(fields: [centreTriId], references: [id])
-  categorie     CategorieDechet
-  quantiteKg    Float           @default(0)
-  capaciteKg    Float // sert a calculer le taux de remplissage et l alerte
-  updatedAt     DateTime        @updatedAt
+  id          String          @id @default(cuid())
+  centreTriId String
+  centreTri   CentreTri       @relation(fields: [centreTriId], references: [id])
+  categorie   CategorieDechet
+  quantiteKg  Float           @default(0)
+  capaciteKg  Float // sert a calculer le taux de remplissage et l alerte
+  updatedAt   DateTime        @updatedAt
 
   @@unique([centreTriId, categorie])
 }
@@ -723,6 +765,38 @@ model Vente {
 }
 
 // ---------------------------------------------------------------------------
+// Reinitialisation de mot de passe
+// ---------------------------------------------------------------------------
+
+/// Code a usage unique envoye par SMS pour reinitialiser un mot de passe.
+///
+/// Le code n'est PAS stocke en clair : seule son empreinte l'est. Une fuite de
+/// la base ne donnerait donc pas les codes en cours de validite.
+model CodeVerification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// SHA-256 du code a six chiffres.
+  empreinte String
+  /// Jeton remis apres verification, echange contre le changement de mot de passe.
+  jeton     String? @unique
+
+  /// Nombre d'essais infructueux. Au-dela du plafond, le code est brule :
+  /// sans cela, six chiffres se devinent en quelques milliers de tentatives.
+  essais    Int       @default(0)
+  utiliseLe DateTime?
+  expireLe  DateTime
+
+  /// Adresse d'origine, pour reperer un envoi massif depuis une meme source.
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expireLe])
+}
+
+// ---------------------------------------------------------------------------
 // Synchronisation hors ligne
 // ---------------------------------------------------------------------------
 
@@ -740,15 +814,15 @@ model OperationSync {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type    String // scan_bac | collecte_mission | confirmer_zone | niveau_bac
-  charge  Json   // corps de l'operation, tel qu'envoye
-  statut  String @default("APPLIQUEE") // APPLIQUEE | ECHOUEE | IGNOREE
-  erreur  String?
+  type   String // scan_bac | collecte_mission | confirmer_zone | niveau_bac
+  charge Json // corps de l'operation, tel qu'envoye
+  statut String  @default("APPLIQUEE") // APPLIQUEE | ECHOUEE | IGNOREE
+  erreur String?
 
   /// Horodatage cote appareil : l'ordre reel des gestes du collecteur, qui
   /// n'est pas celui de leur arrivee au serveur.
-  faiteA    DateTime
-  recueA    DateTime @default(now())
+  faiteA DateTime
+  recueA DateTime @default(now())
 
   @@index([userId, recueA])
   @@index([statut])
@@ -772,10 +846,10 @@ model Notification {
   /// Contexte libre : reference de mission, montant, points credites.
   donnees Json?
 
-  lue      Boolean   @default(false)
-  lueLe    DateTime?
-  envoyeePush Boolean @default(false)
-  envoyeeSms  Boolean @default(false)
+  lue         Boolean   @default(false)
+  lueLe       DateTime?
+  envoyeePush Boolean   @default(false)
+  envoyeeSms  Boolean   @default(false)
 
   createdAt DateTime @default(now())
 
@@ -786,16 +860,16 @@ model Notification {
 /// Jeton push d'un appareil. Un utilisateur peut en avoir plusieurs
 /// (telephone personnel et telephone de service, par exemple).
 model AppareilPush {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Jeton Expo : ExponentPushToken[...]
-  jeton     String   @unique
+  jeton      String   @unique
   plateforme String? // ios | android
-  modele    String?
-  actif     Boolean  @default(true)
-  vuLe      DateTime @default(now())
-  createdAt DateTime @default(now())
+  modele     String?
+  actif      Boolean  @default(true)
+  vuLe       DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }
@@ -819,27 +893,27 @@ model PreferenceNotification {
 /// Encart affiche en haut de l'accueil client : promotion, message de service,
 /// campagne de tri. Pilote depuis le back-office, sans nouvelle version de l'app.
 model Banniere {
-  id          String   @id @default(cuid())
-  titre       String
-  titreEn     String?
-  sousTitre   String?
-  sousTitreEn String?
-  imageUrl    String?
+  id              String  @id @default(cuid())
+  titre           String
+  titreEn         String?
+  sousTitre       String?
+  sousTitreEn     String?
+  imageUrl        String?
   /// Couleur de fond quand il n'y a pas d'image.
-  couleur     String   @default("#16A34A")
+  couleur         String  @default("#16A34A")
   /// Route interne (/(client)/points) ou URL externe (https://...).
-  lien        String?
+  lien            String?
   libelleAction   String?
   libelleActionEn String?
 
-  actif     Boolean   @default(true)
-  ordre     Int       @default(0)
-  debutLe   DateTime?
-  finLe     DateTime?
+  actif   Boolean   @default(true)
+  ordre   Int       @default(0)
+  debutLe DateTime?
+  finLe   DateTime?
 
   /// Compteurs d'usage, pour savoir ce qui interesse reellement.
-  vues     Int @default(0)
-  clics    Int @default(0)
+  vues  Int @default(0)
+  clics Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -862,4 +936,56 @@ model Alerte {
 
   @@index([lue])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Messagerie de support
+//
+// Un fil par demande, et non un fil unique par client : deux problemes
+// simultanes (un bac casse, une facture contestee) se suivent et se cloturent
+// separement. Chaque client ne voit que ses propres fils ; le back-office les
+// voit tous.
+// ---------------------------------------------------------------------------
+
+model ConversationSupport {
+  id        String        @id @default(cuid())
+  /// Reference citee au telephone par le service client : SUP-2026-0001
+  reference String        @unique
+  clientId  String
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  motif     MotifSupport
+  /// Resume libre saisi par le client, ou premiere ligne de son message.
+  sujet     String
+  statut    StatutSupport @default(OUVERTE)
+
+  /// Denormalise : la liste du back-office trie sur cette colonne, et une
+  /// agregation sur les messages a chaque affichage couterait trop cher.
+  dernierMessageLe DateTime @default(now())
+  /// Messages non lus, de chaque cote. Le badge doit se lire sans requete.
+  nonLusSupport    Int      @default(0)
+  nonLusClient     Int      @default(0)
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  messages  MessageSupport[]
+
+  @@index([statut, dernierMessageLe])
+  @@index([clientId])
+}
+
+model MessageSupport {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   ConversationSupport @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  emetteur       EmetteurSupport
+  /// Auteur reel : le client, ou l agent qui a repondu.
+  auteurId       String
+  auteur         User                @relation(fields: [auteurId], references: [id])
+  texte          String
+  /// Photo jointe (bac casse, depot sauvage...), hebergee chez Cloudinary.
+  photoUrl       String?
+  luLe           DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId, createdAt])
 }

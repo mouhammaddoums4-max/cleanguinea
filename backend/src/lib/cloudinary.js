@@ -24,6 +24,7 @@ export const DOSSIERS = {
   collecteurs: 'collecteurs',
   collectes: 'collectes',
   bannieres: 'bannieres',
+  support: 'support',
 };
 
 export function cloudinaryActif() {

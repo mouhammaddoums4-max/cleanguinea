@@ -47,7 +47,7 @@ export default function Connexion() {
             <Recycle className="h-7 w-7 text-primaire-500" />
           </span>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-900">CleanGuinée</h1>
+            <h1 className="text-xl font-bold text-gray-900">Sényi</h1>
             <p className="text-xs text-gray-500">
               {langue === 'en' ? 'From waste to value' : 'Du déchet à la valeur'}
             </p>

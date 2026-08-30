@@ -15,7 +15,7 @@ const config: Config = {
           600: '#15803D',
           700: '#166534',
         },
-        // Teintes du logo Clean Guinée (moulinet).
+        // Teintes du logo Sényi (moulinet).
         marque: {
           tealFonce: '#14524F',
           teal: '#0FA085',

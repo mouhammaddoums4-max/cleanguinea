@@ -5,7 +5,7 @@ import { ConfigProvider } from '@/lib/config';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Clean Guinée — Back-office',
+  title: 'Sényi — Back-office',
   description: 'Supervision des collectes, du tri et de la valorisation des déchets à Conakry.',
 };
 

@@ -140,7 +140,7 @@ export function Coquille({ children }: { children: React.ReactNode }) {
               <Recycle className="h-5 w-5 text-primaire-500" />
             </span>
             <span className="leading-tight">
-              <span className="block text-base font-bold text-gray-900">CleanGuinée</span>
+              <span className="block text-base font-bold text-gray-900">Sényi</span>
               <span className="block text-[10px] text-gray-500">Du déchet à la valeur</span>
             </span>
           </Link>

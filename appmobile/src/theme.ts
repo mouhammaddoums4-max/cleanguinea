@@ -1,5 +1,5 @@
 /**
- * Charte Clean Guinée.
+ * Charte Sényi.
  * Les teintes de marque sont reprises du logo (moulinet turquoise / lime / vert / ardoise).
  */
 

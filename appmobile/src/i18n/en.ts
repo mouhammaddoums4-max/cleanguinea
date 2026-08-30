@@ -52,7 +52,7 @@ export const en: Traductions = {
     numeroAbonnement: 'Customer code',
     numeroEmploye: 'Staff number',
     aideClient:
-      'Use the number you gave at signup. Forgot your password? Call customer service.',
+      'Use the number you gave at signup.',
     telephone: 'Phone number',
     motDePasse: 'Password',
     afficherMotDePasse: 'Show password',
@@ -93,7 +93,6 @@ export const en: Traductions = {
     arriveeEstimee: 'Estimated arrival',
     mesBacs: 'My bins',
     poubellePleine: 'My bin is full',
-    pointsClean: 'Clean points',
     niveau: 'Tier',
   },
 
@@ -156,20 +155,7 @@ export const en: Traductions = {
     echoue: 'Failed',
     enAttente: 'Pending',
     note:
-      'Pay with Orange Money, MTN MoMo, Visa or Mastercard. Your Clean points can cover part or all of the subscription.',
-  },
-
-  points: {
-    titre: 'Clean Points',
-    soldeDisponible: 'Available balance',
-    soit: 'worth',
-    bonusSurGains: 'on your earnings',
-    encorePts: '{n} more pts to reach {niveau}',
-    baremeParMatiere: 'Rate per material',
-    ptsParKg: 'pts / kg',
-    note:
-      '{taux} points = 1,000 GNF · redeemable as a subscription discount, Orange Money credit or vouchers.',
-    derniersMouvements: 'Recent activity',
+      'Pay with Orange Money, MTN MoMo, Visa or Mastercard.',
   },
 
   profil: {
@@ -183,7 +169,6 @@ export const en: Traductions = {
     mesInformations: 'My details',
     monAbonnement: 'My subscription',
     mesBacs: 'My bins',
-    mesPoints: 'My Clean points',
     notifications: 'Notifications',
     langue: 'Language',
     aide: 'Help & FAQ',
@@ -208,7 +193,6 @@ export const en: Traductions = {
     listeSupprime: [
       'Your name, phone number, email and photo',
       'Your address and home access instructions',
-      'Your Clean points balance and its history',
       'Your access to the app',
     ],
     ceQuiEstConserve: 'Kept, with no link to you',
@@ -269,6 +253,9 @@ export const en: Traductions = {
 
 
   zones: {
+    confirmeeHorsLigne: 'Zone saved offline',
+    confirmeeHorsLigneDetail:
+      'The confirmation will be sent automatically when the network returns. You can carry on with your round.',
     aCollecter: 'Zones to collect',
     aFaire: 'To do',
     enCours: 'In progress',
@@ -344,9 +331,7 @@ export const en: Traductions = {
     collecteurEnRoute: 'Collector on the way',
     collecteurEnRouteDetail: 'When the collector is approaching',
     collecteTerminee: 'Collection completed',
-    collecteTermineeDetail: 'Weight collected and points earned',
-    pointsClean: 'Clean Points',
-    pointsCleanDetail: 'Tier changes and available rewards',
+    collecteTermineeDetail: 'When your bins have been emptied',
     rappelPaiement: 'Payment reminder',
     rappelPaiementDetail: 'Cannot be turned off: an unpaid bill suspends the service',
     avisSms:
@@ -370,7 +355,7 @@ export const en: Traductions = {
     q6: 'How do I delete my account?',
     r6: 'From Profile, at the very bottom. Your personal data is erased immediately. Invoiced amounts are kept for accounting, with no link to you.',
     cguResume:
-      'By subscribing, you agree to put your bins out on collection days and to pay your subscription monthly. Clean Guinée commits to the announced collection frequency and informs you of any delay. Bins remain the property of Clean Guinée and are collected on termination. The full Clean Points programme rules are annexed to the terms and conditions.',
+      'By subscribing, you agree to put your bins out on collection days and to pay your subscription monthly. Sényi commits to the announced collection frequency and informs you of any delay. Bins remain the property of Sényi and are collected on termination.',
   },
 
   codeClient: {
@@ -392,7 +377,7 @@ export const en: Traductions = {
       'Camera access is required to scan bins. You can allow it in your phone settings.',
     autoriser: 'Allow camera',
     codeInconnu: 'Code not recognised',
-    codeInconnuDetail: 'This QR code is not a Clean Guinée bin.',
+    codeInconnuDetail: 'This QR code is not a Sényi bin.',
     saisirManuellement: 'Enter the code manually',
     abonnementInactif: 'Subscription suspended',
     foyerIntrouvable: 'Household not found — the collection will be matched on sync.',
@@ -459,6 +444,39 @@ export const en: Traductions = {
     synchroniser: 'Sync now',
     echecs: 'Failed operations',
     echecsDetail: 'These operations could not be saved. Please contact support.',
+  },
+
+  oubli: {
+    titre: 'Forgotten password',
+    lienConnexion: 'Forgotten password?',
+
+    introIdentifiant:
+      'Enter your account phone number. We will send you a code by SMS.',
+    identifiant: 'Phone or customer code',
+    envoyerCode: 'Send me the code',
+
+    introCode:
+      'If this account exists, a 6-digit code has just been sent to it by SMS. It is valid for {n} minutes.',
+    code: 'Code received by SMS',
+    verifier: 'Verify',
+    renvoyer: 'I did not receive anything',
+    essaisRestants: '{n} attempt(s) left',
+    changerNumero: 'Change the number',
+
+    introNouveau: 'Choose a new password. You will use it to sign in.',
+    nouveau: 'New password',
+    confirmation: 'Confirm the password',
+    tropCourt: 'At least 6 characters',
+    differents: 'The two passwords do not match',
+    valider: 'Save',
+
+    reussi: 'Password changed',
+    reussiTexte: 'You can now sign in with your new password.',
+    retourConnexion: 'Sign in',
+
+    note:
+      'The code goes to the number registered when you signed up. If you no longer have access to it, call customer service.',
+    echec: 'Something went wrong',
   },
 
   onglets: {

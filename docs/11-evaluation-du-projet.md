@@ -1,6 +1,6 @@
 # 11 — Évaluation du projet et plan d'action
 
-Ce document reprend l'évaluation critique du projet Clean Guinée et la traduit en actions
+Ce document reprend l'évaluation critique du projet Sényi et la traduit en actions
 concrètes, chacune renvoyant au document du dossier qui la traite.
 
 ---
@@ -72,7 +72,7 @@ aux conditions générales.
 
 ## 5. Potentiel
 
-Avec une bonne exécution, Clean Guinée peut devenir :
+Avec une bonne exécution, Sényi peut devenir :
 
 1. **La première plateforme numérique de gestion des déchets en Guinée** — l'avance se prend
    maintenant, avant l'arrivée d'un acteur régional.

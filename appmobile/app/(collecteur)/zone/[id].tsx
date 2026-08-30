@@ -9,6 +9,7 @@ import { api, type DetailZone } from '../../../src/api';
 import { useConfig } from '../../../src/config';
 import { useI18n, useFormat } from '../../../src/i18n';
 import { ouvrirItineraire, relevePosition } from '../../../src/geo';
+import { useHorsLigne } from '../../../src/hors-ligne';
 import { CarteZones } from '../../../src/components/CarteZones';
 import {
   Bouton, Carte, Champ, Chargement, Contenu, Ecran, EnTete, Etiquette, PastilleBac,
@@ -31,6 +32,7 @@ export default function DetailZone() {
   const { categorie } = useConfig();
   const { t } = useI18n();
   const format = useFormat();
+  const { enLigne, enfiler } = useHorsLigne();
 
   const [foyersServis, setFoyersServis] = useState('');
   const [commentaire, setCommentaire] = useState('');
@@ -47,9 +49,20 @@ export default function DetailZone() {
     client.invalidateQueries({ queryKey: ['tableau-de-bord-collecteur'] });
   }
 
+  /**
+   * Démarrage et confirmation basculent hors ligne quand il n'y a pas de réseau.
+   *
+   * On finit une zone en périphérie, pas devant l'entrepôt : c'est justement là
+   * que la couverture manque. Sans cette bascule, le geste le plus important de
+   * la journée était celui qui avait le plus de chances d'être perdu.
+   */
   const demarrer = useMutation({
     mutationFn: async () => {
       const position = await relevePosition();
+      if (!enLigne) {
+        await enfiler('demarrer_zone', { tourneeId: id, ...(position ?? {}) });
+        return { differe: true };
+      }
       return api(`/api/tournees/${id}/demarrer`, { method: 'PATCH', body: position ?? {} });
     },
     onSuccess: () => {
@@ -62,23 +75,29 @@ export default function DetailZone() {
   const confirmer = useMutation({
     mutationFn: async () => {
       const position = await relevePosition();
+      const charge = {
+        // Rend l'envoi idempotent si le réseau coupe et que le collecteur réessaie.
+        clientRef: Crypto.randomUUID(),
+        nbFoyersServis: Number(foyersServis) || 0,
+        commentaire: commentaire.trim() || undefined,
+        ...(position ?? {}),
+      };
 
-      return api(`/api/tournees/${id}/confirmer`, {
-        method: 'POST',
-        body: {
-          // Rend l'envoi idempotent si le réseau coupe et que le collecteur réessaie.
-          clientRef: Crypto.randomUUID(),
-          nbFoyersServis: Number(foyersServis) || 0,
-          commentaire: commentaire.trim() || undefined,
-          ...(position ?? {}),
-        },
-      });
+      if (!enLigne) {
+        await enfiler('confirmer_zone', { tourneeId: id, ...charge });
+        return { differe: true };
+      }
+
+      return api(`/api/tournees/${id}/confirmer`, { method: 'POST', body: charge });
     },
-    onSuccess: () => {
+    onSuccess: (resultat) => {
       invalider();
+      const differe = (resultat as { differe?: boolean })?.differe === true;
       Alert.alert(
-        t('zones.zoneConfirmee'),
-        t('zones.confirmationResume', { foyers: Number(foyersServis) || 0 }),
+        differe ? t('zones.confirmeeHorsLigne') : t('zones.zoneConfirmee'),
+        differe
+          ? t('zones.confirmeeHorsLigneDetail')
+          : t('zones.confirmationResume', { foyers: Number(foyersServis) || 0 }),
         [{ text: 'OK', onPress: () => router.back() }],
       );
     },

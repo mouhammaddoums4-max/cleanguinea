@@ -23,8 +23,7 @@ export default function Bienvenue() {
         <View style={styles.bloc}>
           <Logo taille={130} />
           <View style={{ height: espacement.lg }} />
-          <Text style={styles.nom}>CLEAN</Text>
-          <Text style={styles.nomSecond}>GUINÉE</Text>
+          <Text style={styles.nom}>SÉNYI</Text>
           <Text style={styles.slogan}>{slogan} ♻</Text>
         </View>
 
@@ -69,8 +68,8 @@ const styles = StyleSheet.create({
     paddingVertical: espacement.xxl,
   },
   bloc: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  nom: { fontSize: 34, fontWeight: '800', color: colors.primary, letterSpacing: 1 },
-  nomSecond: { fontSize: 22, fontWeight: '700', color: colors.primary, letterSpacing: 5 },
+  // Un seul mot : il peut respirer davantage que l'ancien nom sur deux lignes.
+  nom: { fontSize: 38, fontWeight: '800', color: colors.primary, letterSpacing: 3 },
   slogan: { fontSize: 14, color: colors.texteSecondaire, marginTop: espacement.md },
   actions: { gap: espacement.md },
   langues: { flexDirection: 'row', justifyContent: 'center', marginTop: espacement.lg },

@@ -9,6 +9,7 @@ import { useConfig } from '../../src/config';
 import { useI18n, useFormat, LANGUES } from '../../src/i18n';
 import { Carte, Contenu, Ecran, EnTete, Etiquette } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 type Entree = {
   icone: keyof typeof Ionicons.glyphMap;
@@ -25,6 +26,8 @@ type Moi = {
 };
 
 export default function Profil() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { utilisateur, deconnexion } = useAuth();
   const { t, langue } = useI18n();
@@ -225,7 +228,7 @@ export default function Profil() {
           <Text style={styles.suppressionTexte}>{t('profil.supprimerCompte')}</Text>
         </Pressable>
 
-        <Text style={styles.version}>Clean Guinée · {t('profil.version')} 1.0.0</Text>
+        <Text style={styles.version}>Sényi · {t('profil.version')} 1.0.0</Text>
       </Contenu>
     </Ecran>
   );

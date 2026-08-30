@@ -58,7 +58,7 @@ router.get(
     const lu = lireCodeQr(req.params.codeQr);
     if (!lu) {
       return res.status(400).json({
-        erreur: 'Ce code n est pas un bac Clean Guinee',
+        erreur: 'Ce code n est pas un bac Senyi',
         attendu: 'CG-AAAA-NNNNNN-B1',
       });
     }

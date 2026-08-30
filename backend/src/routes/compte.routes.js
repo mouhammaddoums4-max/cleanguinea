@@ -105,7 +105,7 @@ router.get(
         : [],
     ]);
 
-    res.set('Content-Disposition', 'attachment; filename="mes-donnees-cleanguinea.json"');
+    res.set('Content-Disposition', 'attachment; filename="mes-donnees-senyi.json"');
     res.json({
       exporteLe: new Date().toISOString(),
       utilisateur,

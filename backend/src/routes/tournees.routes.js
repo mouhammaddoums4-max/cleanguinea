@@ -6,6 +6,12 @@ import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { parametre } from '../lib/config.js';
 import { notifier } from '../lib/notifications.js';
+import {
+  confirmationSchema,
+  confirmerTournee,
+  demarrerTournee,
+  tourneeComplete,
+} from '../services/tournees.service.js';
 
 const router = Router();
 router.use(authentifier);
@@ -34,12 +40,6 @@ function centre(quartier, clients) {
     longitude: points.reduce((s, c) => s + c.longitude, 0) / points.length,
   };
 }
-
-const tourneeComplete = {
-  quartier: { include: { commune: true } },
-  collecteur: { include: { user: true } },
-  pesees: true,
-};
 
 /**
  * GET /api/tournees/mes-zones
@@ -190,27 +190,16 @@ router.patch(
       .object({ latitude: z.number().optional(), longitude: z.number().optional() })
       .parse(req.body ?? {});
 
-    const tournee = await prisma.tournee.findUnique({ where: { id: req.params.id } });
-    if (!tournee) return res.status(404).json({ erreur: 'Zone introuvable' });
-    if (req.user.collecteur && tournee.collecteurId !== req.user.collecteur.id) {
-      return res.status(403).json({ erreur: 'Cette zone ne vous est pas affectee' });
-    }
-    if (tournee.statut !== 'A_FAIRE') {
-      return res.status(409).json({ erreur: `Zone deja ${tournee.statut.toLowerCase()}` });
-    }
+    const { tournee, dejaDemarree } = await demarrerTournee({
+      user: req.user,
+      tourneeId: req.params.id,
+      position,
+    });
 
-    res.json(
-      await prisma.tournee.update({
-        where: { id: tournee.id },
-        data: {
-          statut: 'EN_COURS',
-          demarreeA: new Date(),
-          latitude: position.latitude,
-          longitude: position.longitude,
-        },
-        include: tourneeComplete,
-      }),
-    );
+    // Rejouer un demarrage n'est pas une faute : le collecteur a pu perdre le
+    // reseau au mauvais moment et retoucher le bouton. On renvoie l'etat courant
+    // plutot qu'un 409 qui l'obligerait a comprendre une erreur sans objet.
+    res.json({ ...tournee, dejaDemarree });
   }),
 );
 
@@ -224,132 +213,19 @@ router.patch(
  * champ `pesees` reste accepte pour cette saisie d'entrepot a venir, mais
  * l'application du collecteur ne l'envoie plus.
  */
-const confirmationSchema = z.object({
-  clientRef: z.string().uuid().optional(),
-  nbFoyersServis: z.number().int().min(0),
-  pesees: z
-    .array(
-      z.object({
-        categorie: z.enum([
-          'PLASTIQUE', 'METAL_FER', 'AUTRES', 'CARTON', 'VERRE', 'ORGANIQUE', 'REFUS',
-        ]),
-        poidsKg: z.number().positive(),
-        peseeCertifiee: z.boolean().default(true),
-      }),
-    )
-    .default([]),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  photoUrl: z.string().url().optional(),
-  commentaire: z.string().max(500).optional(),
-});
-
 router.post(
   '/:id/confirmer',
   exigerRole('COLLECTEUR', 'SUPERVISEUR', 'ADMIN'),
   asyncHandler(async (req, res) => {
     const data = confirmationSchema.parse(req.body);
 
-    // Idempotence : une zone confirmee hors reseau puis resynchronisee ne compte qu'une fois.
-    if (data.clientRef) {
-      const deja = await prisma.tournee.findUnique({
-        where: { clientRef: data.clientRef },
-        include: tourneeComplete,
-      });
-      if (deja) return res.status(200).json({ ...deja, deduplique: true });
-    }
-
-    const tournee = await prisma.tournee.findUnique({ where: { id: req.params.id } });
-    if (!tournee) return res.status(404).json({ erreur: 'Zone introuvable' });
-    if (req.user.collecteur && tournee.collecteurId !== req.user.collecteur.id) {
-      return res.status(403).json({ erreur: 'Cette zone ne vous est pas affectee' });
-    }
-    if (tournee.statut === 'TERMINEE') {
-      return res.status(409).json({ erreur: 'Zone deja confirmee' });
-    }
-
-    const poidsTotal = data.pesees.reduce((s, p) => s + p.poidsKg, 0);
-
-    const { debut, fin } = aujourdhui();
-
-    // Lectures faites AVANT d'ouvrir la transaction : chaque aller-retour compte
-    // contre son delai, et la base est derriere un proxy a forte latence.
-    const [centreTri, capacite] = await Promise.all([
-      prisma.centreTri.findFirst({ where: { actif: true } }),
-      parametre('tri.capaciteParCategorieKg'),
-    ]);
-
-    const confirmee = await prisma.$transaction(async (tx) => {
-      await tx.pesee.createMany({
-        data: data.pesees.map((p) => ({
-          tourneeId: tournee.id,
-          categorie: p.categorie,
-          poidsKg: p.poidsKg,
-          peseeCertifiee: p.peseeCertifiee,
-        })),
-      });
-
-      // Entree en stock au centre de tri.
-      if (centreTri) {
-        for (const p of data.pesees) {
-          await tx.stock.upsert({
-            where: {
-              centreTriId_categorie: { centreTriId: centreTri.id, categorie: p.categorie },
-            },
-            create: {
-              centreTriId: centreTri.id,
-              categorie: p.categorie,
-              quantiteKg: p.poidsKg,
-              capaciteKg: capacite,
-            },
-            update: { quantiteKg: { increment: p.poidsKg } },
-          });
-        }
-      }
-
-      // Les demandes du jour dans ce quartier sont servies par ce passage.
-      await tx.mission.updateMany({
-        where: {
-          quartierId: tournee.quartierId,
-          datePlanifiee: { gte: debut, lt: fin },
-          statut: { in: ['EN_ATTENTE', 'ACCEPTEE', 'EN_ROUTE', 'ARRIVE'] },
-        },
-        data: {
-          statut: 'TERMINEE',
-          termineeA: new Date(),
-          tourneeId: tournee.id,
-          collecteurId: tournee.collecteurId,
-        },
-      });
-
-      // Les bacs du quartier repassent a vide.
-      await tx.bac.updateMany({
-        where: { client: { quartierId: tournee.quartierId } },
-        data: { niveauTiers: 0 },
-      });
-
-      return tx.tournee.update({
-        where: { id: tournee.id },
-        data: {
-          statut: 'TERMINEE',
-          termineeA: new Date(),
-          clientRef: data.clientRef,
-          nbFoyersServis: data.nbFoyersServis,
-          poidsTotalKg: poidsTotal,
-          latitude: data.latitude ?? tournee.latitude,
-          longitude: data.longitude ?? tournee.longitude,
-          photoUrl: data.photoUrl,
-          commentaire: data.commentaire,
-        },
-        include: tourneeComplete,
-      });
-    }, {
-      // 5 s par defaut : insuffisant quand la base repond en ~1 s par requete.
-      timeout: 30_000,
-      maxWait: 15_000,
+    const { tournee, deduplique } = await confirmerTournee({
+      user: req.user,
+      tourneeId: req.params.id,
+      data,
     });
 
-    res.status(201).json(confirmee);
+    res.status(deduplique ? 200 : 201).json({ ...tournee, deduplique });
   }),
 );
 

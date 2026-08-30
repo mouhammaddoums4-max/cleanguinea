@@ -9,6 +9,7 @@ import { useRouter as useRouterExpo } from 'expo-router';
 import { Bouton, Carte, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
+import { useEcranProtege } from '../../src/securite';
 
 type Moi = {
   utilisateur: { nom: string; telephone: string };
@@ -16,6 +17,8 @@ type Moi = {
 };
 
 export default function ProfilCollecteur() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { utilisateur, deconnexion } = useAuth();
   const { t } = useI18n();

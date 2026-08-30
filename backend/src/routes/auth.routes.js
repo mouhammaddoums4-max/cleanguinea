@@ -53,6 +53,9 @@ async function resoudreIdentifiant(brut) {
   return prisma.user.findUnique({ where: { telephone: normaliserTelephone(saisi) } });
 }
 
+/** Echecs consecutifs tolerés avant verrouillage temporaire du compte. */
+const SEUIL_VERROUILLAGE = 5;
+
 const inscriptionSchema = z.object({
   nom: z.string().min(2, 'Le nom complet est requis'),
   // Un foyer ou une societe : le volume et l interlocuteur different, et le
@@ -216,12 +219,71 @@ router.post(
 
     const user = await resoudreIdentifiant(saisi);
 
-    // Message identique dans tous les cas : ne pas reveler si le compte existe.
-    if (!user || !(await bcrypt.compare(donnees.motDePasse, user.motDePasse))) {
-      return res.status(401).json({ erreur: 'Identifiant ou mot de passe incorrect' });
+    // Un identifiant inconnu est annonce comme tel : l'abonne qui se trompe de
+    // numero doit le savoir, plutot que de soupconner son mot de passe. Le
+    // verrouillage progressif ci-dessous reste ce qui protege les comptes.
+    if (!user) {
+      return res.status(404).json({
+        erreur: "Aucun compte n'est enregistre pour ce numero.",
+        compteInconnu: true,
+      });
     }
+
+    const refus = { erreur: 'Mot de passe incorrect' };
+
+    // Compte verrouille : on ne verifie meme pas le mot de passe. La limitation
+    // par IP ne suffit pas — un attaquant patient change d'adresse, alors que
+    // le compte vise, lui, ne change pas.
+    if (user.verrouilleJusqua && user.verrouilleJusqua > new Date()) {
+      const minutes = Math.ceil((user.verrouilleJusqua - Date.now()) / 60_000);
+      return res.status(429).json({
+        erreur: `Compte temporairement bloque apres plusieurs echecs. Reessayez dans ${minutes} minute(s).`,
+      });
+    }
+
+    if (!(await bcrypt.compare(donnees.motDePasse, user.motDePasse))) {
+      const echecs = user.echecsConnexion + 1;
+
+      // Le blocage s'allonge avec les echecs : 5 min, puis 10, 20, 40...
+      // Une faute de frappe coute quelques minutes, un script en essuie des
+      // heures. Plafonne a une heure pour ne pas enfermer un client dehors.
+      const verrouille = echecs >= SEUIL_VERROUILLAGE;
+      const minutes = verrouille
+        ? Math.min(5 * 2 ** (echecs - SEUIL_VERROUILLAGE), 60)
+        : 0;
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          echecsConnexion: echecs,
+          verrouilleJusqua: verrouille ? new Date(Date.now() + minutes * 60_000) : null,
+        },
+      });
+
+      // Le refus annonce le verrouillage au moment ou il tombe : sinon
+      // l'abonne enchaine les essais sans comprendre pourquoi ils echouent.
+      if (verrouille) {
+        return res.status(429).json({
+          erreur: `Trop d essais. Compte bloque pendant ${minutes} minute(s).`,
+        });
+      }
+
+      return res.status(401).json({
+        ...refus,
+        essaisRestants: Math.max(0, SEUIL_VERROUILLAGE - echecs),
+      });
+    }
+
     if (!user.actif || user.supprimeLe) {
       return res.status(403).json({ erreur: 'Compte desactive' });
+    }
+
+    // Connexion reussie : le compteur repart de zero.
+    if (user.echecsConnexion > 0 || user.verrouilleJusqua) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { echecsConnexion: 0, verrouilleJusqua: null },
+      });
     }
 
     res.json({

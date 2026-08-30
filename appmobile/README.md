@@ -1,4 +1,4 @@
-# Clean Guinée — Application mobile
+# Sényi — Application mobile
 
 Application unique portant **deux espaces** : le client (foyer ou professionnel) et le
 collecteur. L'espace affiché dépend du rôle du compte connecté.

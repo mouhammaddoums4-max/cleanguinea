@@ -7,7 +7,7 @@ Une idée par slide. Un chiffre par slide. Pas de paragraphe.
 
 ### Slide 1 — Couverture
 
-> # Clean Guinée
+> # Sényi
 > ## Du déchet à la valeur
 >
 > Collecte, tri et valorisation des déchets à Conakry

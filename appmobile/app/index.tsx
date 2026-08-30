@@ -16,7 +16,7 @@ export default function Index() {
   if (chargement) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.fond }}>
-        <Chargement texte="Clean Guinée" />
+        <Chargement texte="Sényi" />
       </View>
     );
   }

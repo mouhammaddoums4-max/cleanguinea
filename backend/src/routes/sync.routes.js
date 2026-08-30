@@ -7,6 +7,11 @@ import { asyncHandler } from '../middleware/erreurs.js';
 import { lireCodeQr } from '../lib/qr.js';
 import { parametre } from '../lib/config.js';
 import { notifier } from '../lib/notifications.js';
+import {
+  confirmationSchema,
+  confirmerTournee,
+  demarrerTournee,
+} from '../services/tournees.service.js';
 
 const router = Router();
 router.use(authentifier);
@@ -158,24 +163,104 @@ async function traiterNiveauBac(user, charge) {
 async function traiterDemarrerZone(user, charge, faiteA) {
   const { tourneeId } = z.object({ tourneeId: z.string() }).parse(charge);
 
-  const tournee = await prisma.tournee.findUnique({ where: { id: tourneeId } });
-  if (!tournee) throw Object.assign(new Error('Zone introuvable'), { status: 404 });
-  if (user.collecteur && tournee.collecteurId !== user.collecteur.id) {
-    throw Object.assign(new Error('Zone non affectee'), { status: 403 });
-  }
-  if (tournee.statut !== 'A_FAIRE') return { tourneeId, ignoree: true };
-
-  await prisma.tournee.update({
-    where: { id: tourneeId },
-    data: { statut: 'EN_COURS', demarreeA: faiteA },
+  const { tournee, dejaDemarree } = await demarrerTournee({
+    user,
+    tourneeId,
+    position: charge,
+    demarreeA: faiteA,
   });
-  return { tourneeId, statut: 'EN_COURS' };
+  return { tourneeId, statut: tournee.statut, ignoree: dejaDemarree };
+}
+
+/**
+ * Confirmation d'une zone collectee hors reseau.
+ *
+ * C'est le geste central du collecteur, et celui qui a le plus de chances
+ * d'etre fait sans couverture : on finit une zone en peripherie, pas devant
+ * l'entrepot. Il passe par le meme service que la route en ligne, avec
+ * `faiteA` comme heure de fin — sinon une zone terminee a 6 h apparaitrait
+ * close a l'heure de la synchronisation.
+ */
+async function traiterConfirmerZone(user, charge, faiteA) {
+  const { tourneeId, ...reste } = z
+    .object({ tourneeId: z.string() })
+    .passthrough()
+    .parse(charge);
+
+  const data = confirmationSchema.parse(reste);
+
+  const { tournee, deduplique } = await confirmerTournee({
+    user,
+    tourneeId,
+    data,
+    termineeA: faiteA,
+  });
+  return { tourneeId, statut: tournee.statut, deduplique };
+}
+
+/**
+ * Collecte d'une mission individuelle (demande ponctuelle d'un foyer).
+ *
+ * Distincte du scan de bac : ici le collecteur repond a une demande deja
+ * enregistree, dont il connait l'identifiant. Le scan, lui, part d'un code QR
+ * et doit retrouver le foyer.
+ */
+async function traiterCollecteMission(user, charge, faiteA) {
+  const { missionId, photoUrl, commentaire } = z
+    .object({
+      missionId: z.string(),
+      photoUrl: z.string().url().optional(),
+      commentaire: z.string().max(300).optional(),
+    })
+    .parse(charge);
+
+  if (!user.collecteur) {
+    throw Object.assign(new Error('Reserve aux collecteurs'), { status: 403 });
+  }
+
+  const mission = await prisma.mission.findUnique({
+    where: { id: missionId },
+    include: { client: { select: { userId: true } } },
+  });
+  if (!mission) throw Object.assign(new Error('Collecte introuvable'), { status: 404 });
+  // Deja terminee : le geste a ete rejoue, ce n'est pas une erreur.
+  if (mission.statut === 'TERMINEE') return { missionId, deduplique: true };
+  if (mission.statut === 'ANNULEE') {
+    throw Object.assign(new Error('Collecte annulee'), { status: 409 });
+  }
+
+  const terminee = await prisma.mission.update({
+    where: { id: missionId },
+    data: {
+      statut: 'TERMINEE',
+      termineeA: faiteA,
+      collecteurId: mission.collecteurId ?? user.collecteur.id,
+      photoUrl: photoUrl ?? mission.photoUrl,
+      commentaire: commentaire ?? mission.commentaire,
+    },
+  });
+
+  // Hors transaction : l'echec d'une notification ne doit pas annuler une
+  // collecte reellement faite. Elle demande au client de confirmer de son
+  // cote — la seconde moitie de la double confirmation.
+  await notifier({
+    userId: mission.client.userId,
+    type: 'COLLECTE_TERMINEE',
+    titre: 'Vos bacs ont ete collectes',
+    message: `Confirmez le passage de ${terminee.reference} dans l'application.`,
+    lien: '/(client)/historique',
+    donnees: { missionId, aConfirmer: true },
+  }).catch(() => {});
+
+  return { missionId, statut: 'TERMINEE', deduplique: false };
 }
 
 const TRAITEMENTS = {
   scan_bac: traiterScanBac,
   niveau_bac: (user, charge) => traiterNiveauBac(user, charge),
   demarrer_zone: traiterDemarrerZone,
+  confirmer_zone: traiterConfirmerZone,
+  collecte_mission: traiterCollecteMission,
 };
 
 // ---------------------------------------------------------------------------

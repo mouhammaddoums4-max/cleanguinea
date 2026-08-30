@@ -9,6 +9,7 @@ import {
   Bouton, Carte, Chargement, Contenu, Ecran, EnTete, Etiquette,
 } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 type Reponse = {
   abonnement: {
@@ -21,6 +22,8 @@ type Reponse = {
 
 /** Ecran 7 des maquettes : abonnement et historique des paiements. */
 export default function Paiements() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { t } = useI18n();
   const format = useFormat();

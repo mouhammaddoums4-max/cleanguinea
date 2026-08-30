@@ -1,6 +1,6 @@
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
-  type TextInputProps, type ViewStyle,
+  type StyleProp, type TextInputProps, type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ export function Ecran({
 }: {
   children: React.ReactNode;
   bas?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -94,7 +94,7 @@ export function EnTete({
 
 export function Carte({
   children, style, onPress,
-}: { children: React.ReactNode; style?: ViewStyle; onPress?: () => void }) {
+}: { children: React.ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void }) {
   if (onPress) {
     return (
       <Pressable
@@ -117,7 +117,7 @@ export function Bouton({
   charge?: boolean;
   desactive?: boolean;
   icone?: keyof typeof Ionicons.glyphMap;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const inactif = desactive || charge;
   const teinte = variante === 'plein' ? colors.blanc : colors.primary;

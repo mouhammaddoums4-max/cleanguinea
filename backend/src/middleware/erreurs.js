@@ -13,10 +13,21 @@ export function gestionErreurs(err, req, res, _next) {
     });
   }
 
-  // Contrainte d unicite violee
+  // Contrainte d unicite violee. Le message nomme ce que l utilisateur a saisi :
+  // « Valeur deja utilisee (telephone) » ne dit rien a un abonne.
   if (err.code === 'P2002') {
-    const champs = Array.isArray(err.meta?.target) ? err.meta.target.join(', ') : 'champ';
-    return res.status(409).json({ erreur: `Valeur deja utilisee (${champs})` });
+    const cibles = Array.isArray(err.meta?.target) ? err.meta.target : [];
+    const messages = {
+      telephone: 'Ce numero est deja utilise par un compte. Connectez-vous ou utilisez « Mot de passe oublie ».',
+      email: 'Cette adresse e-mail est deja utilisee par un compte.',
+      matricule: 'Ce numero employe est deja attribue.',
+      reference: 'Cette reference existe deja.',
+    };
+    const connu = cibles.find((c) => messages[c]);
+    return res.status(409).json({
+      erreur: connu ? messages[connu] : `Valeur deja utilisee (${cibles.join(', ') || 'champ'})`,
+      champ: connu ?? undefined,
+    });
   }
 
   // Enregistrement introuvable

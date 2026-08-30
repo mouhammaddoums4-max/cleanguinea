@@ -16,7 +16,7 @@ type Section = keyof typeof fr;
 type ContexteI18n = {
   langue: Langue;
   changerLangue: (l: Langue) => Promise<void>;
-  /** t('accueil.bonjour') · t('points.encorePts', { n: 120, niveau: 'Or' }) */
+  /** t('accueil.bonjour') · t('zones.confirmationResume', { foyers: 12 }) */
   t: (chemin: string, variables?: Record<string, string | number>) => string;
   /** Pour les clés dont la valeur est une liste (ex. suppression.listeSupprime). */
   tListe: (chemin: string) => string[];

@@ -36,7 +36,7 @@ export const fr = {
     numeroAbonnement: 'Code client',
     numeroEmploye: 'Numéro employé',
     aideClient:
-      'Utilisez le numéro que vous avez donné à l’inscription. Mot de passe oublié ? Appelez le service client.',
+      'Utilisez le numéro que vous avez donné à l’inscription.',
     telephone: 'Téléphone',
     motDePasse: 'Mot de passe',
     afficherMotDePasse: 'Afficher le mot de passe',
@@ -77,7 +77,6 @@ export const fr = {
     arriveeEstimee: 'Arrivée estimée',
     mesBacs: 'Mes bacs',
     poubellePleine: 'Ma poubelle est pleine',
-    pointsClean: 'points Clean',
     niveau: 'Niveau',
   },
 
@@ -141,20 +140,7 @@ export const fr = {
     echoue: 'Échoué',
     enAttente: 'En attente',
     note:
-      'Paiement par Orange Money, MTN MoMo, Visa ou Mastercard. Vos points Clean peuvent couvrir tout ou partie de l’abonnement.',
-  },
-
-  points: {
-    titre: 'Points Clean',
-    soldeDisponible: 'Solde disponible',
-    soit: 'soit',
-    bonusSurGains: 'sur vos gains',
-    encorePts: 'Encore {n} pts pour le niveau {niveau}',
-    baremeParMatiere: 'Barème par matière',
-    ptsParKg: 'pts / kg',
-    note:
-      '{taux} points = 1 000 GNF · convertibles en réduction d’abonnement, crédit Orange Money ou bons d’achat.',
-    derniersMouvements: 'Derniers mouvements',
+      'Paiement par Orange Money, MTN MoMo, Visa ou Mastercard.',
   },
 
   profil: {
@@ -168,7 +154,6 @@ export const fr = {
     mesInformations: 'Mes informations',
     monAbonnement: 'Mon abonnement',
     mesBacs: 'Mes bacs',
-    mesPoints: 'Mes points Clean',
     notifications: 'Notifications',
     langue: 'Langue',
     aide: 'Aide & FAQ',
@@ -193,7 +178,6 @@ export const fr = {
     listeSupprime: [
       'Votre nom, téléphone, email et photo',
       'Votre adresse et les consignes d’accès à votre domicile',
-      'Votre solde de points Clean et son historique',
       'Votre accès à l’application',
     ],
     ceQuiEstConserve: 'Ce qui est conservé, sans lien avec vous',
@@ -254,6 +238,9 @@ export const fr = {
 
 
   zones: {
+    confirmeeHorsLigne: 'Zone enregistrée hors ligne',
+    confirmeeHorsLigneDetail:
+      'La confirmation partira automatiquement au retour du réseau. Vous pouvez continuer votre tournée.',
     aCollecter: 'Zones à collecter',
     aFaire: 'À faire',
     enCours: 'En cours',
@@ -329,9 +316,7 @@ export const fr = {
     collecteurEnRoute: 'Collecteur en route',
     collecteurEnRouteDetail: "Quand le collecteur approche de chez vous",
     collecteTerminee: 'Collecte terminée',
-    collecteTermineeDetail: 'Poids collecté et points gagnés',
-    pointsClean: 'Points Clean',
-    pointsCleanDetail: 'Changement de niveau et récompenses disponibles',
+    collecteTermineeDetail: 'Quand vos poubelles ont été ramassées',
     rappelPaiement: 'Rappel de paiement',
     rappelPaiementDetail: 'Ne peut pas être désactivé : un impayé suspend le service',
     avisSms:
@@ -355,7 +340,7 @@ export const fr = {
     q6: 'Comment supprimer mon compte ?',
     r6: "Depuis Profil, tout en bas. Vos données personnelles sont effacées immédiatement. Les montants facturés sont conservés pour la comptabilité, sans lien avec vous.",
     cguResume:
-      "En souscrivant, vous vous engagez à sortir vos bacs aux jours de passage et à régler votre abonnement mensuellement. Clean Guinée s'engage sur la fréquence de passage annoncée et vous informe de tout retard. Les bacs restent la propriété de Clean Guinée et sont récupérés à la résiliation. Le règlement complet du programme Points Clean est annexé aux conditions générales.",
+      "En souscrivant, vous vous engagez à sortir vos bacs aux jours de passage et à régler votre abonnement mensuellement. Sényi s'engage sur la fréquence de passage annoncée et vous informe de tout retard. Les bacs restent la propriété de Sényi et sont récupérés à la résiliation.",
   },
 
   codeClient: {
@@ -377,7 +362,7 @@ export const fr = {
       "L'accès à la caméra est nécessaire pour scanner les bacs. Vous pourrez l'autoriser dans les réglages du téléphone.",
     autoriser: 'Autoriser la caméra',
     codeInconnu: 'Code non reconnu',
-    codeInconnuDetail: "Ce QR code n'est pas un bac Clean Guinée.",
+    codeInconnuDetail: "Ce QR code n'est pas un bac Sényi.",
     saisirManuellement: 'Saisir le code à la main',
     abonnementInactif: 'Abonnement suspendu',
     foyerIntrouvable: 'Foyer introuvable — la collecte sera rattachée à la synchronisation.',
@@ -445,6 +430,39 @@ export const fr = {
     synchroniser: 'Synchroniser maintenant',
     echecs: 'Opérations en échec',
     echecsDetail: 'Ces opérations n’ont pas pu être enregistrées. Contactez le support.',
+  },
+
+  oubli: {
+    titre: 'Mot de passe oublié',
+    lienConnexion: 'Mot de passe oublié ?',
+
+    introIdentifiant:
+      'Entrez le numéro de téléphone de votre compte. Nous vous enverrons un code par SMS.',
+    identifiant: 'Téléphone ou code client',
+    envoyerCode: 'Recevoir le code',
+
+    introCode:
+      'Si ce compte existe, un code à 6 chiffres vient de lui être envoyé par SMS. Il est valable {n} minutes.',
+    code: 'Code reçu par SMS',
+    verifier: 'Vérifier',
+    renvoyer: 'Je n’ai rien reçu',
+    essaisRestants: '{n} essai(s) restant(s)',
+    changerNumero: 'Modifier le numéro',
+
+    introNouveau: 'Choisissez un nouveau mot de passe. Il vous servira à vous connecter.',
+    nouveau: 'Nouveau mot de passe',
+    confirmation: 'Confirmez le mot de passe',
+    tropCourt: '6 caractères minimum',
+    differents: 'Les deux mots de passe ne sont pas identiques',
+    valider: 'Enregistrer',
+
+    reussi: 'Mot de passe modifié',
+    reussiTexte: 'Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.',
+    retourConnexion: 'Se connecter',
+
+    note:
+      'Le code arrive sur le numéro enregistré à votre inscription. Si vous n’y avez plus accès, appelez le service client.',
+    echec: 'Opération impossible',
   },
 
   onglets: {

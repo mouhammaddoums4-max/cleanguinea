@@ -8,6 +8,7 @@ import { useI18n } from '../../src/i18n';
 import { relevePosition } from '../../src/geo';
 import { Bouton, Carte, Champ, Chargement, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 type Moi = {
   utilisateur: { nom: string; telephone: string; email: string | null };
@@ -22,6 +23,8 @@ type Moi = {
 
 /** Modification des informations personnelles et de la position du domicile. */
 export default function MesInformations() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const client = useQueryClient();
   const { t } = useI18n();
 

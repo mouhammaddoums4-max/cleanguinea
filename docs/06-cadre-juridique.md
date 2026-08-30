@@ -47,14 +47,14 @@ relatif au droit des sociétés commerciales et du GIE (AUSCGIE).
 
 | Étape | Organisme | Délai indicatif | Coût indicatif |
 |---|---|---|---|
-| Réservation de la dénomination « Clean Guinée » | APIP | 1–2 jours | Faible |
+| Réservation de la dénomination « Sényi » | APIP | 1–2 jours | Faible |
 | Rédaction et signature des statuts | Notaire / avocat | 1 semaine | 8–15 M GNF |
 | Dépôt du capital social | Banque | 2 jours | — |
 | Immatriculation au RCCM | APIP (guichet unique) | 3–10 jours | 3–6 M GNF |
 | Numéro d'identification fiscale (NIF) | Direction générale des impôts | Inclus au guichet unique | — |
 | Immatriculation CNSS employeur | CNSS | 1 semaine | — |
 | Ouverture du compte bancaire professionnel | Banque commerciale | 1–2 semaines | — |
-| Dépôt de la marque « Clean Guinée » et du slogan | OAPI (via le point focal national) | 4–8 mois | 3–5 M GNF |
+| Dépôt de la marque « Sényi » et du slogan | OAPI (via le point focal national) | 4–8 mois | 3–5 M GNF |
 
 **Budget total constitution et protection de la marque : ≈ 25 à 35 M GNF** (inclus dans la
 ligne « Frais juridiques et administratifs » du budget de démarrage).

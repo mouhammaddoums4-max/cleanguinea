@@ -22,8 +22,7 @@ export function MarqueEnTete({
   return (
     <View style={styles.bloc}>
       <Logo taille={taille} />
-      <Text style={styles.nom}>CLEAN</Text>
-      <Text style={styles.nomSecond}>GUINÉE</Text>
+      <Text style={styles.nom}>SÉNYI</Text>
       {avecSlogan && <Text style={styles.slogan}>{slogan} ♻</Text>}
     </View>
   );
@@ -32,12 +31,11 @@ export function MarqueEnTete({
 const styles = StyleSheet.create({
   bloc: { alignItems: 'center', gap: 2, paddingVertical: espacement.md },
   nom: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
     color: colors.primary,
-    letterSpacing: 1,
+    letterSpacing: 3,
     marginTop: espacement.md,
   },
-  nomSecond: { fontSize: 14, fontWeight: '700', color: colors.primary, letterSpacing: 4 },
   slogan: { fontSize: 12, color: colors.texteSecondaire, marginTop: 6 },
 });

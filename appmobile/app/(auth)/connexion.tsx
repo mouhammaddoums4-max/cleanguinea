@@ -9,6 +9,7 @@ import { useConfig } from '../../src/config';
 import { Bouton, Champ, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { MarqueEnTete } from '../../src/components/MarqueEnTete';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useEcranProtege } from '../../src/securite';
 
 /**
  * Connexion unique, client comme collecteur.
@@ -21,6 +22,8 @@ import { colors, espacement, rayon } from '../../src/theme';
  * (COL-...) : un collecteur habitue a saisir son matricule n'est pas bloque.
  */
 export default function Connexion() {
+  // Ecran sensible : ni capture, ni apercu dans les applications recentes.
+  useEcranProtege();
   const router = useRouter();
   const { connexion } = useAuth();
   const { t } = useI18n();
@@ -116,6 +119,12 @@ export default function Connexion() {
             onPress={valider}
             charge={envoi}
             desactive={!identifiant.trim() || !motDePasse}
+          />
+
+          <Bouton
+            titre={t('oubli.lienConnexion')}
+            variante="texte"
+            onPress={() => router.push('/(auth)/mot-de-passe-oublie')}
           />
 
           <View style={styles.aide}>

@@ -41,7 +41,7 @@ export function lireCodeQr(brut) {
   };
 }
 
-/** true si la chaine ressemble a un code de bac Clean Guinee. */
+/** true si la chaine ressemble a un code de bac Senyi. */
 export function estCodeQrValide(brut) {
   return lireCodeQr(brut) !== null;
 }

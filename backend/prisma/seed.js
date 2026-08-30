@@ -146,7 +146,7 @@ async function main() {
     data: {
       nom: 'Mamadou Camara',
       telephone: '+224621000000',
-      email: 'admin@cleanguinea.gn',
+      email: 'admin@senyi.gn',
       motDePasse: hash,
       role: 'ADMIN',
     },

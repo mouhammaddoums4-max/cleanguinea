@@ -1,4 +1,4 @@
-# Clean Guinée — Back-office web
+# Sényi — Back-office web
 
 Interface de supervision : activité, collectes en cours, stock du centre de tri, ventes de
 matières et résumé financier.

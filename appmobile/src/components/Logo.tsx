@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { brand } from '../theme';
 
 /**
- * Moulinet Clean Guinée, compose de cinq pales dans les teintes du logo.
+ * Moulinet Sényi, compose de cinq pales dans les teintes du logo.
  *
  * Dessine avec des Views plutot qu'importe comme image : le depot reste sans
  * binaire, le rendu est net a toutes les tailles, et aucune dependance SVG
@@ -27,7 +27,7 @@ export function Logo({ taille = 120 }: { taille?: number }) {
     <View
       style={[styles.conteneur, { width: taille, height: taille }]}
       accessibilityRole="image"
-      accessibilityLabel="Logo Clean Guinée"
+      accessibilityLabel="Logo Sényi"
     >
       {PALES.map(({ couleur, rotation }) => (
         <View

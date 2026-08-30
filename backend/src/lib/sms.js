@@ -3,7 +3,7 @@ import { randomInt } from 'node:crypto';
 /**
  * Passerelle SMS - NimbaSMS (https://api.nimbasms.com)
  *
- * Sert a deux choses dans Clean Guinee :
+ * Sert a deux choses dans Senyi :
  *   1. les codes OTP d'inscription et de connexion ;
  *   2. les notifications de passage, pour les clients sans smartphone.
  *
@@ -20,7 +20,7 @@ import { randomInt } from 'node:crypto';
 const BASE_URL = process.env.SMS_BASE_URL || 'https://api.nimbasms.com';
 const ENDPOINT_MESSAGES = process.env.SMS_ENDPOINT || '/v1/messages';
 const ENDPOINT_COMPTE = '/v1/accounts';
-const SENDER = process.env.SMS_SENDER_ID || 'CleanGuinee';
+const SENDER = process.env.SMS_SENDER_ID || 'Senyi';
 
 /** Limites imposees par l'API. */
 const MAX_DESTINATAIRES = 30;
@@ -184,10 +184,10 @@ export async function expediteursAutorises() {
 
 export const modeles = {
   otp: (code) =>
-    `Clean Guinee : votre code de verification est ${code}. Il expire dans 10 minutes. Ne le partagez avec personne.`,
+    `Senyi : votre code de verification est ${code}. Il expire dans 10 minutes. Ne le partagez avec personne.`,
 
   bienvenue: (nom) =>
-    `Bienvenue ${nom} ! Votre abonnement Clean Guinee est actif. Du dechet a la valeur.`,
+    `Bienvenue ${nom} ! Votre abonnement Senyi est actif. Du dechet a la valeur.`,
 
   /**
    * Envoye juste apres l'inscription.
@@ -197,24 +197,24 @@ export const modeles = {
    * ses bacs. Le SMS le rappelle pour eviter la confusion.
    */
   codeClient: (nom, code) =>
-    `Bienvenue ${nom} ! Votre code client Clean Guinee est ${code}. ` +
+    `Bienvenue ${nom} ! Votre code client Senyi est ${code}. ` +
     `Connectez-vous avec votre numero de telephone. Du dechet a la valeur.`,
 
   codeClientEn: (nom, code) =>
-    `Welcome ${nom}! Your Clean Guinea customer code is ${code}. ` +
+    `Welcome ${nom}! Your Senyi customer code is ${code}. ` +
     `Sign in with your phone number. From waste to value.`,
 
   passagePrevu: (date, creneau) =>
-    `Clean Guinee : votre collecte est prevue le ${date} entre ${creneau}. Merci de sortir vos bacs.`,
+    `Senyi : votre collecte est prevue le ${date} entre ${creneau}. Merci de sortir vos bacs.`,
 
   collecteurEnRoute: (collecteur, minutes) =>
-    `Clean Guinee : ${collecteur} arrive dans environ ${minutes} minutes pour votre collecte.`,
+    `Senyi : ${collecteur} arrive dans environ ${minutes} minutes pour votre collecte.`,
 
-  collecteTerminee: (poidsKg, points) =>
-    `Clean Guinee : collecte terminee (${poidsKg} kg). Vous gagnez ${points} points Clean. Merci !`,
+  collecteTerminee: () =>
+    `Senyi : vos poubelles ont ete ramassees. Confirmez le passage dans l application. Merci !`,
 
   rappelPaiement: (montant, jours) =>
-    `Clean Guinee : votre abonnement de ${montant} GNF est du depuis ${jours} jours. Payez via Orange Money ou MTN MoMo pour eviter la suspension.`,
+    `Senyi : votre abonnement de ${montant} GNF est du depuis ${jours} jours. Payez via Orange Money ou MTN MoMo pour eviter la suspension.`,
 };
 
 /**

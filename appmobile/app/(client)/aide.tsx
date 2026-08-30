@@ -104,7 +104,7 @@ export default function Aide() {
           <Text style={styles.cgu}>{t('aide.cguResume')}</Text>
         </Carte>
 
-        <Text style={styles.version}>Clean Guinée · {t('profil.version')} 1.0.0</Text>
+        <Text style={styles.version}>Sényi · {t('profil.version')} 1.0.0</Text>
       </Contenu>
     </Ecran>
   );

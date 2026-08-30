@@ -43,11 +43,38 @@ export async function effacerJeton(): Promise<void> {
   await SecureStore.deleteItemAsync(CLE_JETON);
 }
 
+/**
+ * Abonnes prevenus quand le serveur rejette la session.
+ *
+ * Un simple tableau plutot qu'un import de `auth.tsx` : l'authentification
+ * utilise deja `api()`, et les faire s'importer mutuellement casserait le
+ * chargement des modules.
+ */
+const auditeursSession: Array<() => void> = [];
+
+/** Prevenu quand le serveur declare la session invalide (401). */
+export function surSessionExpiree(rappel: () => void): () => void {
+  auditeursSession.push(rappel);
+  return () => {
+    const i = auditeursSession.indexOf(rappel);
+    if (i >= 0) auditeursSession.splice(i, 1);
+  };
+}
+
 export class ErreurApi extends Error {
   constructor(
     message: string,
     public statut: number,
     public details?: unknown,
+    /**
+     * Corps complet de la reponse.
+     *
+     * `details` ne porte que le champ du meme nom, reserve aux erreurs de
+     * validation. Les routes renvoient parfois d'autres indications utiles a
+     * l'ecran — un nombre d'essais restants, par exemple — et les perdre
+     * obligerait a les deviner.
+     */
+    public corps?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'ErreurApi';
@@ -89,10 +116,20 @@ export async function api<T = unknown>(chemin: string, options: Options = {}): P
   const donnees = await reponse.json().catch(() => null);
 
   if (!reponse.ok) {
+    // 401 sur un appel authentifie : le jeton a expire, ete revoque, ou le
+    // compte a ete desactive. Insister ne servirait a rien — on efface la
+    // session et l'application repart sur l'ecran de connexion, plutot que de
+    // laisser l'utilisateur devant un ecran vide qui ne se remplira jamais.
+    if (reponse.status === 401 && !sansAuth) {
+      await effacerJeton();
+      for (const prevenir of [...auditeursSession]) prevenir();
+    }
+
     throw new ErreurApi(
       (donnees as { erreur?: string })?.erreur ?? `Erreur ${reponse.status}`,
       reponse.status,
       (donnees as { details?: unknown })?.details,
+      (donnees as Record<string, unknown>) ?? undefined,
     );
   }
 
@@ -205,6 +242,13 @@ export type Mission = {
   datePlanifiee: string;
   fenetreFin: string | null;
   etaMinutes: number | null;
+  /// Horodatage du passage reel. Absent tant que la mission n'est pas terminee.
+  termineeA: string | null;
+  /// Double confirmation : le collecteur declare, le client confirme.
+  confirmeParClient: boolean;
+  confirmeParClientLe: string | null;
+  contesteParClient: boolean;
+  motifContestation: string | null;
   poidsTotalKg: number;
   photoUrl: string | null;
   client: {

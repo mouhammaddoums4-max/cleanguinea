@@ -192,7 +192,7 @@ router.post(
 
     envoyerSms(
       telephone,
-      `Clean Guinee : votre compte collecteur est cree. Numero employe ${matricule}, ` +
+      `Senyi : votre compte collecteur est cree. Numero employe ${matricule}, ` +
         `mot de passe provisoire ${provisoire}. Changez-le a la premiere connexion.`,
     ).catch((e) => console.error('[collecteur] SMS identifiants', e.message));
 
@@ -274,7 +274,7 @@ router.post(
 
     envoyerSms(
       collecteur.user.telephone,
-      `Clean Guinee : nouveau mot de passe provisoire ${provisoire}. ` +
+      `Senyi : nouveau mot de passe provisoire ${provisoire}. ` +
         `Changez-le a la prochaine connexion.`,
     ).catch(() => {});
 

@@ -14,7 +14,6 @@ type Preferences = {
   collecteurEnRoute: boolean;
   collecteTerminee: boolean;
   rappelPaiement: boolean;
-  pointsClean: boolean;
 };
 
 const DEFAUTS: Preferences = {
@@ -23,7 +22,6 @@ const DEFAUTS: Preferences = {
   collecteTerminee: true,
   // Les rappels de paiement ne se désactivent pas : un impayé suspend le service.
   rappelPaiement: true,
-  pointsClean: true,
 };
 
 /**
@@ -75,12 +73,6 @@ export default function Notifications() {
       icone: 'checkmark-done-outline',
       libelle: t('notifs.collecteTerminee'),
       detail: t('notifs.collecteTermineeDetail'),
-    },
-    {
-      cle: 'pointsClean',
-      icone: 'leaf-outline',
-      libelle: t('notifs.pointsClean'),
-      detail: t('notifs.pointsCleanDetail'),
     },
     {
       cle: 'rappelPaiement',

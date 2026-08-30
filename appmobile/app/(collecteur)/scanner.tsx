@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
 
   camera: { flex: 1, margin: espacement.lg, borderRadius: rayon.lg, overflow: 'hidden' },
-  viseur: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: espacement.lg },
+  viseur: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: espacement.lg },
   cadre: {
     width: 220,
     height: 220,

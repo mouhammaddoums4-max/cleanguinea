@@ -1,4 +1,4 @@
-# Clean Guinée — *Du déchet à la valeur*
+# Sényi — *Du déchet à la valeur*
 
 Plateforme numérique de gestion des déchets à Conakry : collecte chez les **foyers** et les
 **professionnels**, tri, valorisation des matières recyclables et programme de fidélité

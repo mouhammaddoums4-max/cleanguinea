@@ -1,4 +1,4 @@
-# Clean Guinée — API
+# Sényi — API
 
 API REST de la plateforme : comptes, abonnements, bacs, missions de collecte, pesées,
 Points Clean, paiements, stock du centre de tri et ventes de matières.

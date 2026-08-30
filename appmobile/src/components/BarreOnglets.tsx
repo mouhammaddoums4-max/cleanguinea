@@ -1,10 +1,7 @@
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import type {
-  BottomTabBarProps,
-  BottomTabNavigationOptions,
-} from '@react-navigation/bottom-tabs';
+import { Tabs } from 'expo-router';
 
 import { colors, espacement, rayon } from '../theme';
 import { useResponsive } from '../responsive';
@@ -47,13 +44,28 @@ const HAUTEUR_CONTENU = 58;
 const MIN_PADDING_BAS = 8;
 const MAX_ONGLETS_LISIBLES = 5;
 
-type Props = BottomTabBarProps & {
+/**
+ * Les proprietes que `<Tabs tabBar={...}>` passe reellement, deduites du
+ * composant lui-meme.
+ *
+ * Les importer depuis `@react-navigation/bottom-tabs` semblait naturel, mais
+ * expo-router embarque sa propre copie de ces types : les deux versions ne
+ * sont pas interchangeables et le composant etait rejete a l'affectation.
+ * Deduire evite d'avoir a deviner laquelle des deux fait foi.
+ */
+type ProprietesBarre = Parameters<
+  NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>
+>[0];
+
+type OptionsOnglet = ProprietesBarre['descriptors'][string]['options'];
+
+type Props = ProprietesBarre & {
   /** Icone Ionicons par nom de route, ex. { accueil: 'home', profil: 'person' } */
   icones: Record<string, NomIcone>;
 };
 
 /** Une route masquee par `href: null` porte `display: 'none'` sur son item. */
-function estMasquee(options: BottomTabNavigationOptions) {
+function estMasquee(options: OptionsOnglet) {
   const style = StyleSheet.flatten(options.tabBarItemStyle) as
     | { display?: string }
     | undefined;

@@ -38,7 +38,7 @@
 |---|---|---:|---:|
 | **TAM** — marché total | Tous ménages et établissements de Conakry + matières | 333 000 ménages · 18 000 PRO · 115 000 t | **≈ 286 Md GNF** (33,3 M USD) |
 | **SAM** — marché accessible | Ménages solvables de Ratoma, Matoto, Dixinn + PRO de ces zones | 120 000 ménages · 8 000 PRO | **≈ 65 Md GNF** (7,6 M USD) |
-| **SOM** — objectif année 5 | Clean Guinée | 40 000 ménages · 950 PRO | **≈ 22,7 Md GNF** (2,64 M USD) |
+| **SOM** — objectif année 5 | Sényi | 40 000 ménages · 950 PRO | **≈ 22,7 Md GNF** (2,64 M USD) |
 
 ### Taux de pénétration visé
 
