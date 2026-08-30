@@ -4,20 +4,15 @@ import { useEffect, useRef, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  BadgeCheck,
   Bell,
   Boxes,
   ChevronDown,
-  FileText,
-  HardHat,
   LayoutDashboard,
   LogOut,
   Moon,
   Recycle,
   Settings,
-  ShoppingCart,
   Sun,
-  Trash2,
   Truck,
   UserRound,
   Users,
@@ -29,19 +24,73 @@ import { useConfig, type CleTexte, type Langue } from '@/lib/config';
 
 type Icone = ComponentType<{ className?: string }>;
 
-const NAVIGATION: { cle: CleTexte; href: string; icone: Icone }[] = [
+type SousPage = { cle: CleTexte; href: string };
+type Rubrique = { cle: CleTexte; href: string; icone: Icone; sous?: SousPage[] };
+
+/**
+ * Cinq rubriques, pas une de plus.
+ *
+ * Onze icones alignees demandaient au lecteur de choisir avant de comprendre.
+ * Les pages sont donc regroupees par metier : on choisit d'abord un domaine,
+ * puis une page a l'interieur. Les URL ne changent pas — /abonnements,
+ * /collecteurs, /stock... restent valides, elles apparaissent simplement en
+ * sous-navigation de leur rubrique.
+ *
+ * Parametres a quitte la barre pour le menu du compte : c'est un reglage,
+ * consulte rarement, pas une etape du travail quotidien.
+ */
+const NAVIGATION: Rubrique[] = [
   { cle: 'tableauDeBord', href: '/tableau-de-bord', icone: LayoutDashboard },
-  { cle: 'clients', href: '/clients', icone: Users },
-  { cle: 'abonnements', href: '/abonnements', icone: BadgeCheck },
-  { cle: 'collectes', href: '/collectes', icone: Truck },
-  { cle: 'collecteurs', href: '/collecteurs', icone: HardHat },
-  { cle: 'dechets', href: '/dechets', icone: Trash2 },
-  { cle: 'stock', href: '/stock', icone: Boxes },
-  { cle: 'ventes', href: '/ventes', icone: ShoppingCart },
-  { cle: 'finance', href: '/finance', icone: Wallet },
-  { cle: 'rapports', href: '/rapports', icone: FileText },
-  { cle: 'parametres', href: '/parametres', icone: Settings },
+  {
+    cle: 'clients',
+    href: '/clients',
+    icone: Users,
+    sous: [
+      { cle: 'annuaire', href: '/clients' },
+      { cle: 'abonnements', href: '/abonnements' },
+    ],
+  },
+  {
+    cle: 'operations',
+    href: '/collectes',
+    icone: Truck,
+    sous: [
+      { cle: 'collectes', href: '/collectes' },
+      { cle: 'collecteurs', href: '/collecteurs' },
+    ],
+  },
+  {
+    cle: 'valorisation',
+    href: '/dechets',
+    icone: Boxes,
+    sous: [
+      { cle: 'dechets', href: '/dechets' },
+      { cle: 'stock', href: '/stock' },
+      { cle: 'ventes', href: '/ventes' },
+    ],
+  },
+  {
+    cle: 'finance',
+    href: '/finance',
+    icone: Wallet,
+    sous: [
+      { cle: 'synthese', href: '/finance' },
+      { cle: 'rapports', href: '/rapports' },
+    ],
+  },
 ];
+
+/** Vrai si le chemin courant est cette page ou l'une de ses sous-pages. */
+function estActif(href: string, chemin: string) {
+  return chemin === href || chemin.startsWith(`${href}/`);
+}
+
+/** Rubrique a laquelle appartient le chemin courant, s'il y en a une. */
+function rubriqueDe(chemin: string) {
+  return NAVIGATION.find(
+    (r) => estActif(r.href, chemin) || r.sous?.some((p) => estActif(p.href, chemin)),
+  );
+}
 
 const LANGUES: Langue[] = ['fr', 'en'];
 
@@ -133,7 +182,10 @@ export function Coquille({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* pb-28 : le dock flotte au-dessus du contenu, on lui réserve la place. */}
-      <main className="px-6 pb-28 pt-6">{children}</main>
+      <main className="px-6 pb-28 pt-6">
+        <SousNavigation chemin={chemin} t={t} />
+        {children}
+      </main>
 
       <Dock chemin={chemin} t={t} />
     </div>
@@ -267,6 +319,18 @@ function MenuUtilisateur({
             {t('monProfil')}
           </Link>
 
+          {/* Reglages de l'entreprise : consultes rarement, ils n'ont pas leur
+              place dans la navigation du travail quotidien. */}
+          <Link
+            href="/parametres"
+            role="menuitem"
+            onClick={() => setOuvert(false)}
+            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+          >
+            <Settings className="h-4 w-4 text-gray-500" />
+            {t('parametres')}
+          </Link>
+
           <div className="my-1 border-t border-gray-200" />
 
           <button
@@ -289,56 +353,85 @@ function MenuUtilisateur({
 
 /**
  * Navigation flottante, centrée en bas de l'écran.
- * Icônes seules : le libellé n'apparaît qu'au survol ou au focus clavier.
+ *
+ * Cinq rubriques seulement : le libellé tient à côté de l'icône, et personne
+ * n'a plus à survoler une icône pour savoir où elle mène. Sur écran étroit
+ * seul le libellé de la rubrique ouverte reste affiché.
  */
 function Dock({ chemin, t }: { chemin: string; t: (cle: CleTexte) => string }) {
+  const courante = rubriqueDe(chemin);
+
   return (
     <nav
       aria-label={t('navigationPrincipale')}
       className="fixed inset-x-0 bottom-5 z-30 flex justify-center px-4"
     >
-      {/* Pas d'overflow ici : il découperait les infobulles, qui débordent vers le haut.
-          Sur petit écran les icônes passent à la ligne plutôt que de défiler. */}
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white/90 p-2 shadow-lg shadow-gray-900/10 backdrop-blur">
-        {NAVIGATION.map((entree) => {
-          const actif = chemin.startsWith(entree.href);
-          const libelle = t(entree.cle);
-          const Icone = entree.icone;
+      <div className="flex max-w-full items-center gap-1 rounded-2xl border border-gray-200 bg-white/90 p-1.5 shadow-lg shadow-gray-900/10 backdrop-blur">
+        {NAVIGATION.map((rubrique) => {
+          const actif = rubrique === courante;
+          const libelle = t(rubrique.cle);
+          const Icone = rubrique.icone;
 
           return (
             <Link
-              key={entree.href}
-              href={entree.href}
+              key={rubrique.href}
+              href={rubrique.href}
               aria-label={libelle}
               aria-current={actif ? 'page' : undefined}
               className={clsxLocal(
-                'group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl outline-none transition',
+                'flex h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium outline-none transition',
                 'focus-visible:ring-2 focus-visible:ring-primaire-500 focus-visible:ring-offset-2',
                 actif
                   ? 'bg-primaire-500 text-white shadow-sm'
                   : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
               )}
             >
-              <Icone className="h-5 w-5" />
-
-              {/* Infobulle : masquée aux lecteurs d'écran, qui lisent déjà aria-label. */}
-              <span
-                aria-hidden
-                className={clsxLocal(
-                  'pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 translate-y-1',
-                  'whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs font-medium text-white',
-                  'opacity-0 shadow-md transition duration-150',
-                  'group-hover:translate-y-0 group-hover:opacity-100',
-                  'group-focus-visible:translate-y-0 group-focus-visible:opacity-100',
-                )}
-              >
+              <Icone className="h-5 w-5 shrink-0" />
+              {/* Le libellé de la rubrique ouverte ne disparaît jamais : c'est
+                  le repère qui dit où l'on se trouve. */}
+              <span className={actif ? 'whitespace-nowrap' : 'hidden whitespace-nowrap md:inline'}>
                 {libelle}
-                <span className="absolute left-1/2 top-full -ml-1 border-4 border-transparent border-t-gray-900" />
               </span>
             </Link>
           );
         })}
       </div>
+    </nav>
+  );
+}
+
+/**
+ * Pages de la rubrique ouverte, en onglets sous l'en-tête.
+ * Rien ne s'affiche pour une rubrique qui n'a qu'une seule page.
+ */
+function SousNavigation({ chemin, t }: { chemin: string; t: (cle: CleTexte) => string }) {
+  const rubrique = rubriqueDe(chemin);
+  if (!rubrique?.sous || rubrique.sous.length < 2) return null;
+
+  return (
+    <nav
+      aria-label={t('sousNavigation')}
+      className="mb-6 flex gap-6 border-b border-gray-200 text-sm"
+    >
+      {rubrique.sous.map((page) => {
+        const actif = estActif(page.href, chemin);
+        return (
+          <Link
+            key={page.href}
+            href={page.href}
+            aria-current={actif ? 'page' : undefined}
+            className={clsxLocal(
+              '-mb-px border-b-2 pb-2.5 font-medium outline-none transition',
+              'focus-visible:ring-2 focus-visible:ring-primaire-500',
+              actif
+                ? 'border-primaire-500 text-primaire-600'
+                : 'border-transparent text-gray-500 hover:text-gray-900',
+            )}
+          >
+            {t(page.cle)}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

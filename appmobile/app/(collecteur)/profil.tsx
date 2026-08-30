@@ -60,13 +60,6 @@ export default function ProfilCollecteur() {
         )}
 
         <Bouton
-          titre={t('collecteur.historique')}
-          variante="contour"
-          icone="time-outline"
-          onPress={() => router.push('/(collecteur)/historique')}
-        />
-
-        <Bouton
           titre={t('profil.langue')}
           variante="contour"
           icone="language-outline"

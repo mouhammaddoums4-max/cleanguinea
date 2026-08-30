@@ -288,6 +288,7 @@ export const fr = {
   },
 
   tdb: {
+    titre: 'Tableau de bord',
     aujourdhui: "Aujourd'hui",
     cetteSemaine: 'Cette semaine',
     ceMois: 'Ce mois-ci',
@@ -367,12 +368,13 @@ export const fr = {
   },
 
   onglets: {
+    points: 'Points',
     paiements: 'Paiements',
     accueil: 'Accueil',
     collectes: 'Collectes',
     historique: 'Historique',
     profil: 'Profil',
-    tableauDeBord: 'Tableau de bord',
+    tableauDeBord: 'Résumé',
     zones: 'Zones',
     carte: 'Carte',
   },

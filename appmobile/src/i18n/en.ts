@@ -303,6 +303,7 @@ export const en: Traductions = {
   },
 
   tdb: {
+    titre: 'Dashboard',
     aujourdhui: 'Today',
     cetteSemaine: 'This week',
     ceMois: 'This month',
@@ -382,12 +383,13 @@ export const en: Traductions = {
   },
 
   onglets: {
+    points: 'Points',
     paiements: 'Payments',
     accueil: 'Home',
     collectes: 'Bins',
     historique: 'History',
     profil: 'Profile',
-    tableauDeBord: 'Dashboard',
+    tableauDeBord: 'Summary',
     zones: 'Zones',
     carte: 'Map',
   },

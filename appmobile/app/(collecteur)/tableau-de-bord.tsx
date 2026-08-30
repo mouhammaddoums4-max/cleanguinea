@@ -33,7 +33,7 @@ export default function TableauDeBordCollecteur() {
   return (
     <Ecran>
       <EnTete
-        titre={t('onglets.tableauDeBord')}
+        titre={t('tdb.titre')}
         sousTitre={`${utilisateur?.nom} · ${utilisateur?.identifiant ?? ''}`}
       />
       <ScrollView

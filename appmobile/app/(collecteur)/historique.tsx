@@ -27,7 +27,7 @@ export default function HistoriqueCollecteur() {
   const cumul = donnees.data?.cumul;
 
   return (
-    <Ecran bas>
+    <Ecran>
       <EnTete
         titre={t('collecteur.historique')}
         sousTitre={
@@ -35,7 +35,6 @@ export default function HistoriqueCollecteur() {
             ? `${cumul.zones} ${t('tdb.zones')} · ${cumul.poidsTotalKg} kg · ${cumul.foyersServis} ${t('zones.foyersServis')}`
             : undefined
         }
-        retour
       />
       {donnees.isLoading ? (
         <Chargement texte={t('commun.chargement')} />
