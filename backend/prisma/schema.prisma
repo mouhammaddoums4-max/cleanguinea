@@ -152,9 +152,10 @@ model Quartier {
   commune   Commune   @relation(fields: [communeId], references: [id])
   latitude  Float?
   longitude Float?
-  clients   Client[]
-  missions  Mission[]
-  tournees  Tournee[]
+  clients     Client[]
+  collecteurs Collecteur[]
+  missions    Mission[]
+  tournees    Tournee[]
   createdAt DateTime  @default(now())
 
   @@unique([communeId, nom])
@@ -186,6 +187,7 @@ model User {
   notifications    Notification[]
   appareils        AppareilPush[]
   preferencesNotif PreferenceNotification[]
+  operationsSync   OperationSync[]
 
   @@index([role])
 }
@@ -211,12 +213,43 @@ model Client {
   @@index([quartierId])
 }
 
+/// Statut d'emploi d'un collecteur. Un compte suspendu ne peut plus se
+/// connecter mais reste rattache a son historique de collectes.
+enum StatutCollecteur {
+  ACTIF
+  CONGE
+  SUSPENDU
+  SORTI
+}
+
 model Collecteur {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   matricule    String   @unique // COL-001
-  vehicule     String? // immatriculation du tricycle ou de la camionnette
+
+  // --- Etat civil et coordonnees -------------------------------------------
+  photoUrl       String?
+  dateNaissance  DateTime?
+  adresse        String?
+  quartierId     String?
+  quartier       Quartier? @relation(fields: [quartierId], references: [id])
+  pieceIdentite  String? // numero de CNI ou de passeport
+
+  // --- Personne a prevenir -------------------------------------------------
+  // Metier a risque : chutes, coupures, accidents de circulation. Un numero
+  // joignable immediatement fait partie du minimum.
+  urgenceNom      String?
+  urgenceTelephone String?
+  urgenceLien     String? // conjoint, frere, voisin...
+
+  // --- Emploi --------------------------------------------------------------
+  statut        StatutCollecteur @default(ACTIF)
+  dateEmbauche  DateTime?
+  dateSortie    DateTime?
+  typeContrat   String? // CDD, CDI, prestataire
+  vehicule      String? // immatriculation du tricycle ou de la camionnette
+
   note         Float    @default(5.0) // note moyenne affichee au client (ex. 4,8)
   nbEvaluations Int     @default(0)
   disponible   Boolean  @default(true)
@@ -224,6 +257,9 @@ model Collecteur {
   longitude    Float?
   positionMaj  DateTime?
   createdAt    DateTime @default(now())
+  // @default en plus de @updatedAt : sans lui, ajouter la colonne sur une table
+  // deja peuplee exigerait de vider la table.
+  updatedAt    DateTime @default(now()) @updatedAt
 
   missions    Mission[]
   tournees    Tournee[]
@@ -273,10 +309,16 @@ model Abonnement {
 
 model Bac {
   id           String          @id @default(cuid())
-  codeQr       String          @unique // scanne par l application collecteur
-  numero       Int // 1, 2 ou 3 - "Bac 1", "Bac 2", "Bac 3"
+  /// Contenu du QR colle sur le bac : il porte l'identifiant du client suivi
+  /// du numero de bac, par exemple CG-2026-000001-B1. Le collecteur qui scanne
+  /// sait donc immediatement chez qui il se trouve, meme hors reseau.
+  codeQr       String          @unique
+  numero       Int // 1 ou 2 - "Bac 1", "Bac 2"
   categorie    CategorieDechet
   volumeLitres Int             @default(240)
+  /// Etat physique, renseigne par l'administrateur lors des inventaires.
+  etat         String          @default("BON") // BON | ABIME | PERDU | REMPLACE
+  imprimeLe    DateTime?
   /// Niveau de remplissage declare par le client : 0 a 3 tiers (0/3 a 3/3 plein).
   niveauTiers  Int             @default(0)
   clientId     String?
@@ -381,6 +423,14 @@ model Mission {
   poidsTotalKg Float   @default(0)
   commentaire String?
   motifAnnulation String?
+
+  /// Double confirmation : le collecteur declare avoir collecte, le client
+  /// confirme de son cote. Un ecart entre les deux revele une collecte non
+  /// faite, ou une contestation a arbitrer.
+  confirmeParClient   Boolean   @default(false)
+  confirmeParClientLe DateTime?
+  contesteParClient   Boolean   @default(false)
+  motifContestation   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -662,6 +712,38 @@ model Vente {
   lots Lot[]
 
   @@index([dateVente])
+}
+
+// ---------------------------------------------------------------------------
+// Synchronisation hors ligne
+// ---------------------------------------------------------------------------
+
+/// Journal des operations recues depuis un appareil ayant travaille hors reseau.
+///
+/// Sert a deux choses : garantir qu'une meme operation rejouee n'est appliquee
+/// qu'une fois (clientRef), et garder une trace de ce qui a echoue pour pouvoir
+/// le rejouer ou l'expliquer. Sans ce journal, une synchronisation partielle
+/// disparait sans laisser de piste.
+model OperationSync {
+  id        String @id @default(cuid())
+  /// UUID genere sur l'appareil AVANT l'envoi.
+  clientRef String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String // scan_bac | collecte_mission | confirmer_zone | niveau_bac
+  charge  Json   // corps de l'operation, tel qu'envoye
+  statut  String @default("APPLIQUEE") // APPLIQUEE | ECHOUEE | IGNOREE
+  erreur  String?
+
+  /// Horodatage cote appareil : l'ordre reel des gestes du collecteur, qui
+  /// n'est pas celui de leur arrivee au serveur.
+  faiteA    DateTime
+  recueA    DateTime @default(now())
+
+  @@index([userId, recueA])
+  @@index([statut])
 }
 
 // ---------------------------------------------------------------------------

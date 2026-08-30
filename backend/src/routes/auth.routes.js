@@ -6,6 +6,7 @@ import { signerToken, authentifier } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { chargerConfig, parametre } from '../lib/config.js';
 import { envoyerSms, modeles } from '../lib/sms.js';
+import { construireCodeQr } from '../lib/qr.js';
 
 const router = Router();
 
@@ -141,10 +142,12 @@ router.post(
 
       await tx.soldePoints.create({ data: { userId: cree.id } });
 
+      // Le QR porte la reference d abonnement : le collecteur qui le scanne
+      // sait chez qui il est, meme sans reseau.
       await tx.bac.createMany({
         data: bacsParDefaut.map((b) => ({
           ...b,
-          codeQr: `CG-BAC-${cree.client.id.slice(-6).toUpperCase()}-${b.numero}`,
+          codeQr: construireCodeQr(reference, b.numero),
           clientId: cree.client.id,
           dateRemise: new Date(),
         })),

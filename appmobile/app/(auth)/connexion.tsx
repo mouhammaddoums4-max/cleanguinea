@@ -56,7 +56,7 @@ export default function Connexion() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Contenu>
-          <MarqueEnTete />
+          <MarqueEnTete avecSlogan={false} />
 
           <Text style={styles.intro}>{t('connexion.introClient')}</Text>
 

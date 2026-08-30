@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { semerConfig, CATEGORIES } from './config.seed.js';
+import { construireCodeQr } from '../src/lib/qr.js';
 
 const prisma = new PrismaClient();
 
@@ -93,6 +94,7 @@ async function vider() {
     prisma.appareilPush.deleteMany(),
     prisma.preferenceNotification.deleteMany(),
     prisma.banniere.deleteMany(),
+    prisma.operationSync.deleteMany(),
     prisma.baremePoints.deleteMany(),
     prisma.tauxConversion.deleteMany(),
     prisma.tarifPeriodicite.deleteMany(),
@@ -202,11 +204,25 @@ async function main() {
       data: { userId: user.id, solde: 400 + i * 250, cumule12Mois: 900 + i * 600 },
     });
 
+    // L abonnement d abord : c est sa reference qui compose le code QR des bacs.
+    const reference = `CG-${new Date().getFullYear()}-${String(i + 1).padStart(6, '0')}`;
+    const prochainPrelevement = new Date();
+    prochainPrelevement.setMonth(prochainPrelevement.getMonth() + 1);
+
+    await prisma.abonnement.create({
+      data: {
+        reference,
+        clientId: user.client.id,
+        offreId: offres.STANDARD.id,
+        prochainPrelevement,
+      },
+    });
+
     for (const b of BACS) {
       await prisma.bac.create({
         data: {
           ...b,
-          codeQr: `CG-BAC-${user.client.id.slice(-6).toUpperCase()}-${b.numero}`,
+          codeQr: construireCodeQr(reference, b.numero),
           clientId: user.client.id,
           // Niveaux de remplissage varies, comme sur l ecran d accueil.
           niveauTiers: b.numero === 1 ? 2 : 1,
@@ -214,18 +230,6 @@ async function main() {
         },
       });
     }
-
-    const prochainPrelevement = new Date();
-    prochainPrelevement.setMonth(prochainPrelevement.getMonth() + 1);
-
-    await prisma.abonnement.create({
-      data: {
-        reference: `CG-${new Date().getFullYear()}-${String(i + 1).padStart(6, '0')}`,
-        clientId: user.client.id,
-        offreId: offres.STANDARD.id,
-        prochainPrelevement,
-      },
-    });
 
     clients.push(user);
   }

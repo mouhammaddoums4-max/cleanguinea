@@ -166,6 +166,28 @@ router.get(
   }),
 );
 
+/** GET /api/missions/a-confirmer — collectes en attente de reponse du client. */
+router.get(
+  '/a-confirmer',
+  asyncHandler(async (req, res) => {
+    if (!req.user.client) return res.status(403).json({ erreur: 'Reserve aux clients' });
+
+    res.json(
+      await prisma.mission.findMany({
+        where: {
+          clientId: req.user.client.id,
+          statut: 'TERMINEE',
+          confirmeParClient: false,
+          contesteParClient: false,
+        },
+        include: missionComplete,
+        orderBy: { termineeA: 'desc' },
+        take: 20,
+      }),
+    );
+  }),
+);
+
 /** GET /api/missions/:id */
 router.get(
   '/:id',
@@ -431,6 +453,77 @@ router.post(
     }).catch((e) => console.error('[notif] collecte terminee', e.message));
 
     res.status(201).json({ ...misAJour, pointsCredites: pointsTotal });
+  }),
+);
+
+/**
+ * POST /api/missions/:id/confirmation
+ *
+ * Seconde moitie de la double confirmation : le collecteur declare avoir
+ * collecte, le client confirme — ou contexte. Un ecart entre les deux revele
+ * une collecte facturee mais non faite, ce qu'aucun controle interne ne
+ * remonterait autrement.
+ */
+router.post(
+  '/:id/confirmation',
+  asyncHandler(async (req, res) => {
+    const { confirme, motif } = z
+      .object({ confirme: z.boolean(), motif: z.string().max(300).optional() })
+      .parse(req.body);
+
+    const mission = await prisma.mission.findUnique({
+      where: { id: req.params.id },
+      include: { collecteur: { include: { user: true } } },
+    });
+    if (!mission) return res.status(404).json({ erreur: 'Collecte introuvable' });
+
+    if (req.user.client?.id !== mission.clientId) {
+      return res.status(403).json({ erreur: 'Cette collecte ne vous concerne pas' });
+    }
+    if (mission.statut !== 'TERMINEE') {
+      return res.status(409).json({
+        erreur: 'Le collecteur n a pas encore declare cette collecte',
+      });
+    }
+    if (mission.confirmeParClient || mission.contesteParClient) {
+      return res.status(409).json({ erreur: 'Vous avez deja repondu pour cette collecte' });
+    }
+    if (!confirme && !motif) {
+      return res.status(400).json({ erreur: 'Indiquez ce qui n a pas ete fait' });
+    }
+
+    const misAJour = await prisma.mission.update({
+      where: { id: mission.id },
+      data: confirme
+        ? { confirmeParClient: true, confirmeParClientLe: new Date() }
+        : { contesteParClient: true, motifContestation: motif },
+      include: missionComplete,
+    });
+
+    // Une contestation remonte tout de suite au back-office : c'est une
+    // anomalie a arbitrer, pas une statistique de fin de mois.
+    if (!confirme) {
+      await prisma.alerte.create({
+        data: {
+          niveau: 'ATTENTION',
+          titre: 'Collecte contestee',
+          message: `${misAJour.reference} — ${misAJour.client.user.nom} : ${motif}`,
+          lien: '/collectes',
+        },
+      });
+
+      if (mission.collecteur) {
+        notifier({
+          userId: mission.collecteur.userId,
+          type: 'INFORMATION',
+          titre: 'Collecte contestee',
+          message: `Le client conteste le passage ${misAJour.reference}.`,
+          lien: '/(collecteur)/historique',
+        }).catch(() => {});
+      }
+    }
+
+    res.json(misAJour);
   }),
 );
 

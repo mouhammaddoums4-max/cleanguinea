@@ -1,4 +1,4 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,11 @@ import { api, type Bac, type Mission, type SoldePoints } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
-import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, PastilleBac } from '../../src/components/ui';
+import { Avatar } from '../../src/components/Avatar';
+import { Bannieres } from '../../src/components/Bannieres';
+import {
+  Bouton, Carte, Chargement, Ecran, useHautBarreStatut, PastilleBac,
+} from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
 import { useResponsive } from '../../src/responsive';
 
@@ -24,7 +28,17 @@ export default function Accueil() {
 
   const profil = useQuery({
     queryKey: ['moi'],
-    queryFn: () => api<{ client: { adresse: string } | null }>('/api/auth/moi'),
+    queryFn: () =>
+      api<{
+        utilisateur: { photoUrl: string | null };
+        client: { quartier: { nom: string; commune: { nom: string } } } | null;
+      }>('/api/auth/moi'),
+  });
+
+  const notifs = useQuery({
+    queryKey: ['notifications-compteur'],
+    queryFn: () => api<{ nonLues: number }>('/api/notifications/compteur'),
+    refetchInterval: 60_000,
   });
 
   const bacs = useQuery({
@@ -52,6 +66,7 @@ export default function Accueil() {
     prochaine.refetch();
     points.refetch();
     profil.refetch();
+    notifs.refetch();
   }
 
   return (
@@ -61,15 +76,50 @@ export default function Accueil() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={rafraichit} onRefresh={toutRafraichir} />}
       >
+        {/* Identite : photo, nom, quartier. Pas de salutation — elle occupe la
+            largeur sans rien apprendre a qui ouvre l'application. */}
         <View style={styles.enTete}>
+          <Pressable
+            onPress={() => router.push('/(client)/profil')}
+            accessibilityRole="button"
+            accessibilityLabel={t('profil.titre')}
+          >
+            <Avatar
+              nom={utilisateur?.nom}
+              photoUrl={profil.data?.utilisateur.photoUrl}
+              taille={46}
+            />
+          </Pressable>
+
           <View style={{ flex: 1 }}>
-            <Text style={styles.bonjour}>
-              {t('accueil.bonjour')} {utilisateur?.nom.split(' ')[0]} 👋
+            <Text style={styles.nom} numberOfLines={1}>
+              {utilisateur?.nom}
             </Text>
-            <Text style={styles.lieu}>{profil.data?.client?.adresse ?? 'Conakry'}</Text>
+            <Text style={styles.lieu} numberOfLines={1}>
+              {profil.data?.client
+                ? `${profil.data.client.quartier.nom}, ${profil.data.client.quartier.commune.nom}`
+                : 'Conakry'}
+            </Text>
           </View>
-          <Ionicons name="notifications-outline" size={24} color={colors.texte} />
+
+          <Pressable
+            onPress={() => router.push('/(client)/notifications-liste')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('profil.notifications')}
+          >
+            <Ionicons name="notifications-outline" size={24} color={colors.texte} />
+            {(notifs.data?.nonLues ?? 0) > 0 && (
+              <View style={styles.pastilleNotif}>
+                <Text style={styles.pastilleNotifTexte}>
+                  {notifs.data!.nonLues > 9 ? '9+' : notifs.data!.nonLues}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         </View>
+
+        <Bannieres />
 
         {enChargement ? (
           <Chargement texte={t('commun.chargement')} />
@@ -184,9 +234,22 @@ export default function Accueil() {
 const styles = StyleSheet.create({
   // Marges horizontales et ecart fournis par useResponsive.
   contenu: { paddingBottom: espacement.xxl },
-  enTete: { flexDirection: 'row', alignItems: 'center' },
-  bonjour: { fontSize: 20, fontWeight: '700', color: colors.texte },
-  lieu: { fontSize: 13, color: colors.texteSecondaire, marginTop: 2 },
+  enTete: { flexDirection: 'row', alignItems: 'center', gap: espacement.md },
+  nom: { fontSize: 17, fontWeight: '700', color: colors.texte },
+  lieu: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
+  pastilleNotif: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pastilleNotifTexte: { fontSize: 10, fontWeight: '800', color: colors.blanc },
 
   carteVerte: { backgroundColor: colors.primary, borderColor: colors.primary, gap: 4 },
   carteVerteLibelle: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },

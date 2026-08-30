@@ -1,4 +1,4 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,10 @@ import { api, type Zone, type ResumeZones } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useI18n, useFormat } from '../../src/i18n';
 import { ouvrirItineraire } from '../../src/geo';
-import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, Etiquette, Vide } from '../../src/components/ui';
+import { Avatar } from '../../src/components/Avatar';
+import {
+  Bouton, Carte, Chargement, Ecran, useHautBarreStatut, Etiquette, Vide,
+} from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
 import { useResponsive } from '../../src/responsive';
 
@@ -53,13 +56,27 @@ export default function Zones() {
           <RefreshControl refreshing={donnees.isRefetching} onRefresh={() => donnees.refetch()} />
         }
       >
+        {/* Photo, nom, matricule : le collecteur doit reconnaitre son compte
+            d'un coup d'oeil, plusieurs se partagent parfois un telephone. */}
         <View style={styles.enTete}>
+          <Pressable
+            onPress={() => router.push('/(collecteur)/profil')}
+            accessibilityRole="button"
+            accessibilityLabel={t('profil.titre')}
+          >
+            <Avatar nom={utilisateur?.nom} taille={46} />
+          </Pressable>
+
           <View style={{ flex: 1 }}>
-            <Text style={styles.bonjour}>
-              {t('accueil.bonjour')} {utilisateur?.nom.split(' ')[0]} 👋
+            <Text style={styles.nom} numberOfLines={1}>
+              {utilisateur?.nom}
             </Text>
-            <Text style={styles.petit}>{format.dateLongue(new Date())}</Text>
+            <Text style={styles.petit}>
+              {utilisateur?.identifiant ? `${utilisateur.identifiant} · ` : ''}
+              {format.dateLongue(new Date())}
+            </Text>
           </View>
+
           <Ionicons name="notifications-outline" size={24} color={colors.texte} />
         </View>
 
@@ -192,8 +209,13 @@ function Info({ icone, texte }: { icone: keyof typeof Ionicons.glyphMap; texte: 
 const styles = StyleSheet.create({
   // Marges horizontales et ecart fournis par useResponsive.
   contenu: { paddingBottom: espacement.xxl },
-  enTete: { flexDirection: 'row', alignItems: 'center', marginBottom: espacement.xs },
-  bonjour: { fontSize: 20, fontWeight: '700', color: colors.texte },
+  enTete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacement.md,
+    marginBottom: espacement.xs,
+  },
+  nom: { fontSize: 17, fontWeight: '700', color: colors.texte },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
 
   compteurs: { flexDirection: 'row', gap: espacement.sm },
