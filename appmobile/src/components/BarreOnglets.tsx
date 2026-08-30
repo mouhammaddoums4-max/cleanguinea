@@ -1,7 +1,10 @@
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type {
+  BottomTabBarProps,
+  BottomTabNavigationOptions,
+} from '@react-navigation/bottom-tabs';
 
 import { colors, espacement, rayon } from '../theme';
 import { useResponsive } from '../responsive';
@@ -32,6 +35,13 @@ type NomIcone = keyof typeof Ionicons.glyphMap;
  *
  * Au-dela de cinq onglets les libelles se chevauchent : on tronque plutot que
  * de laisser le texte deborder.
+ *
+ * ROUTES MASQUEES
+ * `href: null` ne retire pas la route du navigateur : expo-router se contente
+ * de poser `tabBarItemStyle: { display: 'none' }` et un `tabBarButton` qui
+ * renvoie null. La barre par defaut respecte ces marqueurs — une barre sur
+ * mesure doit le faire elle-meme, sinon elle affiche TOUS les ecrans du
+ * dossier (treize au lieu de cinq, ici).
  */
 const HAUTEUR_CONTENU = 58;
 const MIN_PADDING_BAS = 8;
@@ -42,21 +52,33 @@ type Props = BottomTabBarProps & {
   icones: Record<string, NomIcone>;
 };
 
+/** Une route masquee par `href: null` porte `display: 'none'` sur son item. */
+function estMasquee(options: BottomTabNavigationOptions) {
+  const style = StyleSheet.flatten(options.tabBarItemStyle) as
+    | { display?: string }
+    | undefined;
+  return style?.display === 'none';
+}
+
 export function BarreOnglets({ state, descriptors, navigation, icones }: Props) {
   const insets = useSafeAreaInsets();
   const r = useResponsive();
 
   const paddingBas = Math.max(insets.bottom, MIN_PADDING_BAS);
 
+  // Seuls les onglets reellement affichables.
+  const visibles = state.routes.filter((route) => !estMasquee(descriptors[route.key].options));
+  const cleActive = state.routes[state.index]?.key;
+
   // Sur un ecran etroit, l'icone et le libelle retrecissent plutot que de se
   // chevaucher ; sur tablette ils gagnent un peu d'air.
   const tailleIcone = r.taille === 'compact' ? 19 : r.taille === 'tablette' ? 23 : 21;
   const largeurPastille = r.taille === 'compact' ? 40 : 46;
 
-  if (__DEV__ && state.routes.length > MAX_ONGLETS_LISIBLES) {
+  if (__DEV__ && visibles.length > MAX_ONGLETS_LISIBLES) {
     console.warn(
-      `BarreOnglets : ${state.routes.length} onglets pour ${MAX_ONGLETS_LISIBLES} lisibles. ` +
-        'Deplacez les moins utilises vers le profil.',
+      `BarreOnglets : ${visibles.length} onglets visibles pour ${MAX_ONGLETS_LISIBLES} lisibles. ` +
+        'Masquez les moins utilises avec `href: null` et rendez-les accessibles depuis le profil.',
     );
   }
 
@@ -75,10 +97,12 @@ export function BarreOnglets({ state, descriptors, navigation, icones }: Props) 
         },
       ]}
     >
-      {state.routes.map((route, index) => {
+      {visibles.map((route) => {
         const { options } = descriptors[route.key];
         const label = (options.title ?? route.name) as string;
-        const actif = state.index === index;
+        // Comparaison par cle : l'index de `state` porte sur TOUTES les routes,
+        // masquees comprises, et ne correspond donc pas a celui de `visibles`.
+        const actif = route.key === cleActive;
         const icone = icones[route.name] ?? 'ellipse';
 
         const onPress = () => {
