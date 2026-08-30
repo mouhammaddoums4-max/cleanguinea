@@ -11,25 +11,21 @@ import { colors, espacement, rayon, ombre } from '../theme';
 /**
  * Conteneur d'ecran, plein ecran.
  *
- * Le fond couvre TOUT l'ecran, y compris sous la barre de statut et sous la
- * barre de navigation : c'est un simple View, pas un SafeAreaView, sinon
- * l'application apparaitrait encadree de bandes.
+ * L'application monte JUSQU'A L'ENCOCHE : aucune marge en haut ici, sinon une
+ * bande apparaitrait sous les icones d'heure et de batterie. Ce sont les
+ * en-tetes qui absorbent la barre de statut (voir `EnTete`), de sorte que leur
+ * fond touche le haut de l'ecran mais que leur texte reste sous les icones.
  *
- * Ce sont les *marges du contenu* qui evitent les barres systeme, pas le fond :
- *   - `bas = false` (defaut) pour un ecran a onglets : la BarreOnglets absorbe
- *     deja l'inset du bas, l'ajouter ici le compterait DEUX FOIS ;
- *   - `bas = true` pour un ecran empile, sans quoi le contenu passerait sous la
- *     barre de navigation du telephone.
- *
- * `souslaBarreDeStatut` laisse le contenu remonter sous la barre de statut,
- * pour les ecrans dont l'en-tete colore doit aller jusqu'en haut.
+ * `bas` gere la barre de navigation du bas :
+ *   - false (defaut) pour un ecran a onglets : la BarreOnglets absorbe deja
+ *     l'inset, l'ajouter ici le compterait DEUX FOIS ;
+ *   - true pour un ecran empile, sans quoi le contenu passerait dessous.
  */
 export function Ecran({
-  children, bas = false, sousLaBarreDeStatut = false, style,
+  children, bas = false, style,
 }: {
   children: React.ReactNode;
   bas?: boolean;
-  sousLaBarreDeStatut?: boolean;
   style?: ViewStyle;
 }) {
   const insets = useSafeAreaInsets();
@@ -39,7 +35,6 @@ export function Ecran({
       style={[
         styles.ecran,
         {
-          paddingTop: sousLaBarreDeStatut ? 0 : insets.top,
           paddingBottom: bas ? insets.bottom : 0,
           // Encoches laterales en paysage : sans elles, le contenu passe dessous.
           paddingLeft: insets.left,
@@ -53,12 +48,24 @@ export function Ecran({
   );
 }
 
+/**
+ * Hauteur de la barre de statut, a ajouter en haut d'un ecran qui dessine son
+ * propre en-tete dans un ScrollView plutot que d'utiliser `EnTete`.
+ */
+export function useHautBarreStatut() {
+  return useSafeAreaInsets().top;
+}
+
 export function EnTete({
   titre, sousTitre, retour = false, action,
 }: { titre: string; sousTitre?: string; retour?: boolean; action?: React.ReactNode }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.enTete}>
+    // paddingTop = inset + marge : le fond blanc touche l'encoche, le titre
+    // se place sous l'heure et la batterie.
+    <View style={[styles.enTete, { paddingTop: insets.top + espacement.md }]}>
       {retour && (
         <Pressable
           onPress={() => router.back()}

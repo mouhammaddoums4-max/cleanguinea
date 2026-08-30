@@ -7,7 +7,7 @@ import { api, type Bac, type Mission, type SoldePoints } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
-import { Bouton, Carte, Chargement, Ecran, PastilleBac } from '../../src/components/ui';
+import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, PastilleBac } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
 
 export default function Accueil() {
@@ -16,6 +16,7 @@ export default function Accueil() {
   const { categorie, parametre, devise } = useConfig();
   const { t, langue } = useI18n();
   const format = useFormat();
+  const hautBarre = useHautBarreStatut();
 
   const niveauMax = parametre<number>('bac.niveauMaxTiers', 3);
 
@@ -54,7 +55,7 @@ export default function Accueil() {
   return (
     <Ecran>
       <ScrollView
-        contentContainerStyle={styles.contenu}
+        contentContainerStyle={[styles.contenu, { paddingTop: hautBarre + espacement.lg }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={rafraichit} onRefresh={toutRafraichir} />}
       >

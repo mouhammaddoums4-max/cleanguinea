@@ -7,7 +7,7 @@ import { api, type Zone, type ResumeZones } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useI18n, useFormat } from '../../src/i18n';
 import { ouvrirItineraire } from '../../src/geo';
-import { Bouton, Carte, Chargement, Ecran, Etiquette, Vide } from '../../src/components/ui';
+import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, Etiquette, Vide } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
 
 /** Couleur et fond de l'étiquette de statut. */
@@ -27,6 +27,7 @@ export default function Zones() {
   const { utilisateur } = useAuth();
   const { t } = useI18n();
   const format = useFormat();
+  const hautBarre = useHautBarreStatut();
 
   const donnees = useQuery({
     queryKey: ['mes-zones'],
@@ -44,7 +45,7 @@ export default function Zones() {
   return (
     <Ecran>
       <ScrollView
-        contentContainerStyle={styles.contenu}
+        contentContainerStyle={[styles.contenu, { paddingTop: hautBarre + espacement.lg }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={donnees.isRefetching} onRefresh={() => donnees.refetch()} />

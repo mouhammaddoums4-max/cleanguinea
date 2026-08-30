@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Bouton, Ecran } from '../../src/components/ui';
+import { Bouton, Ecran, useHautBarreStatut } from '../../src/components/ui';
 import { Logo } from '../../src/components/Logo';
 import { colors, espacement } from '../../src/theme';
 import { useI18n, LANGUES, type Langue } from '../../src/i18n';
@@ -12,11 +12,12 @@ export default function Bienvenue() {
   const router = useRouter();
   const { langue, changerLangue, t } = useI18n();
   const { slogan } = useConfig();
+  const hautBarre = useHautBarreStatut();
 
   return (
     // bas: true — ecran sans onglets, la zone systeme doit etre respectee ici.
     <Ecran bas style={{ backgroundColor: colors.surface }}>
-      <View style={styles.conteneur}>
+      <View style={[styles.conteneur, { paddingTop: hautBarre + espacement.xxl }]}>
         <View style={styles.bloc}>
           <Logo taille={130} />
           <View style={{ height: espacement.lg }} />
