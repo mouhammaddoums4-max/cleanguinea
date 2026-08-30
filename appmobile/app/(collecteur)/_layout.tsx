@@ -7,7 +7,7 @@ import { useI18n } from '../../src/i18n';
 const ICONES: Record<string, keyof typeof Ionicons.glyphMap> = {
   'tableau-de-bord': 'stats-chart',
   zones: 'location',
-  carte: 'map',
+  scanner: 'qr-code',
   historique: 'time',
   profil: 'person',
 };
@@ -29,12 +29,13 @@ export default function CollecteurLayout() {
     >
       <Tabs.Screen name="tableau-de-bord" options={{ title: t('onglets.tableauDeBord') }} />
       <Tabs.Screen name="zones" options={{ title: t('onglets.zones') }} />
-      <Tabs.Screen name="carte" options={{ title: t('onglets.carte') }} />
+      <Tabs.Screen name="scanner" options={{ title: t('onglets.scanner') }} />
       <Tabs.Screen name="historique" options={{ title: t('onglets.historique') }} />
       <Tabs.Screen name="profil" options={{ title: t('onglets.profil') }} />
 
-      {/* Ecran empile, absent de la barre. */}
+      {/* Ecrans empiles, absents de la barre. */}
       <Tabs.Screen name="zone" options={{ href: null }} />
+      <Tabs.Screen name="carte" options={{ href: null }} />
     </Tabs>
   );
 }

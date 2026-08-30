@@ -6,7 +6,6 @@ import { authentifier } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { lireCodeQr } from '../lib/qr.js';
 import { parametre } from '../lib/config.js';
-import { calculerPoints, crediterPoints, seuilContamination } from '../lib/points.js';
 import { notifier } from '../lib/notifications.js';
 
 const router = Router();
@@ -15,8 +14,9 @@ router.use(authentifier);
 /**
  * Synchronisation des operations faites hors reseau.
  *
- * Le collecteur travaille souvent sans couverture : il scanne, pese, confirme,
- * et tout part quand le reseau revient. Trois exigences en decoulent.
+ * Le collecteur travaille souvent sans couverture : il scanne, confirme, et
+ * tout part quand le reseau revient. Il ne pese rien — le chargement est pese
+ * a l'entrepot par les trieurs. Trois exigences en decoulent.
  *
  * IDEMPOTENCE. Chaque operation porte un `clientRef` (UUID genere sur
  * l'appareil AVANT l'envoi). Un lot rejoue — reseau coupe pendant la reponse,
@@ -48,10 +48,9 @@ const lotSchema = z.object({
 
 /** Scan d'un bac chez le client : cree la collecte et la marque terminee. */
 async function traiterScanBac(user, charge, faiteA) {
-  const { codeQr, poidsKg, photoUrl, commentaire } = z
+  const { codeQr, photoUrl, commentaire } = z
     .object({
       codeQr: z.string(),
-      poidsKg: z.number().positive().optional(),
       photoUrl: z.string().url().optional(),
       commentaire: z.string().max(300).optional(),
     })
@@ -81,12 +80,6 @@ async function traiterScanBac(user, charge, faiteA) {
     },
   });
 
-  const [seuil, capacite, centre] = await Promise.all([
-    seuilContamination(),
-    parametre('tri.capaciteParCategorieKg'),
-    prisma.centreTri.findFirst({ where: { actif: true } }),
-  ]);
-
   const resultat = await prisma.$transaction(
     async (tx) => {
       if (!mission) {
@@ -112,34 +105,6 @@ async function traiterScanBac(user, charge, faiteA) {
         });
       }
 
-      if (poidsKg) {
-        await tx.pesee.create({
-          data: {
-            missionId: mission.id,
-            bacId: bac.id,
-            categorie: bac.categorie,
-            poidsKg,
-            // Saisie sur le terrain, hors balance connectee : a controler.
-            peseeCertifiee: false,
-          },
-        });
-
-        if (centre) {
-          await tx.stock.upsert({
-            where: {
-              centreTriId_categorie: { centreTriId: centre.id, categorie: bac.categorie },
-            },
-            create: {
-              centreTriId: centre.id,
-              categorie: bac.categorie,
-              quantiteKg: poidsKg,
-              capaciteKg: capacite,
-            },
-            update: { quantiteKg: { increment: poidsKg } },
-          });
-        }
-      }
-
       await tx.bac.update({ where: { id: bac.id }, data: { niveauTiers: 0 } });
 
       return tx.mission.update({
@@ -148,7 +113,6 @@ async function traiterScanBac(user, charge, faiteA) {
           statut: 'TERMINEE',
           termineeA: faiteA,
           collecteurId: user.collecteur.id,
-          poidsTotalKg: { increment: poidsKg ?? 0 },
           photoUrl: photoUrl ?? undefined,
           commentaire: commentaire ?? undefined,
         },
@@ -158,28 +122,8 @@ async function traiterScanBac(user, charge, faiteA) {
     { timeout: 30_000, maxWait: 15_000 },
   );
 
-  // Points et notification hors transaction : leur echec ne doit pas annuler
-  // une collecte reellement effectuee.
-  let points = 0;
-  if (poidsKg) {
-    const solde = await prisma.soldePoints.findUnique({
-      where: { userId: bac.client.userId },
-    });
-    points = await calculerPoints({
-      categorie: bac.categorie,
-      poidsKg,
-      declassee: false,
-      cumule12Mois: solde?.cumule12Mois ?? 0,
-    });
-    if (points > 0) {
-      await crediterPoints({
-        userId: bac.client.userId,
-        points,
-        motif: `Collecte ${resultat.reference} - ${poidsKg} kg`,
-      });
-    }
-  }
-
+  // Notification hors transaction : son echec ne doit pas annuler une
+  // collecte reellement effectuee.
   // Le client doit confirmer de son cote : c'est la seconde moitie de la
   // double confirmation.
   await notifier({
@@ -191,7 +135,7 @@ async function traiterScanBac(user, charge, faiteA) {
     donnees: { missionId: resultat.id, aConfirmer: true },
   }).catch(() => {});
 
-  return { missionId: resultat.id, reference: resultat.reference, pointsCredites: points };
+  return { missionId: resultat.id, reference: resultat.reference };
 }
 
 /** Le client declare le remplissage d'un bac, meme hors ligne. */

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { api, type Bac, type Mission, type SoldePoints } from '../../src/api';
+import { api, type Bac, type Mission } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
@@ -35,6 +35,11 @@ export default function Accueil() {
       }>('/api/auth/moi'),
   });
 
+  const aConfirmer = useQuery({
+    queryKey: ['a-confirmer'],
+    queryFn: () => api<unknown[]>('/api/missions/a-confirmer'),
+  });
+
   const notifs = useQuery({
     queryKey: ['notifications-compteur'],
     queryFn: () => api<{ nonLues: number }>('/api/notifications/compteur'),
@@ -53,10 +58,6 @@ export default function Accueil() {
     refetchInterval: 30_000,
   });
 
-  const points = useQuery({
-    queryKey: ['points', langue],
-    queryFn: () => api<SoldePoints>(`/api/points/mon-solde?langue=${langue}`),
-  });
 
   const enChargement = bacs.isLoading || prochaine.isLoading;
   const rafraichit = bacs.isRefetching || prochaine.isRefetching;
@@ -64,7 +65,6 @@ export default function Accueil() {
   function toutRafraichir() {
     bacs.refetch();
     prochaine.refetch();
-    points.refetch();
     profil.refetch();
     notifs.refetch();
   }
@@ -119,6 +119,24 @@ export default function Accueil() {
           </Pressable>
         </View>
 
+        {/* Une collecte non confirmee est une facturation non verifiee :
+            le rappel passe devant les bannieres. */}
+        {(aConfirmer.data?.length ?? 0) > 0 && (
+          <Carte
+            onPress={() => router.push('/(client)/confirmations')}
+            style={styles.aConfirmer}
+          >
+            <Ionicons name="checkmark-done-circle" size={22} color={colors.alerte} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.aConfirmerTitre}>{t('confirmation.titre')}</Text>
+              <Text style={styles.aConfirmerTexte}>
+                {aConfirmer.data!.length} {t('confirmation.sousTitre')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.alerte} />
+          </Carte>
+        )}
+
         <Bannieres />
 
         {enChargement ? (
@@ -153,25 +171,6 @@ export default function Accueil() {
                   <Text style={styles.carteVerteHeure}>{t('accueil.signalerBacPlein')}</Text>
                 </>
               )}
-            </Carte>
-
-            {/* Points Clean */}
-            <Carte onPress={() => router.push('/(client)/points')} style={styles.cartePoints}>
-              <View style={styles.ligne}>
-                <View style={styles.iconePoints}>
-                  <Ionicons name="leaf" size={20} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.pointsValeur}>
-                    {points.data?.solde ?? 0} {t('accueil.pointsClean')}
-                  </Text>
-                  <Text style={styles.petit}>
-                    {t('accueil.niveau')} {points.data?.niveauLibelle ?? points.data?.niveau ?? '—'}{' '}
-                    · {format.montant(points.data?.valeurGnf ?? 0, devise)}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
-              </View>
             </Carte>
 
             {/* Mes bacs */}
@@ -250,6 +249,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pastilleNotifTexte: { fontSize: 10, fontWeight: '800', color: colors.blanc },
+
+  aConfirmer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacement.md,
+    backgroundColor: colors.alerteClair,
+    borderColor: colors.alerteClair,
+    paddingVertical: espacement.md,
+  },
+  aConfirmerTitre: { fontSize: 14, fontWeight: '700', color: colors.texte },
+  aConfirmerTexte: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
 
   carteVerte: { backgroundColor: colors.primary, borderColor: colors.primary, gap: 4 },
   carteVerteLibelle: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },

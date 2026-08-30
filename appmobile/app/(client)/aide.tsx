@@ -19,7 +19,6 @@ export default function Aide() {
   // Les réponses citent les vrais tarifs et barèmes : une FAQ qui contredit
   // l'application est pire que pas de FAQ du tout.
   const offreStandard = config?.offres.find((o) => o.type === 'STANDARD');
-  const gnfParPoint = Number(config?.parametres['points.gnfParPoint'] ?? 10);
 
   const questions = [
     {
@@ -30,7 +29,7 @@ export default function Aide() {
       }),
     },
     { q: t('aide.q2'), r: t('aide.r2') },
-    { q: t('aide.q3'), r: t('aide.r3', { taux: 1000 / gnfParPoint }) },
+    { q: t('aide.q3'), r: t('aide.r3') },
     { q: t('aide.q4'), r: t('aide.r4') },
     { q: t('aide.q5'), r: t('aide.r5') },
     { q: t('aide.q6'), r: t('aide.r6') },

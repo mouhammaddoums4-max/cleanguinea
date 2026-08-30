@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { networkInterfaces } from 'node:os';
 import { creerApp } from './app.js';
 import { prisma } from './lib/prisma.js';
 
@@ -13,8 +14,21 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-const serveur = creerApp().listen(port, () => {
+/** Adresses IPv4 du reseau local, celles que le telephone peut joindre. */
+function adressesReseau() {
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((i) => i && i.family === 'IPv4' && !i.internal)
+    .map((i) => i.address);
+}
+
+// 0.0.0.0 et non localhost : sinon le serveur n'ecoute que sur la machine, et
+// le telephone recoit "impossible de joindre le serveur" sans autre indice.
+const serveur = creerApp().listen(port, '0.0.0.0', () => {
   console.log(`API Clean Guinee sur http://localhost:${port}`);
+  for (const ip of adressesReseau()) {
+    console.log(`  depuis le telephone (meme Wi-Fi) : http://${ip}:${port}`);
+  }
 });
 
 // Arret propre : on ferme les connexions avant de rendre la main.

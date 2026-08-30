@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { api, type SoldePoints } from '../../src/api';
+import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat, LANGUES } from '../../src/i18n';
@@ -32,10 +32,6 @@ export default function Profil() {
   const { devise } = useConfig();
 
   const moi = useQuery({ queryKey: ['moi'], queryFn: () => api<Moi>('/api/auth/moi') });
-  const points = useQuery({
-    queryKey: ['points', langue],
-    queryFn: () => api<SoldePoints>(`/api/points/mon-solde?langue=${langue}`),
-  });
 
   function confirmerDeconnexion() {
     Alert.alert(t('profil.seDeconnecter'), t('profil.confirmerDeconnexion'), [
@@ -69,7 +65,12 @@ export default function Profil() {
         {
           icone: 'card-outline',
           libelle: t('profil.monAbonnement'),
-          route: '/(client)/paiements',
+          route: '/(client)/abonnement',
+        },
+        {
+          icone: 'checkmark-done-outline',
+          libelle: t('confirmation.titre'),
+          route: '/(client)/confirmations',
         },
         { icone: 'cube-outline', libelle: t('profil.mesBacs'), route: '/(client)/collectes' },
         // L'historique a son propre onglet : le rappeler ici n'ajouterait
@@ -164,23 +165,6 @@ export default function Profil() {
             <Ionicons name="qr-code-outline" size={24} color={colors.primary} />
           </Carte>
         )}
-
-        {/* Points Clean */}
-        <Carte onPress={() => router.push('/(client)/points')} style={styles.points}>
-          <View style={styles.iconePoints}>
-            <Ionicons name="leaf" size={20} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.pointsValeur}>
-              {points.data?.solde ?? 0} {t('accueil.pointsClean')}
-            </Text>
-            <Text style={styles.petit}>
-              {format.montant(points.data?.valeurGnf ?? 0, devise)}
-            </Text>
-          </View>
-          {!!points.data?.niveauLibelle && <Etiquette texte={points.data.niveauLibelle} />}
-          <Ionicons name="chevron-forward" size={18} color={colors.texteTertiaire} />
-        </Carte>
 
         {/* Sections de réglages */}
         {sections.map((section) => (

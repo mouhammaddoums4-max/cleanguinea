@@ -33,6 +33,13 @@ enum CategorieDechet {
   REFUS
 }
 
+/// Un foyer ou une societe : le volume, la facturation et l interlocuteur
+/// different, et le back-office doit pouvoir les distinguer des l inscription.
+enum TypeClient {
+  PARTICULIER
+  ENTREPRISE
+}
+
 enum TypeOffre {
   ESSENTIEL // 2 passages / semaine
   STANDARD  // 3 passages / semaine - offre mise en avant dans l application
@@ -193,9 +200,10 @@ model User {
 }
 
 model Client {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        TypeClient @default(PARTICULIER)
   adresse     String // "Cite FOFANA, Ratoma"
   quartierId  String
   quartier    Quartier @relation(fields: [quartierId], references: [id])

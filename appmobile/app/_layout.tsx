@@ -10,6 +10,8 @@ import * as SystemUI from 'expo-system-ui';
 import { AuthProvider } from '../src/auth';
 import { I18nProvider } from '../src/i18n';
 import { ConfigProvider } from '../src/config';
+import { HorsLigneProvider } from '../src/hors-ligne';
+import { useNotifications } from '../src/notifications';
 import { colors } from '../src/theme';
 
 // Fond de la vue racine. Appele au chargement du module, hors composant, comme
@@ -40,6 +42,8 @@ export default function RootLayout() {
           <I18nProvider>
             <ConfigProvider>
               <AuthProvider>
+                <HorsLigneProvider>
+                <Session />
                 {/*
                   SDK 57 : StatusBar n'accepte plus que `style`. `translucent` et
                   `backgroundColor` ont disparu — l'edge-to-edge etant impose, la
@@ -65,6 +69,7 @@ export default function RootLayout() {
                   <Stack.Screen name="(client)" />
                   <Stack.Screen name="(collecteur)" />
                 </Stack>
+                </HorsLigneProvider>
               </AuthProvider>
             </ConfigProvider>
           </I18nProvider>
@@ -72,6 +77,17 @@ export default function RootLayout() {
       </View>
     </SafeAreaProvider>
   );
+}
+
+/**
+ * Branche les notifications systeme.
+ *
+ * Composant separe parce que `useNotifications` lit la session : il doit donc
+ * s'executer SOUS AuthProvider, ce que RootLayout ne peut pas faire lui-meme.
+ */
+function Session() {
+  useNotifications();
+  return null;
 }
 
 const styles = StyleSheet.create({

@@ -28,15 +28,15 @@ export default function ClientLayout() {
       <Tabs.Screen name="historique" options={{ title: t('onglets.historique') }} />
       <Tabs.Screen name="profil" options={{ title: t('onglets.profil') }} />
 
-      {/* Ecrans accessibles depuis les onglets mais absents de la barre.
-          Les Points Clean ont deux entrees mieux placees qu'un onglet : la
-          carte du solde sur l'accueil, et la carte du profil. */}
-      <Tabs.Screen name="points" options={{ href: null }} />
+      {/* Ecrans accessibles depuis les onglets mais absents de la barre. */}
       <Tabs.Screen name="demande" options={{ href: null }} />
       <Tabs.Screen name="suivi" options={{ href: null }} />
       <Tabs.Screen name="mes-informations" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="aide" options={{ href: null }} />
+      <Tabs.Screen name="confirmations" options={{ href: null }} />
+      <Tabs.Screen name="notifications-liste" options={{ href: null }} />
+      <Tabs.Screen name="abonnement" options={{ href: null }} />
       <Tabs.Screen name="langue" options={{ href: null }} />
       <Tabs.Screen name="supprimer-compte" options={{ href: null }} />
     </Tabs>

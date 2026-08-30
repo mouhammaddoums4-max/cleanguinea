@@ -77,7 +77,14 @@ export default function Zones() {
             </Text>
           </View>
 
-          <Ionicons name="notifications-outline" size={24} color={colors.texte} />
+          <Pressable
+            onPress={() => router.push('/(collecteur)/carte')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('onglets.carte')}
+          >
+            <Ionicons name="map-outline" size={24} color={colors.texte} />
+          </Pressable>
         </View>
 
         {donnees.isLoading ? (

@@ -47,7 +47,6 @@ export default function Scanner() {
   const [permission, demanderPermission] = useCameraPermissions();
   const [foyer, setFoyer] = useState<Foyer | null>(null);
   const [codeBrut, setCodeBrut] = useState<string | null>(null);
-  const [poids, setPoids] = useState('');
   const [envoi, setEnvoi] = useState(false);
 
   // Une caméra déclenche plusieurs lectures par seconde sur le même code :
@@ -89,7 +88,6 @@ export default function Scanner() {
     verrou.current = false;
     setFoyer(null);
     setCodeBrut(null);
-    setPoids('');
   }
 
   async function confirmer() {
@@ -97,12 +95,9 @@ export default function Scanner() {
     setEnvoi(true);
 
     try {
-      await enfiler('scan_bac', {
-        codeQr: codeBrut,
-        ...(Number(poids.replace(',', '.')) > 0
-          ? { poidsKg: Number(poids.replace(',', '.')) }
-          : {}),
-      });
+      // Le collecteur ne pese pas : il declare le passage, rien d'autre.
+      // Le chargement est pese a l'entrepot, par les trieurs.
+      await enfiler('scan_bac', { codeQr: codeBrut });
 
       Alert.alert(
         t('scan.enregistre'),
@@ -193,18 +188,6 @@ export default function Scanner() {
                 </Text>
               </View>
             )}
-          </Carte>
-
-          <Carte style={{ gap: espacement.md }}>
-            <Champ
-              libelle={t('collecteur.poidsKg')}
-              icone="scale-outline"
-              placeholder="0.0"
-              keyboardType="decimal-pad"
-              value={poids}
-              onChangeText={setPoids}
-            />
-            <Text style={styles.petit}>{t('scan.poidsFacultatif')}</Text>
           </Carte>
 
           <View style={{ flex: 1 }} />

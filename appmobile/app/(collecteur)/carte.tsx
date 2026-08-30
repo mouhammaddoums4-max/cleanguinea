@@ -70,8 +70,8 @@ export default function CarteTournee() {
     }));
 
   return (
-    <Ecran>
-      <EnTete titre={t('onglets.carte')} sousTitre={t('zones.carteSousTitre')} />
+    <Ecran bas>
+      <EnTete titre={t('onglets.carte')} sousTitre={t('zones.carteSousTitre')} retour />
       <ScrollView
         contentContainerStyle={[styles.contenu, r.contenu]}
         showsVerticalScrollIndicator={false}

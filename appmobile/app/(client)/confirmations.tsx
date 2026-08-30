@@ -101,12 +101,9 @@ export default function Confirmations() {
                       {m.termineeA ? ` · ${format.heure(m.termineeA)}` : ''}
                     </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.poids}>{m.poidsTotalKg} kg</Text>
-                    {!!m.collecteur && (
-                      <Text style={styles.petit}>{m.collecteur.user.nom}</Text>
-                    )}
-                  </View>
+                  {!!m.collecteur && (
+                    <Text style={styles.petit}>{m.collecteur.user.nom}</Text>
+                  )}
                 </View>
 
                 <Text style={styles.question}>{t('confirmation.question')}</Text>
@@ -178,7 +175,6 @@ const styles = StyleSheet.create({
   ligneHaut: { flexDirection: 'row', alignItems: 'center', gap: espacement.md },
   reference: { fontSize: 15, fontWeight: '700', color: colors.texte },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
-  poids: { fontSize: 16, fontWeight: '800', color: colors.primary },
 
   question: { fontSize: 14, color: colors.texte, fontWeight: '600' },
   actions: { flexDirection: 'row', gap: espacement.sm },

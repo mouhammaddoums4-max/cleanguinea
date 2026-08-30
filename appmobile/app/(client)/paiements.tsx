@@ -3,8 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 
 import { api, type Paiement } from '../../src/api';
 import { useConfig } from '../../src/config';
+import { useRouter } from 'expo-router';
 import { useI18n, useFormat } from '../../src/i18n';
-import { Carte, Chargement, Contenu, Ecran, EnTete, Etiquette } from '../../src/components/ui';
+import {
+  Bouton, Carte, Chargement, Contenu, Ecran, EnTete, Etiquette,
+} from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
 
 type Reponse = {
@@ -18,6 +21,7 @@ type Reponse = {
 
 /** Ecran 7 des maquettes : abonnement et historique des paiements. */
 export default function Paiements() {
+  const router = useRouter();
   const { t } = useI18n();
   const format = useFormat();
   const { devise } = useConfig();
@@ -64,6 +68,13 @@ export default function Paiements() {
             </Text>
           )}
         </Carte>
+
+        <Bouton
+          titre={abo ? t('abonnement.titre') : t('abonnement.souscrire')}
+          variante={abo ? 'contour' : 'plein'}
+          icone="card-outline"
+          onPress={() => router.push('/(client)/abonnement')}
+        />
 
         <Text style={styles.titre}>{t('paiements.historique')}</Text>
 
