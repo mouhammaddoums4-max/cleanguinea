@@ -290,18 +290,23 @@ router.get(
 
     // Lire, c'est accuser reception des messages d'en face.
     const cote = staff ? 'CLIENT' : 'SUPPORT';
-    await prisma.$transaction([
+    const maintenant = new Date();
+
+    const [, aJour] = await prisma.$transaction([
       prisma.messageSupport.updateMany({
         where: { conversationId: conversation.id, emetteur: cote, luLe: null },
-        data: { luLe: new Date() },
+        data: { luLe: maintenant },
       }),
       prisma.conversationSupport.update({
         where: { id: conversation.id },
         data: staff ? { nonLusSupport: 0 } : { nonLusClient: 0 },
+        include: conversationComplete,
       }),
     ]);
 
-    res.json(presenter(conversation));
+    // On renvoie l'etat d'apres : sinon le badge lu resterait affiche jusqu'au
+    // prochain chargement, alors que le serveur, lui, l'a bien remis a zero.
+    res.json(presenter(aJour));
   }),
 );
 
@@ -340,6 +345,18 @@ router.post(
     const emetteur = staff ? 'SUPPORT' : 'CLIENT';
 
     const misAJour = await prisma.$transaction(async (tx) => {
+      // Repondre, c'est avoir lu : on ne peut pas ecrire dans un fil sans
+      // l'avoir sous les yeux. Sans cela, le compteur d'en face ne redescend
+      // jamais pour qui repond directement depuis la liste.
+      await tx.messageSupport.updateMany({
+        where: {
+          conversationId: conversation.id,
+          emetteur: staff ? 'CLIENT' : 'SUPPORT',
+          luLe: null,
+        },
+        data: { luLe: new Date() },
+      });
+
       await tx.messageSupport.create({
         data: {
           conversationId: conversation.id,
@@ -356,8 +373,8 @@ router.post(
           dernierMessageLe: new Date(),
           statut: staff ? (data.resoudre ? 'RESOLUE' : 'REPONDUE') : 'OUVERTE',
           ...(staff
-            ? { nonLusClient: { increment: 1 } }
-            : { nonLusSupport: { increment: 1 } }),
+            ? { nonLusClient: { increment: 1 }, nonLusSupport: 0 }
+            : { nonLusSupport: { increment: 1 }, nonLusClient: 0 }),
         },
         include: conversationComplete,
       });

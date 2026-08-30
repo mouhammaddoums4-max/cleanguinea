@@ -41,6 +41,9 @@ router.post(
     // Qui a le droit d ecrire ou.
     const autorise =
       dossier === 'profils' ||
+      // Une piece jointe de support : tout abonne doit pouvoir montrer son bac
+      // casse ou un depot sauvage, c'est souvent plus clair qu'un paragraphe.
+      dossier === 'support' ||
       (dossier === 'collectes' && ['COLLECTEUR', 'SUPERVISEUR', 'ADMIN'].includes(req.user.role)) ||
       (dossier === 'collecteurs' && ['ADMIN', 'SUPERVISEUR'].includes(req.user.role)) ||
       (dossier === 'bannieres' && req.user.role === 'ADMIN');

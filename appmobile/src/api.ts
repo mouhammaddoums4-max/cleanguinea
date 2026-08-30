@@ -283,3 +283,40 @@ export type SoldePoints = {
   prochainNiveau: { code: string; libelle: string; pointsRestants: number } | null;
   mouvements: { id: string; sens: 'CREDIT' | 'DEBIT'; points: number; motif: string; createdAt: string }[];
 };
+
+// ---------------------------------------------------------------------------
+// Messagerie de support
+// ---------------------------------------------------------------------------
+
+export type MotifSupport =
+  | 'INCIDENT_COLLECTE'
+  | 'BAC'
+  | 'FACTURATION'
+  | 'ABONNEMENT'
+  | 'RECLAMATION'
+  | 'AUTRE';
+
+export type StatutSupport = 'OUVERTE' | 'REPONDUE' | 'RESOLUE';
+
+export type MessageSupport = {
+  id: string;
+  emetteur: 'CLIENT' | 'SUPPORT';
+  auteur: string | null;
+  texte: string;
+  photoUrl: string | null;
+  luLe: string | null;
+  createdAt: string;
+};
+
+export type Conversation = {
+  id: string;
+  reference: string;
+  motif: MotifSupport;
+  sujet: string;
+  statut: StatutSupport;
+  dernierMessageLe: string;
+  nonLusSupport: number;
+  nonLusClient: number;
+  createdAt: string;
+  messages: MessageSupport[];
+};

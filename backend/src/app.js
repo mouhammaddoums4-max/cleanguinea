@@ -49,7 +49,7 @@ export function creerApp() {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
   app.get('/health', (_req, res) =>
-    res.json({ service: 'cleanguinea-api', statut: 'ok', heure: new Date().toISOString() }),
+    res.json({ service: 'senyi-api', statut: 'ok', heure: new Date().toISOString() }),
   );
 
   // Filet general, pose avant les routes pour couvrir aussi celles a venir.

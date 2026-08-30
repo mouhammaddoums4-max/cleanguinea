@@ -100,6 +100,11 @@ export default function Profil() {
       titre: t('profil.sectionSupport'),
       entrees: [
         {
+          icone: 'chatbubbles-outline',
+          libelle: t('support.titre'),
+          route: '/(client)/support',
+        },
+        {
           icone: 'help-circle-outline',
           libelle: t('profil.aide'),
           route: '/(client)/aide',

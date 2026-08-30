@@ -29,6 +29,7 @@ export default function ClientLayout() {
       <Tabs.Screen name="profil" options={{ title: t('onglets.profil') }} />
 
       {/* Ecrans accessibles depuis les onglets mais absents de la barre. */}
+      <Tabs.Screen name="support" options={{ href: null }} />
       <Tabs.Screen name="demande" options={{ href: null }} />
       <Tabs.Screen name="suivi" options={{ href: null }} />
       <Tabs.Screen name="mes-informations" options={{ href: null }} />

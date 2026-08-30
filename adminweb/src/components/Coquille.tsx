@@ -48,6 +48,7 @@ const NAVIGATION: Rubrique[] = [
     sous: [
       { cle: 'annuaire', href: '/clients' },
       { cle: 'abonnements', href: '/abonnements' },
+      { cle: 'support', href: '/support' },
     ],
   },
   {
