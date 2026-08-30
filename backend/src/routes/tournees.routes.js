@@ -5,7 +5,6 @@ import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { parametre } from '../lib/config.js';
-import { calculerPoints, crediterPoints } from '../lib/points.js';
 import { notifier } from '../lib/notifications.js';
 
 const router = Router();
@@ -218,12 +217,12 @@ router.patch(
 /**
  * POST /api/tournees/:id/confirmer
  *
- * Le collecteur confirme la zone : poids releves par categorie, foyers servis,
- * photo. Les demandes du jour dans le quartier sont cloturees avec la zone.
+ * Le collecteur confirme la zone : foyers servis, photo, commentaire.
  *
- * `poidsParFoyer` est optionnel : quand il est fourni, les Points Clean sont
- * credites aux foyers concernes. Sans lui, la zone est bien enregistree mais
- * personne ne gagne de points — c'est le compromis d'une pesee globale.
+ * Il ne pese rien. Le camion part a l'entrepot, ou les trieurs pesent et
+ * trient le chargement ; c'est de la que viendront les entrees en stock. Le
+ * champ `pesees` reste accepte pour cette saisie d'entrepot a venir, mais
+ * l'application du collecteur ne l'envoie plus.
  */
 const confirmationSchema = z.object({
   clientRef: z.string().uuid().optional(),
@@ -238,18 +237,7 @@ const confirmationSchema = z.object({
         peseeCertifiee: z.boolean().default(true),
       }),
     )
-    .min(1, 'Renseignez au moins un poids'),
-  poidsParFoyer: z
-    .array(
-      z.object({
-        clientId: z.string(),
-        categorie: z.enum([
-          'PLASTIQUE', 'METAL_FER', 'AUTRES', 'CARTON', 'VERRE', 'ORGANIQUE', 'REFUS',
-        ]),
-        poidsKg: z.number().positive(),
-      }),
-    )
-    .optional(),
+    .default([]),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   photoUrl: z.string().url().optional(),
@@ -281,6 +269,7 @@ router.post(
     }
 
     const poidsTotal = data.pesees.reduce((s, p) => s + p.poidsKg, 0);
+
     const { debut, fin } = aujourdhui();
 
     // Lectures faites AVANT d'ouvrir la transaction : chaque aller-retour compte
@@ -360,35 +349,7 @@ router.post(
       maxWait: 15_000,
     });
 
-    // Points Clean, hors transaction : un incident ici ne doit pas annuler la collecte.
-    let pointsCredites = 0;
-    for (const ligne of data.poidsParFoyer ?? []) {
-      const client = await prisma.client.findUnique({
-        where: { id: ligne.clientId },
-        select: { userId: true, quartierId: true },
-      });
-      // On ne credite que des foyers de la zone confirmee.
-      if (!client || client.quartierId !== tournee.quartierId) continue;
-
-      const solde = await prisma.soldePoints.findUnique({ where: { userId: client.userId } });
-      const points = await calculerPoints({
-        categorie: ligne.categorie,
-        poidsKg: ligne.poidsKg,
-        declassee: false,
-        cumule12Mois: solde?.cumule12Mois ?? 0,
-      });
-
-      if (points > 0) {
-        await crediterPoints({
-          userId: client.userId,
-          points,
-          motif: `Zone ${tournee.reference} - ${ligne.poidsKg} kg`,
-        });
-        pointsCredites += points;
-      }
-    }
-
-    res.status(201).json({ ...confirmee, pointsCredites });
+    res.status(201).json(confirmee);
   }),
 );
 

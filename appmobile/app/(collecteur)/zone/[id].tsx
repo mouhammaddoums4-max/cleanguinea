@@ -18,20 +18,20 @@ import { colors, espacement, rayon } from '../../../src/theme';
 /**
  * Détail d'une zone : carte, foyers, puis démarrage et confirmation.
  *
- * La confirmation est le geste central du collecteur : il saisit les poids
- * relevés par catégorie, le nombre de foyers servis, et valide. Tout le reste
- * (clôture des demandes du quartier, entrée en stock, remise à zéro des bacs)
- * est fait par le serveur.
+ * Le collecteur ne pèse rien. Il passe chez les foyers, ramasse, et déclare la
+ * zone faite : nombre de foyers servis et, s'il y a lieu, un commentaire. Le
+ * chargement part ensuite à l'entrepôt, où les trieurs pèsent et trient.
+ * Le reste (clôture des demandes du quartier, remise à zéro des bacs) est fait
+ * par le serveur.
  */
 export default function DetailZone() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const client = useQueryClient();
-  const { categorie, config } = useConfig();
+  const { categorie } = useConfig();
   const { t } = useI18n();
   const format = useFormat();
 
-  const [poids, setPoids] = useState<Record<string, string>>({});
   const [foyersServis, setFoyersServis] = useState('');
   const [commentaire, setCommentaire] = useState('');
   const [saisieOuverte, setSaisieOuverte] = useState(false);
@@ -62,36 +62,23 @@ export default function DetailZone() {
   const confirmer = useMutation({
     mutationFn: async () => {
       const position = await relevePosition();
-      const pesees = Object.entries(poids)
-        .map(([categorie, valeur]) => ({
-          categorie,
-          poidsKg: Number(valeur.replace(',', '.')),
-        }))
-        .filter((p) => p.poidsKg > 0);
 
-      return api<{ poidsTotalKg: number; pointsCredites: number }>(
-        `/api/tournees/${id}/confirmer`,
-        {
-          method: 'POST',
-          body: {
-            // Rend l'envoi idempotent si le réseau coupe et que le collecteur réessaie.
-            clientRef: Crypto.randomUUID(),
-            nbFoyersServis: Number(foyersServis) || 0,
-            pesees,
-            commentaire: commentaire.trim() || undefined,
-            ...(position ?? {}),
-          },
+      return api(`/api/tournees/${id}/confirmer`, {
+        method: 'POST',
+        body: {
+          // Rend l'envoi idempotent si le réseau coupe et que le collecteur réessaie.
+          clientRef: Crypto.randomUUID(),
+          nbFoyersServis: Number(foyersServis) || 0,
+          commentaire: commentaire.trim() || undefined,
+          ...(position ?? {}),
         },
-      );
+      });
     },
-    onSuccess: (rep) => {
+    onSuccess: () => {
       invalider();
       Alert.alert(
         t('zones.zoneConfirmee'),
-        t('zones.confirmationResume', {
-          poids: rep.poidsTotalKg,
-          foyers: Number(foyersServis) || 0,
-        }),
+        t('zones.confirmationResume', { foyers: Number(foyersServis) || 0 }),
         [{ text: 'OK', onPress: () => router.back() }],
       );
     },
@@ -111,11 +98,7 @@ export default function DetailZone() {
   const enCours = z.statut === 'EN_COURS';
   const terminee = z.statut === 'TERMINEE';
 
-  const totalSaisi = Object.values(poids).reduce(
-    (s, v) => s + (Number(v.replace(',', '.')) || 0),
-    0,
-  );
-  const peutConfirmer = totalSaisi > 0 && Number(foyersServis) > 0;
+  const peutConfirmer = Number(foyersServis) > 0;
 
   // Un foyer qui a signalé un bac plein passe en tête de liste.
   const foyers = [...z.foyers].sort(
@@ -243,32 +226,11 @@ export default function DetailZone() {
             />
           )}
 
-          {/* Saisie des poids */}
+          {/* Déclaration de fin de zone */}
           {enCours && saisieOuverte && (
             <Carte style={{ gap: espacement.md }}>
-              <Text style={styles.titreBloc}>{t('zones.pesees')}</Text>
-              <Text style={styles.petit}>{t('zones.peseesAide')}</Text>
-
-              {(config?.categories ?? []).map((c) => (
-                <View key={c.code} style={styles.lignePoids}>
-                  <View style={[styles.pastille, { backgroundColor: c.couleur }]} />
-                  <Text style={styles.categorieNom}>{c.libelle}</Text>
-                  <View style={{ width: 96 }}>
-                    <Champ
-                      placeholder="0"
-                      keyboardType="decimal-pad"
-                      value={poids[c.code] ?? ''}
-                      onChangeText={(v) => setPoids((p) => ({ ...p, [c.code]: v }))}
-                    />
-                  </View>
-                  <Text style={styles.unite}>kg</Text>
-                </View>
-              ))}
-
-              <View style={styles.totalLigne}>
-                <Text style={styles.totalLibelle}>{t('zones.total')}</Text>
-                <Text style={styles.totalValeur}>{totalSaisi.toFixed(1)} kg</Text>
-              </View>
+              <Text style={styles.titreBloc}>{t('zones.confirmerCollecte')}</Text>
+              <Text style={styles.petit}>{t('zones.confirmationAide')}</Text>
 
               <Champ
                 libelle={t('zones.foyersServisLabel')}
@@ -310,28 +272,13 @@ export default function DetailZone() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.resultatTitre}>{t('zones.statut.TERMINEE')}</Text>
                 <Text style={styles.resultatTexte}>
-                  {z.poidsTotalKg} kg · {z.nbFoyersServis} {t('zones.foyersServis')}
+                  {z.nbFoyersServis} {t('zones.foyersServis')}
                   {z.termineeA ? ` · ${format.heure(z.termineeA)}` : ''}
                 </Text>
               </View>
             </Carte>
           )}
 
-          {terminee && z.pesees.length > 0 && (
-            <Carte style={{ gap: espacement.sm }}>
-              <Text style={styles.titreBloc}>{t('zones.detailPesees')}</Text>
-              {z.pesees.map((p) => {
-                const c = categorie(p.categorie);
-                return (
-                  <View key={p.id} style={styles.lignePesee}>
-                    <View style={[styles.pastille, { backgroundColor: c.couleur }]} />
-                    <Text style={styles.categorieNom}>{c.libelle}</Text>
-                    <Text style={styles.poidsPesee}>{p.poidsKg} kg</Text>
-                  </View>
-                );
-              })}
-            </Carte>
-          )}
         </Contenu>
       </KeyboardAvoidingView>
     </Ecran>
@@ -357,21 +304,6 @@ const styles = StyleSheet.create({
   foyerNom: { fontSize: 14, fontWeight: '600', color: colors.texte },
   bacsLigne: { flexDirection: 'row', gap: 4 },
 
-  lignePoids: { flexDirection: 'row', alignItems: 'center', gap: espacement.sm },
-  pastille: { width: 10, height: 10, borderRadius: 5 },
-  categorieNom: { flex: 1, fontSize: 14, color: colors.texte },
-  unite: { fontSize: 13, color: colors.texteSecondaire, width: 22 },
-
-  totalLigne: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: espacement.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.bordure,
-  },
-  totalLibelle: { fontSize: 14, fontWeight: '600', color: colors.texte },
-  totalValeur: { fontSize: 18, fontWeight: '800', color: colors.primary },
 
   resultat: {
     flexDirection: 'row',
@@ -383,6 +315,4 @@ const styles = StyleSheet.create({
   resultatTitre: { fontSize: 15, fontWeight: '700', color: colors.primaryTexte },
   resultatTexte: { fontSize: 13, color: colors.primaryTexte, marginTop: 2 },
 
-  lignePesee: { flexDirection: 'row', alignItems: 'center', gap: espacement.sm },
-  poidsPesee: { fontSize: 14, fontWeight: '700', color: colors.texte },
 });

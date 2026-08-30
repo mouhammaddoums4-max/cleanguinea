@@ -52,9 +52,7 @@ export default function Historique() {
                   <Text style={styles.matiere}>
                     {c.libelle} ({t('bacs.bac')} {item.bacs[0]?.bac.numero ?? '-'})
                   </Text>
-                  <Text style={styles.poids}>
-                    {t('historique.poids')} : {item.poidsTotalKg} kg
-                  </Text>
+
                 </View>
                 <Etiquette texte={t('statuts.TERMINEE')} />
               </Carte>
@@ -76,5 +74,4 @@ const styles = StyleSheet.create({
   },
   date: { fontSize: 12, color: colors.texteSecondaire },
   matiere: { fontSize: 15, fontWeight: '600', color: colors.texte, marginTop: 2 },
-  poids: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
 });

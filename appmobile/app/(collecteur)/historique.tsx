@@ -10,7 +10,7 @@ import { useResponsive } from '../../src/responsive';
 
 type Reponse = {
   tournees: TourneeTerminee[];
-  cumul: { zones: number; poidsTotalKg: number; foyersServis: number };
+  cumul: { zones: number; foyersServis: number };
 };
 
 /** Zones confirmees par le collecteur sur les 30 derniers jours. */
@@ -32,7 +32,7 @@ export default function HistoriqueCollecteur() {
         titre={t('collecteur.historique')}
         sousTitre={
           cumul
-            ? `${cumul.zones} ${t('tdb.zones')} · ${cumul.poidsTotalKg} kg · ${cumul.foyersServis} ${t('zones.foyersServis')}`
+            ? `${cumul.zones} ${t('tdb.zones')} · ${cumul.foyersServis} ${t('zones.foyersServis')}`
             : undefined
         }
       />
@@ -63,7 +63,7 @@ export default function HistoriqueCollecteur() {
                   {item.quartier.commune.nom} · {item.nbFoyersServis} {t('zones.foyersServis')}
                 </Text>
               </View>
-              <Text style={styles.poids}>{item.poidsTotalKg} kg</Text>
+              <Text style={styles.foyers}>{item.nbFoyersServis}</Text>
             </Carte>
           )}
         />
@@ -91,5 +91,5 @@ const styles = StyleSheet.create({
   date: { fontSize: 11, color: colors.texteSecondaire },
   nom: { fontSize: 15, fontWeight: '600', color: colors.texte, marginTop: 2 },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
-  poids: { fontSize: 15, fontWeight: '700', color: colors.texte },
+  foyers: { fontSize: 15, fontWeight: '700', color: colors.texte },
 });

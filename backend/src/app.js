@@ -13,6 +13,7 @@ import bannieresRoutes from './routes/bannieres.routes.js';
 import abonnementsRoutes from './routes/abonnements.routes.js';
 import collecteursRoutes from './routes/collecteurs.routes.js';
 import syncRoutes from './routes/sync.routes.js';
+import televersementRoutes from './routes/televersement.routes.js';
 import bacsRoutes from './routes/bacs.routes.js';
 import missionsRoutes from './routes/missions.routes.js';
 import paiementsRoutes from './routes/paiements.routes.js';
@@ -49,6 +50,7 @@ export function creerApp() {
   app.use('/api/abonnements', abonnementsRoutes);
   app.use('/api/collecteurs', collecteursRoutes);
   app.use('/api/sync', syncRoutes);
+  app.use('/api/televersement', televersementRoutes);
   app.use('/api/missions', missionsRoutes);
   app.use('/api/paiements', paiementsRoutes);
   app.use('/api/points', pointsRoutes);

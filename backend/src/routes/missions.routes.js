@@ -3,9 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
-import {
-  calculerPoints, crediterPoints, poidsRecyclableDuMois, plafondKgMois, seuilContamination,
-} from '../lib/points.js';
+import { seuilContamination } from '../lib/points.js';
 import { parametre } from '../lib/config.js';
 import { notifier } from '../lib/notifications.js';
 
@@ -311,7 +309,10 @@ router.patch(
 
 /**
  * POST /api/missions/:id/collecte
- * Ecran "Confirmer la collecte" : poids, photo, puis credit des Points Clean.
+ *
+ * Saisie de pesee rattachee a une collecte. Le collecteur ne s'en sert pas :
+ * il ne pese rien sur le terrain. Cette route est celle de l'entrepot, ou les
+ * trieurs pesent le chargement et le font entrer en stock.
  */
 const collecteSchema = z.object({
   clientRef: z.string().uuid().optional(),
@@ -414,45 +415,19 @@ router.post(
       });
     }, { timeout: 30_000, maxWait: 15_000 });
 
-    // Points Clean, hors transaction : un echec ici ne doit pas annuler la collecte.
-    const solde = await prisma.soldePoints.findUnique({
-      where: { userId: mission.client.userId },
-    });
-    const dejaPese = await poidsRecyclableDuMois(mission.clientId);
-    const plafond = await plafondKgMois();
-
-    let pointsTotal = 0;
-    for (const p of data.pesees) {
-      if (dejaPese > plafond) break; // plafond anti-fraude atteint
-      pointsTotal += await calculerPoints({
-        categorie: p.categorie,
-        poidsKg: p.poidsKg,
-        declassee: (p.contaminationPct ?? 0) > seuilContam,
-        cumule12Mois: solde?.cumule12Mois ?? 0,
-      });
-    }
-
-    if (pointsTotal > 0) {
-      await crediterPoints({
-        userId: mission.client.userId,
-        points: pointsTotal,
-        motif: `Collecte ${mission.reference} - ${poidsTotal.toFixed(1)} kg`,
-      });
-    }
-
+    // Le service est paye par l'abonnement : la collecte ne rapporte pas de
+    // points au foyer. Le client est prevenu, et c'est a lui de confirmer que
+    // sa poubelle a bien ete ramassee.
     notifier({
       userId: mission.client.userId,
       type: 'COLLECTE_TERMINEE',
       titre: 'Collecte terminee',
-      message:
-        pointsTotal > 0
-          ? `${poidsTotal.toFixed(1)} kg collectes. Vous gagnez ${pointsTotal} points Clean.`
-          : `${poidsTotal.toFixed(1)} kg collectes. Merci !`,
+      message: 'Votre poubelle a ete ramassee. Confirmez le passage dans l application.',
       lien: '/(client)/historique',
-      donnees: { missionId: mission.id, poidsKg: poidsTotal, points: pointsTotal },
+      donnees: { missionId: mission.id },
     }).catch((e) => console.error('[notif] collecte terminee', e.message));
 
-    res.status(201).json({ ...misAJour, pointsCredites: pointsTotal });
+    res.status(201).json(misAJour);
   }),
 );
 

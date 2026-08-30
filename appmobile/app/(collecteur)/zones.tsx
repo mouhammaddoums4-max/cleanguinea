@@ -98,11 +98,11 @@ export default function Zones() {
               ))}
             </View>
 
-            {!!resume?.poidsTotalKg && (
+            {!!resume?.foyersServis && (
               <Carte style={styles.bandeau}>
-                <Ionicons name="scale-outline" size={18} color={colors.blanc} />
+                <Ionicons name="home-outline" size={18} color={colors.blanc} />
                 <Text style={styles.bandeauTexte}>
-                  {resume.poidsTotalKg} kg · {resume.foyersServis} {t('zones.foyersServis')}
+                  {resume.foyersServis} {t('zones.foyersServis')}
                 </Text>
               </Carte>
             )}
@@ -180,7 +180,10 @@ function CarteZone({ zone, onPress }: { zone: Zone; onPress: () => void }) {
           />
         )}
         {zone.statut === 'TERMINEE' && (
-          <Info icone="scale-outline" texte={`${zone.poidsTotalKg} kg`} />
+          <Info
+            icone="checkmark-done-outline"
+            texte={`${zone.nbFoyersServis} ${t('zones.foyersServis')}`}
+          />
         )}
       </View>
 

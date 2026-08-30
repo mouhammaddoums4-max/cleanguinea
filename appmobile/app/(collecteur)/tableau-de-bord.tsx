@@ -56,10 +56,13 @@ export default function TableauDeBordCollecteur() {
             {/* Aujourd'hui, mis en avant */}
             <Carte style={styles.carteVerte}>
               <Text style={styles.libelleClair}>{t('tdb.aujourdhui')}</Text>
-              <Text style={styles.grandChiffre}>{tdb.data?.jour.poidsKg ?? 0} kg</Text>
+              {/* Le collecteur ne pese pas : ce qui compte est le nombre de
+                  foyers servis, pas un tonnage qu'il ne mesure jamais. */}
+              <Text style={styles.grandChiffre}>
+                {tdb.data?.jour.foyers ?? 0} {t('zones.foyersServis')}
+              </Text>
               <Text style={styles.libelleClair}>
-                {tdb.data?.jour.zones ?? 0} {t('tdb.zones')} · {tdb.data?.jour.foyers ?? 0}{' '}
-                {t('zones.foyersServis')}
+                {tdb.data?.jour.zones ?? 0} {t('tdb.zones')}
               </Text>
 
               {!!tdb.data?.zonesRestantes && (
@@ -99,14 +102,12 @@ export default function TableauDeBordCollecteur() {
               <Periode
                 titre={t('tdb.cetteSemaine')}
                 zones={tdb.data?.semaine.zones ?? 0}
-                poids={tdb.data?.semaine.poidsKg ?? 0}
                 foyers={tdb.data?.semaine.foyers ?? 0}
                 libelles={{ zones: t('tdb.zones'), foyers: t('zones.foyersServis') }}
               />
               <Periode
                 titre={t('tdb.ceMois')}
                 zones={tdb.data?.mois.zones ?? 0}
-                poids={tdb.data?.mois.poidsKg ?? 0}
                 foyers={tdb.data?.mois.foyers ?? 0}
                 libelles={{ zones: t('tdb.zones'), foyers: t('zones.foyersServis') }}
               />
@@ -140,23 +141,20 @@ export default function TableauDeBordCollecteur() {
 }
 
 function Periode({
-  titre, zones, poids, foyers, libelles,
+  titre, zones, foyers, libelles,
 }: {
   titre: string;
   zones: number;
-  poids: number;
   foyers: number;
   libelles: { zones: string; foyers: string };
 }) {
   return (
     <Carte style={{ flex: 1, gap: 6 }}>
       <Text style={styles.libelle}>{titre}</Text>
-      <Text style={styles.chiffrePeriode}>{poids} kg</Text>
+      <Text style={styles.chiffrePeriode}>{foyers}</Text>
+      <Text style={styles.petit}>{libelles.foyers}</Text>
       <Text style={styles.petit}>
         {zones} {libelles.zones}
-      </Text>
-      <Text style={styles.petit}>
-        {foyers} {libelles.foyers}
       </Text>
     </Carte>
   );
