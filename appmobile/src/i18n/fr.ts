@@ -34,13 +34,12 @@ export const fr = {
     titre: 'Se connecter',
     profilClient: 'Client',
     profilCollecteur: 'Collecteur',
-    introClient:
-      "Entrez le numéro d'abonnement figurant sur votre contrat et sur vos bacs.",
+    introClient: 'Entrez le code client reçu par SMS lors de votre inscription.',
     introCollecteur: 'Entrez votre numéro employé, remis par votre superviseur.',
-    numeroAbonnement: "Numéro d'abonnement",
+    numeroAbonnement: 'Code client',
     numeroEmploye: 'Numéro employé',
     aideClient:
-      "Votre numéro d'abonnement commence par CG. Vous l'avez reçu par SMS à l'inscription.",
+      "Votre code client commence par CG. Retrouvez-le dans vos SMS ou dans votre profil.",
     aideCollecteur: 'Votre numéro employé commence par COL. En cas de perte, voyez votre superviseur.',
     telephone: 'Téléphone',
     motDePasse: 'Mot de passe',
@@ -357,6 +356,18 @@ export const fr = {
     r6: "Depuis Profil, tout en bas. Vos données personnelles sont effacées immédiatement. Les montants facturés sont conservés pour la comptabilité, sans lien avec vous.",
     cguResume:
       "En souscrivant, vous vous engagez à sortir vos bacs aux jours de passage et à régler votre abonnement mensuellement. Clean Guinée s'engage sur la fréquence de passage annoncée et vous informe de tout retard. Les bacs restent la propriété de Clean Guinée et sont récupérés à la résiliation. Le règlement complet du programme Points Clean est annexé aux conditions générales.",
+  },
+
+  codeClient: {
+    compteCree: 'Compte créé',
+    intro: 'Voici votre code client. Notez-le : c’est avec lui que vous vous connecterez.',
+    votreCode: 'VOTRE CODE CLIENT',
+    copier: 'Copier le code',
+    copie: 'Code copié',
+    parSms: 'Nous vous l’avons aussi envoyé par SMS.',
+    pourSeConnecter: 'Il remplace le nom d’utilisateur à la connexion.',
+    retrouvable: 'Vous le retrouverez à tout moment dans votre profil.',
+    continuer: 'Commencer',
   },
 
   onglets: {

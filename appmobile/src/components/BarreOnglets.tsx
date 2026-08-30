@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-import { colors, rayon } from '../theme';
+import { colors, espacement, rayon } from '../theme';
 
 type NomIcone = keyof typeof Ionicons.glyphMap;
 
@@ -11,23 +11,30 @@ type NomIcone = keyof typeof Ionicons.glyphMap;
  * Barre d'onglets qui ne passe JAMAIS sous la barre de navigation du telephone.
  *
  * LE PROBLEME
- * Depuis Expo SDK 54, Android impose le mode edge-to-edge : l'application se dessine
- * SOUS la barre systeme (trois boutons ou barre gestuelle). Une barre d'onglets de
- * hauteur fixe se retrouve donc partiellement masquee par la barre du telephone.
- * La cle `androidNavigationBar` de app.json est ignoree dans ce mode, et le
- * `SafeAreaView` de react-native (et non celui de safe-area-context) ne corrige rien.
+ * Depuis Expo SDK 54, Android impose le mode edge-to-edge : l'application se
+ * dessine SOUS la barre systeme (trois boutons ou barre gestuelle). Une barre
+ * d'onglets de hauteur fixe se retrouve donc partiellement masquee. La cle
+ * `androidNavigationBar` de app.json est ignoree, et le `SafeAreaView` de
+ * react-native (et non celui de safe-area-context) ne corrige rien.
  *
  * LA SOLUTION
- * Lire l'inset bas reel renvoye par le systeme et l'ajouter au padding de la barre :
- *   - navigation a trois boutons : inset ~48 px
- *   - navigation gestuelle       : inset ~16 px
- *   - appareil sans barre / web  : inset 0
- * Le calcul s'adapte donc a chaque telephone sans valeur codee en dur.
+ * Lire l'inset bas reel renvoye par le systeme et l'ajouter au padding :
+ *   - navigation a trois boutons : ~48 px
+ *   - navigation gestuelle       : ~16 px
+ *   - appareil sans barre / web  : 0
+ * Le calcul s'adapte a chaque telephone sans valeur codee en dur.
  *
- * MIN_PADDING_BAS garantit une zone tactile confortable quand l'inset est nul.
+ * MISE EN FORME
+ * L'onglet actif recoit une pastille coloree derriere son icone. C'est plus
+ * lisible qu'une simple teinte : la cible se repere du coin de l'oeil, sans
+ * avoir a comparer deux nuances de gris.
+ *
+ * Au-dela de cinq onglets les libelles se chevauchent : on tronque plutot que
+ * de laisser le texte deborder.
  */
-const HAUTEUR_CONTENU = 56;
+const HAUTEUR_CONTENU = 58;
 const MIN_PADDING_BAS = 8;
+const MAX_ONGLETS_LISIBLES = 5;
 
 type Props = BottomTabBarProps & {
   /** Icone Ionicons par nom de route, ex. { accueil: 'home', profil: 'person' } */
@@ -38,12 +45,19 @@ export function BarreOnglets({ state, descriptors, navigation, icones }: Props) 
   const insets = useSafeAreaInsets();
   const paddingBas = Math.max(insets.bottom, MIN_PADDING_BAS);
 
+  if (__DEV__ && state.routes.length > MAX_ONGLETS_LISIBLES) {
+    console.warn(
+      `BarreOnglets : ${state.routes.length} onglets pour ${MAX_ONGLETS_LISIBLES} lisibles. ` +
+        'Deplacez les moins utilises vers le profil.',
+    );
+  }
+
   return (
     <View
       style={[
         styles.conteneur,
         {
-          // La hauteur totale inclut l'inset : le contenu garde ses 56 px utiles,
+          // La hauteur totale inclut l'inset : le contenu garde ses 58 px utiles,
           // la zone systeme est simplement remplie par le fond de la barre.
           height: HAUTEUR_CONTENU + paddingBas,
           paddingBottom: paddingBas,
@@ -76,13 +90,16 @@ export function BarreOnglets({ state, descriptors, navigation, icones }: Props) 
             accessibilityRole="button"
             accessibilityState={actif ? { selected: true } : {}}
             accessibilityLabel={label}
-            android_ripple={{ color: colors.primaryClair, borderless: true, radius: 40 }}
+            android_ripple={{ color: colors.primaryClair, borderless: true, radius: 44 }}
           >
-            <Ionicons
-              name={actif ? icone : (`${icone}-outline` as NomIcone)}
-              size={22}
-              color={actif ? colors.primary : colors.texteTertiaire}
-            />
+            <View style={[styles.pastille, actif && styles.pastilleActive]}>
+              <Ionicons
+                name={actif ? icone : (`${icone}-outline` as NomIcone)}
+                size={21}
+                color={actif ? colors.primary : colors.texteTertiaire}
+              />
+            </View>
+
             <Text numberOfLines={1} style={[styles.libelle, actif && styles.libelleActif]}>
               {label}
             </Text>
@@ -99,24 +116,37 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.bordure,
-    paddingTop: 8,
+    paddingTop: 6,
+    paddingHorizontal: espacement.xs,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
       },
-      android: { elevation: 8 },
+      android: { elevation: 12 },
     }),
   },
   onglet: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 3,
-    borderRadius: rayon.md,
+    gap: 2,
   },
-  libelle: { fontSize: 11, fontWeight: '500', color: colors.texteTertiaire },
+  pastille: {
+    width: 46,
+    height: 30,
+    borderRadius: rayon.plein,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pastilleActive: { backgroundColor: colors.primaryClair },
+  libelle: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.texteTertiaire,
+    paddingHorizontal: 2,
+  },
   libelleActif: { color: colors.primary, fontWeight: '700' },
 });

@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import { signerToken, authentifier } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { chargerConfig, parametre } from '../lib/config.js';
+import { envoyerSms, modeles } from '../lib/sms.js';
 
 const router = Router();
 
@@ -157,14 +158,28 @@ router.post(
       return cree;
     });
 
+    // Le code de connexion part par SMS : le client doit pouvoir le retrouver
+    // meme s'il desinstalle l'application. L'envoi ne bloque pas la reponse et
+    // un echec n'annule pas l'inscription.
+    const message =
+      data.langue === 'en'
+        ? modeles.codeClientEn(data.nom, reference)
+        : modeles.codeClient(data.nom, reference);
+
+    envoyerSms(telephone, message).catch((err) =>
+      console.error('[inscription] SMS du code client non envoye', err.message),
+    );
+
     res.status(201).json({
       token: signerToken(user),
       utilisateur: {
         id: user.id, nom: user.nom, telephone: user.telephone,
         role: user.role, langue: user.langue,
-        // C est avec ce numero que le client se connectera ensuite.
+        // C est avec ce code que le client se connectera ensuite.
         identifiant: reference,
       },
+      codeClient: reference,
+      // Conserve pour ne pas casser les clients deja deployes.
       numeroAbonnement: reference,
     });
   }),

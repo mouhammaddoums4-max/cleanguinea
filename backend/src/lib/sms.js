@@ -26,9 +26,23 @@ const SENDER = process.env.SMS_SENDER_ID || 'CleanGuinee';
 const MAX_DESTINATAIRES = 30;
 const MAX_CARACTERES = 1071;
 
-/** true si la passerelle est configuree. Sinon, on bascule en mode journal. */
+/**
+ * true si les SMS doivent PARTIR REELLEMENT.
+ *
+ * Deux conditions, pas une : les cles doivent etre presentes, ET l'envoi reel
+ * doit etre autorise. Hors production, il faut l'activer explicitement avec
+ * SMS_ENVOI_REEL=true.
+ *
+ * Pourquoi : chaque SMS coute du credit et part vers un vrai telephone. Un
+ * simple test d'inscription en developpement suffit a vider un forfait et a
+ * envoyer un message a un inconnu. Le defaut doit donc etre l'inaction.
+ */
 export function smsActif() {
-  return Boolean(process.env.SMS_API_KEY && process.env.SMS_API_SECRET);
+  const configure = Boolean(process.env.SMS_API_KEY && process.env.SMS_API_SECRET);
+  if (!configure) return false;
+
+  if (process.env.NODE_ENV === 'production') return true;
+  return process.env.SMS_ENVOI_REEL === 'true';
 }
 
 function enteteAuth() {
@@ -97,9 +111,12 @@ export async function envoyerSms(destinataires, message) {
   }
 
   if (!smsActif()) {
-    // En developpement, on affiche le message au lieu de l'envoyer.
-    console.log(`[SMS simule] -> ${liste.join(', ')} : ${texte}`);
-    return { simule: true, destinataires: liste };
+    const raison =
+      process.env.SMS_API_KEY && process.env.SMS_API_SECRET
+        ? 'envoi reel desactive hors production (SMS_ENVOI_REEL)'
+        : 'passerelle non configuree';
+    console.log(`[SMS simule : ${raison}] -> ${liste.join(', ')} : ${texte}`);
+    return { simule: true, raison, destinataires: liste };
   }
 
   try {
@@ -171,6 +188,19 @@ export const modeles = {
 
   bienvenue: (nom) =>
     `Bienvenue ${nom} ! Votre abonnement Clean Guinee est actif. Du dechet a la valeur.`,
+
+  /**
+   * Envoye juste apres l'inscription. C'est le seul endroit ou le client
+   * recoit son code de connexion : il doit pouvoir le retrouver dans ses SMS
+   * meme s'il desinstalle l'application.
+   */
+  codeClient: (nom, code) =>
+    `Bienvenue ${nom} ! Votre code client Clean Guinee est ${code}. ` +
+    `Conservez-le : il vous servira a vous connecter. Du dechet a la valeur.`,
+
+  codeClientEn: (nom, code) =>
+    `Welcome ${nom}! Your Clean Guinea customer code is ${code}. ` +
+    `Keep it safe: you will use it to sign in. From waste to value.`,
 
   passagePrevu: (date, creneau) =>
     `Clean Guinee : votre collecte est prevue le ${date} entre ${creneau}. Merci de sortir vos bacs.`,

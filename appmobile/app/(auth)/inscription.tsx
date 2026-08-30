@@ -40,8 +40,13 @@ export default function Inscription() {
     setErreur(null);
     setEnvoi(true);
     try {
-      await inscription({ ...f, email: f.email || undefined, langue, cguAcceptees: true });
-      router.replace('/(client)/accueil');
+      const { codeClient } = await inscription({
+        ...f,
+        email: f.email || undefined,
+        langue,
+        cguAcceptees: true,
+      });
+      router.replace({ pathname: '/(auth)/code-client', params: { code: codeClient } });
     } catch (e) {
       setErreur(e instanceof Error ? e.message : t('inscription.echec'));
     } finally {

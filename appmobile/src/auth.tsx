@@ -28,7 +28,7 @@ type ContexteAuth = {
   utilisateur: Utilisateur | null;
   chargement: boolean;
   connexion: (id: Identifiants) => Promise<Utilisateur>;
-  inscription: (donnees: Inscription) => Promise<Utilisateur>;
+  inscription: (donnees: Inscription) => Promise<{ utilisateur: Utilisateur; codeClient: string }>;
   deconnexion: () => Promise<void>;
 };
 
@@ -67,14 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const inscription = useCallback(async (donnees: Inscription) => {
-    const rep = await api<{ token: string; utilisateur: Utilisateur }>('/api/auth/inscription', {
+    const rep = await api<{
+      token: string;
+      utilisateur: Utilisateur;
+      codeClient: string;
+    }>('/api/auth/inscription', {
       method: 'POST',
       body: donnees,
       sansAuth: true,
     });
     await ecrireJeton(rep.token);
     setUtilisateur(rep.utilisateur);
-    return rep.utilisateur;
+    // Le code est remonte a l'appelant : l'ecran d'inscription l'affiche
+    // avant d'entrer dans l'application.
+    return { utilisateur: rep.utilisateur, codeClient: rep.codeClient };
   }, []);
 
   const deconnexion = useCallback(async () => {

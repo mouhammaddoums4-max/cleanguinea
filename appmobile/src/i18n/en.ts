@@ -50,12 +50,12 @@ export const en: Traductions = {
     titre: 'Sign in',
     profilClient: 'Customer',
     profilCollecteur: 'Collector',
-    introClient: 'Enter the subscription number shown on your contract and on your bins.',
+    introClient: 'Enter the customer code you received by SMS when you signed up.',
     introCollecteur: 'Enter your staff number, given to you by your supervisor.',
-    numeroAbonnement: 'Subscription number',
+    numeroAbonnement: 'Customer code',
     numeroEmploye: 'Staff number',
     aideClient:
-      'Your subscription number starts with CG. You received it by SMS when you signed up.',
+      'Your customer code starts with CG. Find it in your SMS or in your profile.',
     aideCollecteur:
       'Your staff number starts with COL. If you lost it, ask your supervisor.',
     telephone: 'Phone number',
@@ -372,6 +372,18 @@ export const en: Traductions = {
     r6: 'From Profile, at the very bottom. Your personal data is erased immediately. Invoiced amounts are kept for accounting, with no link to you.',
     cguResume:
       'By subscribing, you agree to put your bins out on collection days and to pay your subscription monthly. Clean Guinée commits to the announced collection frequency and informs you of any delay. Bins remain the property of Clean Guinée and are collected on termination. The full Clean Points programme rules are annexed to the terms and conditions.',
+  },
+
+  codeClient: {
+    compteCree: 'Account created',
+    intro: 'Here is your customer code. Write it down: this is what you will sign in with.',
+    votreCode: 'YOUR CUSTOMER CODE',
+    copier: 'Copy code',
+    copie: 'Code copied',
+    parSms: 'We have also sent it to you by SMS.',
+    pourSeConnecter: 'It replaces a username when signing in.',
+    retrouvable: 'You can find it any time in your profile.',
+    continuer: 'Get started',
   },
 
   onglets: {
