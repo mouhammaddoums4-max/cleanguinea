@@ -64,7 +64,13 @@ export const en: Traductions = {
 
   inscription: {
     titre: 'Create an account',
+    typeCompte: 'You are signing up as',
+    particulier: 'Individual',
+    particulierAide: 'A household',
+    entreprise: 'Business',
+    entrepriseAide: 'Company, shop, public body',
     nomComplet: 'Full name',
+    raisonSociale: 'Business name',
     telephone: 'Phone number',
     email: 'Email (optional)',
     adresse: 'Address',

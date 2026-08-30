@@ -17,6 +17,8 @@ type Inscription = {
   longitude?: number;
   email?: string;
   motDePasse: string;
+  /** Foyer ou societe : conditionne le suivi commercial cote back-office. */
+  type?: 'PARTICULIER' | 'ENTREPRISE';
   adresse: string;
   commune: string;
   quartier: string;

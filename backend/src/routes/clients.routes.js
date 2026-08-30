@@ -10,6 +10,7 @@ router.use(authentifier, exigerRole('ADMIN', 'SUPERVISEUR'));
 const listeSchema = z.object({
   recherche: z.string().trim().optional(),
   statut: z.enum(['ACTIF', 'SUSPENDU', 'RESILIE']).optional(),
+  type: z.enum(['PARTICULIER', 'ENTREPRISE']).optional(),
   commune: z.string().trim().optional(),
   // Les comptes supprimes sont anonymises : ils encombrent l annuaire, mais
   // restent consultables a la demande pour les rapprochements comptables.
@@ -32,6 +33,7 @@ function resumer(client) {
   return {
     id: client.id,
     reference: abonnement?.reference ?? null,
+    type: client.type,
     nom: client.user.nom,
     telephone: client.user.telephone,
     email: client.user.email,
@@ -58,13 +60,13 @@ function resumer(client) {
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const { recherche, statut, commune, inclureSupprimes, page, parPage } = listeSchema.parse(
-      req.query,
-    );
+    const { recherche, statut, type, commune, inclureSupprimes, page, parPage } =
+      listeSchema.parse(req.query);
 
     const where = {
       ...(inclureSupprimes ? {} : { user: { supprimeLe: null } }),
       ...(statut && { abonnements: { some: { statut } } }),
+      ...(type && { type }),
       ...(commune && { quartier: { commune: { nom: commune } } }),
       ...(recherche && {
         OR: [

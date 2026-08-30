@@ -17,6 +17,7 @@ export default function Inscription() {
   const { t, langue } = useI18n();
   const { indicatif } = useConfig();
 
+  const [type, setType] = useState<'PARTICULIER' | 'ENTREPRISE'>('PARTICULIER');
   const [f, setF] = useState({
     nom: '', telephone: '', email: '', adresse: '', commune: '', quartier: '', motDePasse: '',
   });
@@ -42,6 +43,7 @@ export default function Inscription() {
     try {
       const { codeClient } = await inscription({
         ...f,
+        type,
         email: f.email || undefined,
         langue,
         cguAcceptees: true,
@@ -65,12 +67,52 @@ export default function Inscription() {
           {/* Slogan omis ici : le formulaire est long, on garde l'ecran compact. */}
           <MarqueEnTete taille={60} avecSlogan={false} />
 
+          {/* Le type conditionne le suivi commercial : une societe n'a ni le
+              meme volume ni le meme interlocuteur qu'un foyer. Le choix est
+              donc pose avant le reste, pas enfoui en bas du formulaire. */}
+          <View style={{ gap: espacement.sm }}>
+            <Text style={styles.libelleGroupe}>{t('inscription.typeCompte')}</Text>
+            <View style={styles.typeLigne}>
+              {(
+                [
+                  { valeur: 'PARTICULIER', icone: 'home-outline', cle: 'particulier' },
+                  { valeur: 'ENTREPRISE', icone: 'business-outline', cle: 'entreprise' },
+                ] as const
+              ).map((o) => {
+                const actif = type === o.valeur;
+                return (
+                  <Pressable
+                    key={o.valeur}
+                    onPress={() => setType(o.valeur)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: actif }}
+                    style={[styles.typeCase, actif && styles.typeCaseActive]}
+                  >
+                    <Ionicons
+                      name={o.icone}
+                      size={20}
+                      color={actif ? colors.primary : colors.texteTertiaire}
+                    />
+                    <Text style={[styles.typeTitre, actif && styles.typeTitreActif]}>
+                      {t(`inscription.${o.cle}`)}
+                    </Text>
+                    <Text style={styles.typeAide}>{t(`inscription.${o.cle}Aide`)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           <Champ
-            icone="person-outline"
-            placeholder={t('inscription.nomComplet')}
+            icone={type === 'ENTREPRISE' ? 'business-outline' : 'person-outline'}
+            placeholder={
+              type === 'ENTREPRISE'
+                ? t('inscription.raisonSociale')
+                : t('inscription.nomComplet')
+            }
             value={f.nom}
             onChangeText={maj('nom')}
-            autoComplete="name"
+            autoComplete={type === 'ENTREPRISE' ? 'organization' : 'name'}
           />
 
           <View style={styles.ligneTel}>
@@ -165,6 +207,23 @@ export default function Inscription() {
 }
 
 const styles = StyleSheet.create({
+  libelleGroupe: { fontSize: 13, fontWeight: '600', color: colors.texteSecondaire },
+  typeLigne: { flexDirection: 'row', gap: espacement.sm },
+  typeCase: {
+    flex: 1,
+    gap: 2,
+    paddingVertical: espacement.md,
+    paddingHorizontal: espacement.sm,
+    borderRadius: rayon.md,
+    borderWidth: 1,
+    borderColor: colors.bordure,
+    backgroundColor: colors.surface,
+  },
+  typeCaseActive: { borderColor: colors.primary, backgroundColor: colors.primaryClair },
+  typeTitre: { fontSize: 14, fontWeight: '700', color: colors.texte },
+  typeTitreActif: { color: colors.primaryTexte },
+  typeAide: { fontSize: 11, color: colors.texteSecondaire },
+
   ligneTel: { flexDirection: 'row', gap: espacement.sm, alignItems: 'center' },
   indicatif: {
     height: 50,

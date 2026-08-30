@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { MapPin, Search, Trash2, X } from 'lucide-react';
+import { Building2, MapPin, Search, Trash2, X } from 'lucide-react';
 
 import { api, type ClientDetail, type ClientResume, type PageClients } from '@/lib/api';
 import { useConfig, useFormat } from '@/lib/config';
@@ -15,6 +15,7 @@ export default function Clients() {
   const [recherche, setRecherche] = useState('');
   const [rechercheAppliquee, setRechercheAppliquee] = useState('');
   const [filtreStatut, setFiltreStatut] = useState('');
+  const [filtreType, setFiltreType] = useState('');
   const [filtreCommune, setFiltreCommune] = useState('');
   const [avecSupprimes, setAvecSupprimes] = useState(false);
   const [page, setPage] = useState(1);
@@ -44,6 +45,7 @@ export default function Clients() {
     const params = new URLSearchParams({ page: String(page), parPage: String(PAR_PAGE) });
     if (rechercheAppliquee) params.set('recherche', rechercheAppliquee);
     if (filtreStatut) params.set('statut', filtreStatut);
+    if (filtreType) params.set('type', filtreType);
     if (filtreCommune) params.set('commune', filtreCommune);
     if (avecSupprimes) params.set('inclureSupprimes', 'true');
 
@@ -55,7 +57,7 @@ export default function Clients() {
       })
       .catch((e) => setErreur(e instanceof Error ? e.message : 'Erreur'))
       .finally(() => setChargement(false));
-  }, [page, rechercheAppliquee, filtreStatut, filtreCommune, avecSupprimes]);
+  }, [page, rechercheAppliquee, filtreStatut, filtreType, filtreCommune, avecSupprimes]);
 
   useEffect(charger, [charger]);
 
@@ -98,6 +100,22 @@ export default function Clients() {
           {['ACTIF', 'SUSPENDU', 'RESILIE'].map((s) => (
             <option key={s} value={s}>
               {statut(s)}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={filtreType}
+          onChange={(e) => {
+            setFiltreType(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-primaire-500"
+        >
+          <option value="">{t('tousTypes')}</option>
+          {['PARTICULIER', 'ENTREPRISE'].map((v) => (
+            <option key={v} value={v}>
+              {statut(v)}
             </option>
           ))}
         </select>
@@ -168,7 +186,12 @@ export default function Clients() {
                         {initiales(c.nom)}
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate font-medium text-gray-900">{c.nom}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate font-medium text-gray-900">{c.nom}</span>
+                          {c.type === 'ENTREPRISE' && (
+                            <Building2 className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          )}
+                        </span>
                         <span className="block text-xs text-gray-500">{c.telephone}</span>
                       </span>
                     </div>
@@ -327,6 +350,7 @@ function Fiche({ id, fermer }: { id: string; fermer: () => void }) {
         {client && (
           <div className="space-y-5">
             <section className="grid gap-3 sm:grid-cols-2">
+              <Champ libelle={t('typeClient')} valeur={statut(client.type)} />
               <Champ libelle={t('telephone')} valeur={client.telephone} />
               <Champ libelle={t('email')} valeur={client.email ?? t('nonRenseigne')} />
               <Champ libelle={t('adresse')} valeur={client.adresse} />

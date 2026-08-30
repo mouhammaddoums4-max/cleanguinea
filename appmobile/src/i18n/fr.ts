@@ -48,7 +48,13 @@ export const fr = {
 
   inscription: {
     titre: 'Créer un compte',
+    typeCompte: 'Vous vous inscrivez en tant que',
+    particulier: 'Particulier',
+    particulierAide: 'Un foyer',
+    entreprise: 'Entreprise',
+    entrepriseAide: 'Société, commerce, administration',
     nomComplet: 'Nom complet',
+    raisonSociale: 'Nom de l’entreprise',
     telephone: 'Téléphone',
     email: 'Email (optionnel)',
     adresse: 'Adresse',

@@ -149,6 +149,7 @@ export type Alerte = {
 export type ClientResume = {
   id: string;
   reference: string | null;
+  type: 'PARTICULIER' | 'ENTREPRISE';
   nom: string;
   telephone: string;
   email: string | null;

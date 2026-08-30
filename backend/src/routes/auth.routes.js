@@ -55,6 +55,9 @@ async function resoudreIdentifiant(brut) {
 
 const inscriptionSchema = z.object({
   nom: z.string().min(2, 'Le nom complet est requis'),
+  // Un foyer ou une societe : le volume et l interlocuteur different, et le
+  // back-office doit pouvoir les distinguer des l inscription.
+  type: z.enum(['PARTICULIER', 'ENTREPRISE']).default('PARTICULIER'),
   telephone: z.string().min(8, 'Numero de telephone invalide'),
   email: z.string().email().optional().or(z.literal('')),
   motDePasse: z.string().min(6, 'Le mot de passe doit faire au moins 6 caracteres'),
@@ -129,6 +132,7 @@ router.post(
           langue: data.langue,
           client: {
             create: {
+              type: data.type,
               adresse: data.adresse,
               quartierId: quartier.id,
               nbPersonnes: data.nbPersonnes ?? 6,
