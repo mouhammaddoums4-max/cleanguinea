@@ -32,7 +32,7 @@ export default function CollecteurLayout() {
       <Tabs.Screen name="profil" options={{ title: t('onglets.profil') }} />
 
       {/* Ecrans empiles, absents de la barre. */}
-      <Tabs.Screen name="zone/[id]" options={{ href: null }} />
+      <Tabs.Screen name="zone" options={{ href: null }} />
       <Tabs.Screen name="historique" options={{ href: null }} />
     </Tabs>
   );
