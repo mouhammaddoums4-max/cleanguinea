@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -12,11 +12,14 @@ import {
   HardHat,
   LayoutDashboard,
   LogOut,
+  Moon,
   Recycle,
   Settings,
   ShoppingCart,
+  Sun,
   Trash2,
   Truck,
+  UserRound,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -101,16 +104,6 @@ export function Coquille({ children }: { children: React.ReactNode }) {
               </span>
             </button>
 
-            <div className="flex items-center gap-2">
-              <div className="text-right leading-tight">
-                <div className="text-sm font-semibold text-gray-900">{moi?.utilisateur.nom}</div>
-                <div className="text-xs text-gray-500">
-                  {moi?.utilisateur.role === 'ADMIN' ? t('administrateur') : t('superviseur')}
-                </div>
-              </div>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            </div>
-
             <div className="flex items-center rounded-md border border-gray-200 text-xs">
               {LANGUES.map((l) => (
                 <button
@@ -127,16 +120,14 @@ export function Coquille({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            <button
-              onClick={() => {
+            <MenuUtilisateur
+              nom={moi?.utilisateur.nom ?? ''}
+              role={moi?.utilisateur.role === 'ADMIN' ? t('administrateur') : t('superviseur')}
+              seDeconnecter={() => {
                 effacerJeton();
                 router.replace('/connexion');
               }}
-              aria-label={t('deconnexion')}
-              className="rounded-md p-2 text-gray-500 hover:bg-gray-50 hover:text-red-600"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            />
           </div>
         </div>
       </header>
@@ -145,6 +136,153 @@ export function Coquille({ children }: { children: React.ReactNode }) {
       <main className="px-6 pb-28 pt-6">{children}</main>
 
       <Dock chemin={chemin} t={t} />
+    </div>
+  );
+}
+
+/**
+ * Menu du compte, ouvert depuis le nom de l'utilisateur.
+ * Contient la bascule clair / sombre, l'accès au profil et la déconnexion.
+ */
+function MenuUtilisateur({
+  nom,
+  role,
+  seDeconnecter,
+}: {
+  nom: string;
+  role: string;
+  seDeconnecter: () => void;
+}) {
+  const { t, theme, basculerTheme } = useConfig();
+  const [ouvert, setOuvert] = useState(false);
+  const conteneur = useRef<HTMLDivElement>(null);
+
+  // Fermeture au clic à l'extérieur et à la touche Échap.
+  useEffect(() => {
+    if (!ouvert) return;
+
+    const auClic = (e: MouseEvent) => {
+      if (!conteneur.current?.contains(e.target as Node)) setOuvert(false);
+    };
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOuvert(false);
+    };
+
+    document.addEventListener('mousedown', auClic);
+    document.addEventListener('keydown', auClavier);
+    return () => {
+      document.removeEventListener('mousedown', auClic);
+      document.removeEventListener('keydown', auClavier);
+    };
+  }, [ouvert]);
+
+  const sombre = theme === 'sombre';
+  const initiales = nom
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((mot) => mot[0]?.toUpperCase() ?? '')
+    .join('');
+
+  return (
+    <div className="relative" ref={conteneur}>
+      <button
+        type="button"
+        onClick={() => setOuvert((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={ouvert}
+        aria-label={t('menuUtilisateur')}
+        className={clsxLocal(
+          'flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition',
+          'hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primaire-500',
+          ouvert && 'bg-gray-50',
+        )}
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primaire-100 text-xs font-bold text-primaire-600">
+          {initiales || <UserRound className="h-4 w-4" />}
+        </span>
+        <span className="hidden text-right leading-tight sm:block">
+          <span className="block text-sm font-semibold text-gray-900">{nom}</span>
+          <span className="block text-xs text-gray-500">{role}</span>
+        </span>
+        <ChevronDown
+          className={clsxLocal(
+            'h-4 w-4 text-gray-400 transition-transform',
+            ouvert && 'rotate-180',
+          )}
+        />
+      </button>
+
+      {ouvert && (
+        <div
+          role="menu"
+          aria-label={t('menuUtilisateur')}
+          className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg shadow-gray-900/10"
+        >
+          {/* Rappel de l'identité : sur mobile le bouton n'affiche que l'avatar. */}
+          <div className="border-b border-gray-200 px-3 pb-2 pt-1.5 sm:hidden">
+            <div className="truncate text-sm font-semibold text-gray-900">{nom}</div>
+            <div className="text-xs text-gray-500">{role}</div>
+          </div>
+
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={sombre}
+            onClick={basculerTheme}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+          >
+            {sombre ? (
+              <Sun className="h-4 w-4 text-gray-500" />
+            ) : (
+              <Moon className="h-4 w-4 text-gray-500" />
+            )}
+            <span className="flex-1 text-left">{sombre ? t('modeClair') : t('modeSombre')}</span>
+            {/* Interrupteur : l'état du thème doit se lire sans ouvrir de sous-menu. */}
+            <span
+              aria-hidden
+              className={clsxLocal(
+                'flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition',
+                sombre ? 'bg-primaire-500' : 'bg-gray-100',
+              )}
+            >
+              <span
+                className={clsxLocal(
+                  // bg-[#fff] et non bg-white : la pastille doit rester blanche,
+                  // alors que le theme sombre assombrit bg-white partout ailleurs.
+                  'h-4 w-4 rounded-full bg-[#fff] shadow transition-transform',
+                  sombre && 'translate-x-4',
+                )}
+              />
+            </span>
+          </button>
+
+          <Link
+            href="/profil"
+            role="menuitem"
+            onClick={() => setOuvert(false)}
+            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+          >
+            <UserRound className="h-4 w-4 text-gray-500" />
+            {t('monProfil')}
+          </Link>
+
+          <div className="my-1 border-t border-gray-200" />
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOuvert(false);
+              seDeconnecter();
+            }}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 transition hover:bg-gray-50"
+          >
+            <LogOut className="h-4 w-4" />
+            {t('deconnexion')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

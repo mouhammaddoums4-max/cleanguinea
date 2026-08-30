@@ -2,6 +2,8 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
+  // Theme sombre pilote par la classe .dark sur <html> (menu utilisateur).
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {

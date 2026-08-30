@@ -13,6 +13,7 @@ import { api } from './api';
  */
 
 export type Langue = 'fr' | 'en';
+export type Theme = 'clair' | 'sombre';
 
 export type CategorieConfig = {
   code: string;
@@ -44,6 +45,7 @@ export type Config = {
 };
 
 const CLE_LANGUE = 'cleanguinea.admin.langue';
+export const CLE_THEME = 'cleanguinea.admin.theme';
 
 /** Textes d'interface du back-office. */
 const TEXTES = {
@@ -73,6 +75,13 @@ const TEXTES = {
     aucuneCollecte: 'Aucune collecte en cours',
     chargement: 'Chargement…', tonnes: 'Tonnes',
     deconnexion: 'Se déconnecter', administrateur: 'Administrateur', superviseur: 'Superviseur',
+    monProfil: 'Mon profil', menuUtilisateur: 'Menu utilisateur',
+    apparence: 'Apparence', modeSombre: 'Mode sombre', modeClair: 'Mode clair',
+    langueLibelle: 'Langue',
+    informationsCompte: 'Informations du compte',
+    nom: 'Nom', role: 'Rôle', email: 'E-mail', identifiant: 'Identifiant',
+    membreDepuis: 'Membre depuis', nonRenseigne: 'Non renseigné',
+    preferences: 'Préférences',
     connexion: 'Se connecter', backOffice: 'Back-office',
     reserveA: 'Réservé aux administrateurs et superviseurs.',
     telephone: 'Téléphone', motDePasse: 'Mot de passe',
@@ -108,6 +117,13 @@ const TEXTES = {
     aucuneCollecte: 'No collection in progress',
     chargement: 'Loading…', tonnes: 'Tonnes',
     deconnexion: 'Sign out', administrateur: 'Administrator', superviseur: 'Supervisor',
+    monProfil: 'My profile', menuUtilisateur: 'User menu',
+    apparence: 'Appearance', modeSombre: 'Dark mode', modeClair: 'Light mode',
+    langueLibelle: 'Language',
+    informationsCompte: 'Account information',
+    nom: 'Name', role: 'Role', email: 'Email', identifiant: 'Identifier',
+    membreDepuis: 'Member since', nonRenseigne: 'Not provided',
+    preferences: 'Preferences',
     connexion: 'Sign in', backOffice: 'Back office',
     reserveA: 'Restricted to administrators and supervisors.',
     telephone: 'Phone number', motDePasse: 'Password',
@@ -135,6 +151,9 @@ type ContexteConfig = {
   chargement: boolean;
   langue: Langue;
   changerLangue: (l: Langue) => void;
+  theme: Theme;
+  changerTheme: (t: Theme) => void;
+  basculerTheme: () => void;
   t: (cle: CleTexte) => string;
   categorie: (code: string) => CategorieConfig;
   statut: (code: string) => string;
@@ -155,12 +174,19 @@ const STATUTS: Record<Langue, Record<string, string>> = {
 
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [langue, setLangue] = useState<Langue>('fr');
+  const [theme, setTheme] = useState<Theme>('clair');
   const [config, setConfig] = useState<Config | null>(null);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     const stockee = window.localStorage.getItem(CLE_LANGUE);
     if (stockee === 'fr' || stockee === 'en') setLangue(stockee);
+  }, []);
+
+  // Le theme a deja ete pose sur <html> par le script anti-scintillement du
+  // layout : on se contente ici de refleter l etat reel du document.
+  useEffect(() => {
+    setTheme(document.documentElement.classList.contains('dark') ? 'sombre' : 'clair');
   }, []);
 
   useEffect(() => {
@@ -176,6 +202,17 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(CLE_LANGUE, l);
   }, []);
 
+  const changerTheme = useCallback((t: Theme) => {
+    setTheme(t);
+    document.documentElement.classList.toggle('dark', t === 'sombre');
+    window.localStorage.setItem(CLE_THEME, t);
+  }, []);
+
+  const basculerTheme = useCallback(
+    () => changerTheme(theme === 'sombre' ? 'clair' : 'sombre'),
+    [changerTheme, theme],
+  );
+
   const valeur = useMemo<ContexteConfig>(() => {
     const parCode = new Map(config?.categories.map((c) => [c.code, c]) ?? []);
     return {
@@ -183,11 +220,14 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       chargement,
       langue,
       changerLangue,
+      theme,
+      changerTheme,
+      basculerTheme,
       t: (cle) => TEXTES[langue][cle],
       categorie: (code) => parCode.get(code) ?? { ...CATEGORIE_INCONNUE, code },
       statut: (code) => STATUTS[langue][code] ?? code,
     };
-  }, [config, chargement, langue, changerLangue]);
+  }, [config, chargement, langue, changerLangue, theme, changerTheme, basculerTheme]);
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
 }

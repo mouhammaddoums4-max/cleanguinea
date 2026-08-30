@@ -4,15 +4,128 @@
 
 :root {
   --fond: #f9fafb;
+  --texte: #111827;
+}
+
+.dark {
+  --fond: #0b1220;
+  --texte: #e5e7eb;
 }
 
 body {
   background-color: var(--fond);
-  color: #111827;
+  color: var(--texte);
   -webkit-font-smoothing: antialiased;
 }
 
 /* Les tableaux larges defilent dans leur propre conteneur, jamais la page. */
 .table-scroll {
   overflow-x: auto;
+}
+
+/*
+ * Theme sombre.
+ *
+ * Les pages sont ecrites avec la palette claire (bg-white, text-gray-900...).
+ * Plutot que de doubler chaque classe par une variante `dark:`, on redefinit
+ * ici les quelques utilitaires neutres reellement utilises : une page ajoutee
+ * plus tard herite du theme sombre sans travail supplementaire.
+ *
+ * Ces regles passent avant les variantes `dark:` de Tailwind : pour qu un
+ * element y echappe (la pastille blanche de l interrupteur, par exemple),
+ * utiliser une valeur arbitraire non listee ici, comme `bg-[#fff]`.
+ */
+.dark .bg-white {
+  background-color: #111827;
+}
+/* Le dock reste translucide : le flou d'arriere-plan doit rester visible. */
+.dark .bg-white\/90 {
+  background-color: rgba(17, 24, 39, 0.9);
+}
+.dark .bg-gray-50 {
+  background-color: #1f2937;
+}
+.dark .bg-gray-100 {
+  background-color: #374151;
+}
+.dark .bg-gray-900 {
+  background-color: #374151;
+}
+
+.dark .text-gray-900 {
+  color: #f3f4f6;
+}
+.dark .text-gray-700 {
+  color: #d1d5db;
+}
+.dark .text-gray-600 {
+  color: #cbd5e1;
+}
+.dark .text-gray-500 {
+  color: #9ca3af;
+}
+.dark .text-gray-400 {
+  color: #7c8697;
+}
+
+.dark .border-gray-200 {
+  border-color: #1f2937;
+}
+.dark .border-gray-300 {
+  border-color: #374151;
+}
+.dark .border-t-gray-900 {
+  border-top-color: #374151;
+}
+.dark .divide-gray-100 > * + * {
+  border-color: #1f2937;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #1f2937;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: #374151;
+}
+.dark .hover\:text-gray-900:hover {
+  color: #f3f4f6;
+}
+
+/* Pastilles colorees : on garde la teinte, on baisse la luminosite. */
+.dark .bg-primaire-50,
+.dark .bg-primaire-100 {
+  background-color: rgba(22, 163, 74, 0.18);
+}
+.dark .bg-red-50 {
+  background-color: rgba(220, 38, 38, 0.16);
+}
+.dark .bg-amber-50 {
+  background-color: rgba(217, 119, 6, 0.16);
+}
+.dark .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.16);
+}
+.dark .bg-indigo-50 {
+  background-color: rgba(79, 70, 229, 0.16);
+}
+.dark .border-red-200 {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.dark .text-primaire-600,
+.dark .text-primaire-700 {
+  color: #4ade80;
+}
+.dark .text-red-600,
+.dark .text-red-700 {
+  color: #f87171;
+}
+.dark .text-amber-600 {
+  color: #fbbf24;
+}
+.dark .text-blue-600 {
+  color: #60a5fa;
+}
+.dark .text-indigo-600 {
+  color: #818cf8;
 }
