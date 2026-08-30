@@ -47,12 +47,13 @@ function convertir(valeur, type) {
 export async function chargerConfig() {
   if (cache && Date.now() < cacheExpireA) return cache;
 
-  const [categories, taux, niveaux, parametres, offres] = await Promise.all([
+  const [categories, taux, niveaux, parametres, offres, periodicites] = await Promise.all([
     prisma.categorieConfig.findMany({ where: { actif: true }, orderBy: { ordre: 'asc' } }),
     prisma.tauxConversion.findMany({ where: { actif: true }, orderBy: { ordre: 'asc' } }),
     prisma.niveauFidelite.findMany({ orderBy: { seuil: 'desc' } }),
     prisma.parametre.findMany(),
     prisma.offre.findMany({ where: { actif: true }, orderBy: { tarifMensuelGnf: 'asc' } }),
+    prisma.tarifPeriodicite.findMany({ where: { actif: true }, orderBy: { ordre: 'asc' } }),
   ]);
 
   if (categories.length === 0 || niveaux.length === 0 || parametres.length === 0) {
@@ -67,7 +68,7 @@ export async function chargerConfig() {
   const params = {};
   for (const p of parametres) params[p.cle] = convertir(p.valeur, p.type);
 
-  cache = { categories, taux, niveaux, parametres: params, offres };
+  cache = { categories, taux, niveaux, parametres: params, offres, periodicites };
   cacheExpireA = Date.now() + DUREE_CACHE_MS;
   return cache;
 }
@@ -133,6 +134,12 @@ export function traduire(config, langue = 'fr') {
       tarifMensuelGnf: o.tarifMensuelGnf,
       passagesParSemaine: o.passagesParSemaine,
       nbBacsFournis: o.nbBacsFournis,
+    })),
+    periodicites: (config.periodicites ?? []).map((p) => ({
+      code: p.periodicite,
+      libelle: p[`libelle${l}`],
+      mois: p.mois,
+      remisePct: p.remisePct,
     })),
     parametres: config.parametres,
   };

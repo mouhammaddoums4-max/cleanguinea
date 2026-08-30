@@ -6,6 +6,7 @@ import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { parametre } from '../lib/config.js';
 import { calculerPoints, crediterPoints } from '../lib/points.js';
+import { notifier } from '../lib/notifications.js';
 
 const router = Router();
 router.use(authentifier);
@@ -524,19 +525,30 @@ router.post(
 
     const nb = await prisma.tournee.count();
 
-    res.status(201).json(
-      await prisma.tournee.create({
-        data: {
-          reference: `Z-${new Date().getFullYear()}-${String(nb + 1).padStart(4, '0')}`,
-          date: new Date(data.date),
-          quartierId: data.quartierId,
-          collecteurId: data.collecteurId,
-          heureDebutPrevue: data.heureDebutPrevue ? new Date(data.heureDebutPrevue) : null,
-          heureFinPrevue: data.heureFinPrevue ? new Date(data.heureFinPrevue) : null,
-        },
-        include: tourneeComplete,
-      }),
-    );
+    const tournee = await prisma.tournee.create({
+      data: {
+        reference: `Z-${new Date().getFullYear()}-${String(nb + 1).padStart(4, '0')}`,
+        date: new Date(data.date),
+        quartierId: data.quartierId,
+        collecteurId: data.collecteurId,
+        heureDebutPrevue: data.heureDebutPrevue ? new Date(data.heureDebutPrevue) : null,
+        heureFinPrevue: data.heureFinPrevue ? new Date(data.heureFinPrevue) : null,
+      },
+      include: tourneeComplete,
+    });
+
+    // Le collecteur doit savoir qu'une zone lui a ete confiee sans avoir a
+    // ouvrir l'application pour verifier.
+    notifier({
+      userId: tournee.collecteur.userId,
+      type: 'ZONE_AFFECTEE',
+      titre: 'Nouvelle zone affectee',
+      message: `${tournee.quartier.nom} (${tournee.quartier.commune.nom}) vous est confiee.`,
+      lien: `/(collecteur)/zone/${tournee.id}`,
+      donnees: { tourneeId: tournee.id, reference: tournee.reference },
+    }).catch((e) => console.error('[notif] zone affectee', e.message));
+
+    res.status(201).json(tournee);
   }),
 );
 

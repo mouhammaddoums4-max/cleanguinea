@@ -37,7 +37,7 @@ const COMMUNES = {
 
 const OFFRES = [
   { type: 'ESSENTIEL', libelle: 'Abonnement Essentiel', tarifMensuelGnf: 25_000, passagesParSemaine: 2, nbBacsFournis: 2 },
-  { type: 'STANDARD', libelle: 'Abonnement Standard', tarifMensuelGnf: 50_000, passagesParSemaine: 3, nbBacsFournis: 3 },
+  { type: 'STANDARD', libelle: 'Abonnement Standard', tarifMensuelGnf: 50_000, passagesParSemaine: 3, nbBacsFournis: 2 },
   { type: 'PRO', libelle: 'Abonnement PRO', tarifMensuelGnf: 200_000, passagesParSemaine: 6, nbBacsFournis: 6 },
 ];
 
@@ -66,8 +66,10 @@ const COLLECTEURS = [
   { nom: 'Abdoulaye Traore', telephone: '+224623444555', matricule: 'COL-004', vehicule: 'CAM-001', note: 4.7, nbEvaluations: 28 },
 ];
 
-// Les trois bacs remis a chaque foyer : les trois premieres categories du referentiel.
-const BACS = CATEGORIES.slice(0, 3).map((c, i) => ({ numero: i + 1, categorie: c.code }));
+// Deux bacs par foyer : recyclable et non recyclable. La liste vient du
+// parametre bac.categoriesParDefaut, pour rester modifiable sans redeploiement.
+const CATEGORIES_BACS = ['PLASTIQUE', 'AUTRES'];
+const BACS = CATEGORIES_BACS.map((code, i) => ({ numero: i + 1, categorie: code }));
 
 /** Remet la base a zero dans l ordre des dependances. */
 async function vider() {
@@ -87,8 +89,13 @@ async function vider() {
     prisma.stock.deleteMany(),
     prisma.centreTri.deleteMany(),
     prisma.alerte.deleteMany(),
+    prisma.notification.deleteMany(),
+    prisma.appareilPush.deleteMany(),
+    prisma.preferenceNotification.deleteMany(),
+    prisma.banniere.deleteMany(),
     prisma.baremePoints.deleteMany(),
     prisma.tauxConversion.deleteMany(),
+    prisma.tarifPeriodicite.deleteMany(),
     prisma.niveauFidelite.deleteMany(),
     prisma.categorieConfig.deleteMany(),
     prisma.parametre.deleteMany(),
@@ -123,7 +130,8 @@ async function main() {
   const resume = await semerConfig(prisma);
   console.log(
     `  ${resume.categories} categories · ${resume.niveaux} niveaux · ` +
-    `${resume.conversions} conversions · ${resume.parametres} parametres`,
+    `${resume.conversions} conversions · ${resume.periodicites} formules · ` +
+    `${resume.parametres} parametres`,
   );
 
   console.log('Offres et bareme...');
@@ -273,7 +281,8 @@ async function main() {
     for (let n = 0; n < nbMissions; n++) {
       const user = clients[Math.floor(Math.random() * clients.length)];
       const collecteur = collecteurs[Math.floor(Math.random() * collecteurs.length)];
-      const bac = bacsParClient.get(user.client.id)[1 + (n % 3)];
+      // Modulo sur le nombre reel de bacs : il y en a deux, plus trois.
+      const bac = bacsParClient.get(user.client.id)[1 + (n % BACS.length)];
 
       const heure = new Date(date);
       heure.setMinutes(heure.getMinutes() + n * 45);
@@ -444,6 +453,45 @@ async function main() {
   await prisma.vente.createMany({ data: ventes });
   await prisma.lot.createMany({ data: lots });
 
+  console.log('Bannieres...');
+  await prisma.banniere.createMany({
+    data: [
+      {
+        titre: 'Triez, gagnez des points',
+        titreEn: 'Sort your waste, earn points',
+        sousTitre: 'Chaque kilo de plastique trié vous rapporte 15 points Clean.',
+        sousTitreEn: 'Every kilo of sorted plastic earns you 15 Clean points.',
+        couleur: '#16A34A',
+        lien: '/(client)/points',
+        libelleAction: 'Voir mon solde',
+        libelleActionEn: 'View my balance',
+        ordre: 1,
+      },
+      {
+        titre: 'Parrainez un voisin',
+        titreEn: 'Refer a neighbour',
+        sousTitre: '500 points pour vous et pour lui, dès son deuxième mois.',
+        sousTitreEn: '500 points for you and for them, from their second month.',
+        couleur: '#0FA085',
+        lien: '/(client)/points',
+        libelleAction: 'En savoir plus',
+        libelleActionEn: 'Learn more',
+        ordre: 2,
+      },
+      {
+        titre: 'Payez par Orange Money',
+        titreEn: 'Pay with Orange Money',
+        sousTitre: 'Réglez votre abonnement en quelques secondes, sans espèces.',
+        sousTitreEn: 'Settle your subscription in seconds, no cash needed.',
+        couleur: '#2E4256',
+        lien: '/(client)/paiements',
+        libelleAction: 'Payer maintenant',
+        libelleActionEn: 'Pay now',
+        ordre: 3,
+      },
+    ],
+  });
+
   console.log('Alertes...');
   await prisma.alerte.createMany({
     data: [
@@ -462,9 +510,12 @@ async function main() {
     prisma.abonnement.findFirst({ orderBy: { reference: 'asc' }, select: { reference: true } }),
   ]);
 
+  const nbBacs = await prisma.bac.count();
+
   console.log('\nBase peuplee.');
   console.log(
-    `  ${nbUsers} utilisateurs · ${nbTournees} zones · ${nbMissions} missions · ${nbPesees} pesees`,
+    `  ${nbUsers} utilisateurs · ${nbBacs} bacs · ${nbTournees} zones · ` +
+    `${nbMissions} missions · ${nbPesees} pesees`,
   );
   console.log('\nComptes de demonstration (mot de passe commun) :');
   console.log(`  Admin       +224621000000                  / ${MDP_DEMO}`);

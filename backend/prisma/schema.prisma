@@ -39,6 +39,14 @@ enum TypeOffre {
   PRO       // 6 passages / semaine, volume negocie
 }
 
+/// Duree d'engagement choisie par le client. Un engagement long est remise :
+/// il ameliore la tresorerie et reduit le cout de recouvrement.
+enum Periodicite {
+  MENSUEL
+  TRIMESTRIEL
+  ANNUEL
+}
+
 enum StatutAbonnement {
   ACTIF
   SUSPENDU // impaye de plus de 45 jours
@@ -101,6 +109,25 @@ enum StatutTournee {
   ANNULEE
 }
 
+/// Categories de notification. Le client peut en desactiver certaines ;
+/// PAIEMENT reste toujours active, un impaye suspendant le service.
+enum TypeNotification {
+  COLLECTE_PLANIFIEE
+  COLLECTEUR_EN_ROUTE
+  COLLECTE_TERMINEE
+  POINTS_CREDITES
+  PAIEMENT_DU
+  PAIEMENT_RECU
+  ZONE_AFFECTEE
+  INFORMATION
+}
+
+enum CanalNotification {
+  PUSH
+  SMS
+  LES_DEUX
+}
+
 enum NiveauAlerte {
   INFO
   ATTENTION
@@ -156,6 +183,9 @@ model User {
   client           Client?
   collecteur       Collecteur?
   mouvementsPoints MouvementPoints[]
+  notifications    Notification[]
+  appareils        AppareilPush[]
+  preferencesNotif PreferenceNotification[]
 
   @@index([role])
 }
@@ -223,6 +253,7 @@ model Abonnement {
   client        Client           @relation(fields: [clientId], references: [id])
   offreId       String
   offre         Offre            @relation(fields: [offreId], references: [id])
+  periodicite   Periodicite      @default(MENSUEL)
   statut        StatutAbonnement @default(ACTIF)
   dateDebut     DateTime         @default(now())
   dateFin       DateTime?
@@ -477,6 +508,20 @@ model NiveauFidelite {
   ordre     Int    @default(0)
 }
 
+/// Remise accordee selon la duree d'engagement.
+model TarifPeriodicite {
+  id          String      @id @default(cuid())
+  periodicite Periodicite @unique
+  /// Nombre de mois facturés en une fois.
+  mois        Int
+  /// Remise appliquee au total, en pourcentage.
+  remisePct   Int         @default(0)
+  libelleFr   String
+  libelleEn   String
+  ordre       Int         @default(0)
+  actif       Boolean     @default(true)
+}
+
 /// Parametres scalaires de l application (cle -> valeur typee).
 /// Evite de multiplier les tables pour des reglages isoles.
 model Parametre {
@@ -525,6 +570,9 @@ model MouvementPoints {
 model Paiement {
   id           String     @id @default(cuid())
   reference    String     @unique
+  /// Reprise de l'abonnement au moment du paiement : une periodicite modifiee
+  /// plus tard ne doit pas reecrire l'historique comptable.
+  periodicite  Periodicite @default(MENSUEL)
   clientId     String
   client       Client     @relation(fields: [clientId], references: [id])
   abonnementId String?
@@ -614,6 +662,99 @@ model Vente {
   lots Lot[]
 
   @@index([dateVente])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+/// Notification destinee a un utilisateur, conservee pour etre relue dans
+/// l'application meme si la notification systeme a ete balayee.
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    TypeNotification
+  titre   String
+  message String
+  /// Route de l'application a ouvrir au clic, ex. /(client)/suivi
+  lien    String?
+  /// Contexte libre : reference de mission, montant, points credites.
+  donnees Json?
+
+  lue      Boolean   @default(false)
+  lueLe    DateTime?
+  envoyeePush Boolean @default(false)
+  envoyeeSms  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, lue])
+  @@index([createdAt])
+}
+
+/// Jeton push d'un appareil. Un utilisateur peut en avoir plusieurs
+/// (telephone personnel et telephone de service, par exemple).
+model AppareilPush {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Jeton Expo : ExponentPushToken[...]
+  jeton     String   @unique
+  plateforme String? // ios | android
+  modele    String?
+  actif     Boolean  @default(true)
+  vuLe      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Preferences de notification, par type. L'absence de ligne vaut "active".
+model PreferenceNotification {
+  id     String           @id @default(cuid())
+  userId String
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   TypeNotification
+  push   Boolean          @default(true)
+  sms    Boolean          @default(true)
+
+  @@unique([userId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Bannieres de l'ecran d'accueil
+// ---------------------------------------------------------------------------
+
+/// Encart affiche en haut de l'accueil client : promotion, message de service,
+/// campagne de tri. Pilote depuis le back-office, sans nouvelle version de l'app.
+model Banniere {
+  id          String   @id @default(cuid())
+  titre       String
+  titreEn     String?
+  sousTitre   String?
+  sousTitreEn String?
+  imageUrl    String?
+  /// Couleur de fond quand il n'y a pas d'image.
+  couleur     String   @default("#16A34A")
+  /// Route interne (/(client)/points) ou URL externe (https://...).
+  lien        String?
+  libelleAction   String?
+  libelleActionEn String?
+
+  actif     Boolean   @default(true)
+  ordre     Int       @default(0)
+  debutLe   DateTime?
+  finLe     DateTime?
+
+  /// Compteurs d'usage, pour savoir ce qui interesse reellement.
+  vues     Int @default(0)
+  clics    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([actif, ordre])
 }
 
 // ---------------------------------------------------------------------------

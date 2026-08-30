@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
 import { debiterPoints, gnfParPoint } from '../lib/points.js';
+import { notifier } from '../lib/notifications.js';
 
 const router = Router();
 router.use(authentifier);
@@ -119,6 +120,22 @@ router.post(
         where: { id: paiement.abonnementId },
         data: { statut: 'ACTIF', prochainPrelevement: prochain },
       });
+
+      const client = await prisma.client.findUnique({
+        where: { id: paiement.clientId },
+        select: { userId: true },
+      });
+
+      if (client) {
+        notifier({
+          userId: client.userId,
+          type: 'PAIEMENT_RECU',
+          titre: 'Paiement recu',
+          message: `Votre paiement de ${paiement.montantGnf.toLocaleString('fr-FR')} GNF est enregistre.`,
+          lien: '/(client)/paiements',
+          donnees: { paiementId: paiement.id, montant: paiement.montantGnf },
+        }).catch((e) => console.error('[notif] paiement recu', e.message));
+      }
     }
 
     res.json({ recu: true });

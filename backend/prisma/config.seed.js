@@ -58,6 +58,22 @@ export const CONVERSIONS = [
   },
 ];
 
+/**
+ * Formules d'engagement.
+ *
+ * La remise croit avec la duree : elle achete de la tresorerie et supprime
+ * onze relances de recouvrement sur un abonnement annuel. Les taux restent
+ * modestes pour ne pas amputer la marge d'un service deja peu cher.
+ */
+export const PERIODICITES = [
+  { periodicite: 'MENSUEL', mois: 1, remisePct: 0,
+    libelleFr: 'Mensuel', libelleEn: 'Monthly', ordre: 1 },
+  { periodicite: 'TRIMESTRIEL', mois: 3, remisePct: 5,
+    libelleFr: 'Trimestriel', libelleEn: 'Quarterly', ordre: 2 },
+  { periodicite: 'ANNUEL', mois: 12, remisePct: 15,
+    libelleFr: 'Annuel', libelleEn: 'Yearly', ordre: 3 },
+];
+
 export const PARAMETRES = [
   { cle: 'points.gnfParPoint', valeur: '10', type: 'number', groupe: 'points',
     libelleFr: "Valeur d'un point Clean (GNF)", libelleEn: 'Value of one Clean point (GNF)' },
@@ -81,12 +97,27 @@ export const PARAMETRES = [
 
   { cle: 'abonnement.offreParDefaut', valeur: 'STANDARD', type: 'string', groupe: 'abonnement',
     libelleFr: "Offre attribuée à l'inscription", libelleEn: 'Offer assigned at signup' },
+  // Deux bacs par foyer : un pour ce qui se recycle, un pour le reste.
+  // Trois bacs encombraient les concessions et le tri s'y perdait.
+  { cle: 'bac.categoriesParDefaut', valeur: '["PLASTIQUE","AUTRES"]', type: 'json', groupe: 'bac',
+    libelleFr: 'Bacs remis à chaque foyer', libelleEn: 'Bins provided to each household' },
   { cle: 'abonnement.joursAvantSuspension', valeur: '45', type: 'number', groupe: 'abonnement',
     libelleFr: 'Jours d\'impayé avant suspension', libelleEn: 'Days overdue before suspension' },
 
   { cle: 'compte.retentionAnonymiseeMois', valeur: '60', type: 'number', groupe: 'compte',
     libelleFr: 'Conservation des données comptables anonymisées (mois)',
     libelleEn: 'Retention of anonymised accounting data (months)' },
+
+  { cle: 'notification.rappelCollecteHeures', valeur: '12', type: 'number', groupe: 'notification',
+    libelleFr: 'Heures avant la collecte pour envoyer le rappel',
+    libelleEn: 'Hours before collection to send the reminder' },
+  { cle: 'notification.smsSeuilSolde', valeur: '200', type: 'number', groupe: 'notification',
+    libelleFr: 'Solde SMS sous lequel alerter l’administrateur',
+    libelleEn: 'SMS balance below which the administrator is alerted' },
+
+  { cle: 'banniere.rotationSecondes', valeur: '6', type: 'number', groupe: 'banniere',
+    libelleFr: 'Durée d’affichage de chaque bannière (secondes)',
+    libelleEn: 'Display duration of each banner (seconds)' },
 
   { cle: 'app.languesDisponibles', valeur: '["fr","en"]', type: 'json', groupe: 'app',
     libelleFr: "Langues proposées par l'application", libelleEn: 'Languages offered by the app', modifiable: false },
@@ -131,6 +162,14 @@ export async function semerConfig(prisma) {
     await prisma.tauxConversion.upsert({ where: { type: t.type }, create: t, update: t });
   }
 
+  for (const p of PERIODICITES) {
+    await prisma.tarifPeriodicite.upsert({
+      where: { periodicite: p.periodicite },
+      create: p,
+      update: p,
+    });
+  }
+
   for (const p of PARAMETRES) {
     // Sur un parametre existant, on ne remplace que les libelles : la valeur
     // peut avoir ete reglee depuis le back-office, on ne l'ecrase pas.
@@ -150,6 +189,7 @@ export async function semerConfig(prisma) {
     categories: CATEGORIES.length,
     niveaux: NIVEAUX.length,
     conversions: CONVERSIONS.length,
+    periodicites: PERIODICITES.length,
     parametres: PARAMETRES.length,
   };
 }

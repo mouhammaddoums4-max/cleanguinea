@@ -7,6 +7,7 @@ import {
   calculerPoints, crediterPoints, poidsRecyclableDuMois, plafondKgMois, seuilContamination,
 } from '../lib/points.js';
 import { parametre } from '../lib/config.js';
+import { notifier } from '../lib/notifications.js';
 
 const router = Router();
 router.use(authentifier);
@@ -243,13 +244,46 @@ router.patch(
       maj.collecteurId = req.user.collecteur.id;
     }
 
-    res.json(
-      await prisma.mission.update({
-        where: { id: mission.id },
-        data: maj,
-        include: missionComplete,
-      }),
-    );
+    const misAJour = await prisma.mission.update({
+      where: { id: mission.id },
+      data: maj,
+      include: missionComplete,
+    });
+
+    // Le client suit sa collecte depuis son telephone : chaque etape lui est
+    // annoncee. Hors requete : une notification perdue ne doit pas faire
+    // echouer l'avancement de la mission.
+    const ANNONCES = {
+      ACCEPTEE: {
+        type: 'COLLECTE_PLANIFIEE',
+        titre: 'Collecte acceptee',
+        message: `Votre demande ${misAJour.reference} a ete prise en charge.`,
+      },
+      EN_ROUTE: {
+        type: 'COLLECTEUR_EN_ROUTE',
+        titre: 'Collecteur en route',
+        message: `${misAJour.collecteur?.user.nom ?? 'Le collecteur'} arrive dans environ ${
+          misAJour.etaMinutes ?? 15
+        } minutes.`,
+      },
+      ARRIVE: {
+        type: 'COLLECTEUR_EN_ROUTE',
+        titre: 'Collecteur arrive',
+        message: 'Le collecteur est devant chez vous. Merci de sortir vos bacs.',
+      },
+    };
+
+    const annonce = ANNONCES[data.statut];
+    if (annonce) {
+      notifier({
+        userId: misAJour.client.userId,
+        lien: '/(client)/suivi',
+        donnees: { missionId: misAJour.id, reference: misAJour.reference },
+        ...annonce,
+      }).catch((e) => console.error('[notif] statut mission', e.message));
+    }
+
+    res.json(misAJour);
   }),
 );
 
@@ -383,6 +417,18 @@ router.post(
         motif: `Collecte ${mission.reference} - ${poidsTotal.toFixed(1)} kg`,
       });
     }
+
+    notifier({
+      userId: mission.client.userId,
+      type: 'COLLECTE_TERMINEE',
+      titre: 'Collecte terminee',
+      message:
+        pointsTotal > 0
+          ? `${poidsTotal.toFixed(1)} kg collectes. Vous gagnez ${pointsTotal} points Clean.`
+          : `${poidsTotal.toFixed(1)} kg collectes. Merci !`,
+      lien: '/(client)/historique',
+      donnees: { missionId: mission.id, poidsKg: poidsTotal, points: pointsTotal },
+    }).catch((e) => console.error('[notif] collecte terminee', e.message));
 
     res.status(201).json({ ...misAJour, pointsCredites: pointsTotal });
   }),

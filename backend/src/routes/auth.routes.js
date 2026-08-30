@@ -105,13 +105,17 @@ router.post(
     const prochainPrelevement = new Date();
     prochainPrelevement.setMonth(prochainPrelevement.getMonth() + 1);
 
-    // Les bacs remis a chaque foyer viennent du referentiel des categories :
-    // leur nombre suit nbBacsFournis de l'offre, leur ordre celui du referentiel.
+    // Les bacs remis a chaque foyer viennent du parametre bac.categoriesParDefaut :
+    // deux bacs, un pour ce qui se recycle et un pour le reste. Le nombre est
+    // borne par nbBacsFournis de l'offre souscrite.
     const { categories } = await chargerConfig();
-    const bacsParDefaut = categories
-      .filter((c) => c.actif)
+    const codesVoulus = await parametre('bac.categoriesParDefaut');
+    const actives = new Set(categories.filter((c) => c.actif).map((c) => c.code));
+
+    const bacsParDefaut = codesVoulus
+      .filter((code) => actives.has(code))
       .slice(0, offre.nbBacsFournis)
-      .map((c, i) => ({ numero: i + 1, categorie: c.code }));
+      .map((code, i) => ({ numero: i + 1, categorie: code }));
 
     const user = await prisma.$transaction(async (tx) => {
       const cree = await tx.user.create({
