@@ -2,7 +2,7 @@
 import { Platform, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavigationBar } from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -27,7 +27,9 @@ export default function RootLayout() {
   return (
     // SafeAreaProvider doit envelopper TOUTE l'application : sans lui,
     // useSafeAreaInsets() renvoie 0 et la barre d'onglets passe sous la barre systeme.
-    <SafeAreaProvider>
+    // initialMetrics : sans elles, le premier rendu se fait avec des insets a
+    // zero puis saute une fois mesure. Le contenu se decale visiblement.
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       {/*
         Vue racine opaque et pleine hauteur. Sans elle, le fond de la fenetre
         (noir par defaut) apparait derriere la barre de statut.

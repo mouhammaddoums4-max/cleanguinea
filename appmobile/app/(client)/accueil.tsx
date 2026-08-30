@@ -9,6 +9,7 @@ import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
 import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, PastilleBac } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 export default function Accueil() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function Accueil() {
   const { t, langue } = useI18n();
   const format = useFormat();
   const hautBarre = useHautBarreStatut();
+  const r = useResponsive();
 
   const niveauMax = parametre<number>('bac.niveauMaxTiers', 3);
 
@@ -55,7 +57,7 @@ export default function Accueil() {
   return (
     <Ecran>
       <ScrollView
-        contentContainerStyle={[styles.contenu, { paddingTop: hautBarre + espacement.lg }]}
+        contentContainerStyle={[styles.contenu, r.contenu, { paddingTop: hautBarre + espacement.lg }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={rafraichit} onRefresh={toutRafraichir} />}
       >
@@ -180,7 +182,8 @@ export default function Accueil() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacement.lg, gap: espacement.lg, paddingBottom: espacement.xxl },
+  // Marges horizontales et ecart fournis par useResponsive.
+  contenu: { paddingBottom: espacement.xxl },
   enTete: { flexDirection: 'row', alignItems: 'center' },
   bonjour: { fontSize: 20, fontWeight: '700', color: colors.texte },
   lieu: { fontSize: 13, color: colors.texteSecondaire, marginTop: 2 },

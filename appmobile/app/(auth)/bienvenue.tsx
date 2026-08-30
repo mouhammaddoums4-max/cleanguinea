@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { Bouton, Ecran, useHautBarreStatut } from '../../src/components/ui';
 import { Logo } from '../../src/components/Logo';
 import { colors, espacement } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 import { useI18n, LANGUES, type Langue } from '../../src/i18n';
 import { useConfig } from '../../src/config';
 
 /** Ecran 1 des maquettes : logo, deux actions, bascule FR / EN. */
 export default function Bienvenue() {
   const router = useRouter();
+  const r = useResponsive();
   const { langue, changerLangue, t } = useI18n();
   const { slogan } = useConfig();
   const hautBarre = useHautBarreStatut();
@@ -17,7 +19,7 @@ export default function Bienvenue() {
   return (
     // bas: true — ecran sans onglets, la zone systeme doit etre respectee ici.
     <Ecran bas style={{ backgroundColor: colors.surface }}>
-      <View style={[styles.conteneur, { paddingTop: hautBarre + espacement.xxl }]}>
+      <View style={[styles.conteneur, r.contenu, { paddingTop: hautBarre + espacement.xxl }]}>
         <View style={styles.bloc}>
           <Logo taille={130} />
           <View style={{ height: espacement.lg }} />
@@ -64,7 +66,6 @@ const styles = StyleSheet.create({
   conteneur: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: espacement.xl,
     paddingVertical: espacement.xxl,
   },
   bloc: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },

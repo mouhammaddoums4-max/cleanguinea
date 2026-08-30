@@ -13,11 +13,13 @@ import {
 import { CarteZones } from '../../src/components/CarteZones';
 import { Carte, Chargement, Ecran, EnTete, Etiquette, Vide } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 /** Carte de toutes les zones du jour, ordonnées par distance au collecteur. */
 export default function CarteTournee() {
   const router = useRouter();
   const { t } = useI18n();
+  const r = useResponsive();
   const format = useFormat();
   const [moi, setMoi] = useState<Position | null>(null);
 
@@ -71,7 +73,7 @@ export default function CarteTournee() {
     <Ecran>
       <EnTete titre={t('onglets.carte')} sousTitre={t('zones.carteSousTitre')} />
       <ScrollView
-        contentContainerStyle={styles.contenu}
+        contentContainerStyle={[styles.contenu, r.contenu]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={donnees.isRefetching} onRefresh={() => donnees.refetch()} />
@@ -160,7 +162,7 @@ export default function CarteTournee() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacement.lg, gap: espacement.sm, paddingBottom: espacement.xxl },
+  contenu: { gap: espacement.sm, paddingBottom: espacement.xxl },
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',

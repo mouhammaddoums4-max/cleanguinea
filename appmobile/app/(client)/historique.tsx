@@ -6,6 +6,7 @@ import {
   Carte, Chargement, Ecran, EnTete, Etiquette, PastilleBac, Vide,
 } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 import { useConfig } from '../../src/config';
 import { useI18n, useFormat } from '../../src/i18n';
 
@@ -13,6 +14,7 @@ import { useI18n, useFormat } from '../../src/i18n';
 export default function Historique() {
   const { categorie } = useConfig();
   const { t } = useI18n();
+  const r = useResponsive();
   const format = useFormat();
 
   const missions = useQuery({
@@ -33,7 +35,7 @@ export default function Historique() {
         <FlatList
           data={terminees}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={styles.liste}
+          contentContainerStyle={[styles.liste, r.contenu]}
           showsVerticalScrollIndicator={false}
           refreshing={missions.isRefetching}
           onRefresh={() => missions.refetch()}
@@ -65,7 +67,7 @@ export default function Historique() {
 }
 
 const styles = StyleSheet.create({
-  liste: { padding: espacement.lg, gap: espacement.sm, paddingBottom: espacement.xxl },
+  liste: { gap: espacement.sm, paddingBottom: espacement.xxl },
   carte: {
     flexDirection: 'row',
     alignItems: 'center',

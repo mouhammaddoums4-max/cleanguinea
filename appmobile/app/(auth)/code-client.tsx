@@ -8,6 +8,7 @@ import { useI18n } from '../../src/i18n';
 import { Bouton, Carte, Ecran, useHautBarreStatut } from '../../src/components/ui';
 import { MarqueEnTete } from '../../src/components/MarqueEnTete';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 /**
  * Affiché juste après l'inscription.
@@ -19,6 +20,7 @@ import { colors, espacement, rayon } from '../../src/theme';
 export default function CodeClient() {
   const router = useRouter();
   const { t } = useI18n();
+  const r = useResponsive();
   const hautBarre = useHautBarreStatut();
   const { code } = useLocalSearchParams<{ code: string }>();
 
@@ -31,7 +33,7 @@ export default function CodeClient() {
 
   return (
     <Ecran bas>
-      <View style={[styles.conteneur, { paddingTop: hautBarre + espacement.xl }]}>
+      <View style={[styles.conteneur, r.contenu, { paddingTop: hautBarre + espacement.xl }]}>
         <View style={styles.haut}>
           <MarqueEnTete taille={64} avecSlogan={false} />
 
@@ -90,7 +92,6 @@ const styles = StyleSheet.create({
   conteneur: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: espacement.lg,
     paddingBottom: espacement.xl,
   },
   haut: { gap: espacement.lg },

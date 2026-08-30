@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 import { colors, espacement, rayon } from '../theme';
+import { useResponsive } from '../responsive';
 
 type NomIcone = keyof typeof Ionicons.glyphMap;
 
@@ -43,7 +44,14 @@ type Props = BottomTabBarProps & {
 
 export function BarreOnglets({ state, descriptors, navigation, icones }: Props) {
   const insets = useSafeAreaInsets();
+  const r = useResponsive();
+
   const paddingBas = Math.max(insets.bottom, MIN_PADDING_BAS);
+
+  // Sur un ecran etroit, l'icone et le libelle retrecissent plutot que de se
+  // chevaucher ; sur tablette ils gagnent un peu d'air.
+  const tailleIcone = r.taille === 'compact' ? 19 : r.taille === 'tablette' ? 23 : 21;
+  const largeurPastille = r.taille === 'compact' ? 40 : 46;
 
   if (__DEV__ && state.routes.length > MAX_ONGLETS_LISIBLES) {
     console.warn(
@@ -61,6 +69,9 @@ export function BarreOnglets({ state, descriptors, navigation, icones }: Props) 
           // la zone systeme est simplement remplie par le fond de la barre.
           height: HAUTEUR_CONTENU + paddingBas,
           paddingBottom: paddingBas,
+          // Encoches laterales en paysage : la barre doit rester atteignable.
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
         },
       ]}
     >
@@ -92,15 +103,28 @@ export function BarreOnglets({ state, descriptors, navigation, icones }: Props) 
             accessibilityLabel={label}
             android_ripple={{ color: colors.primaryClair, borderless: true, radius: 44 }}
           >
-            <View style={[styles.pastille, actif && styles.pastilleActive]}>
+            <View
+              style={[
+                styles.pastille,
+                { width: largeurPastille },
+                actif && styles.pastilleActive,
+              ]}
+            >
               <Ionicons
                 name={actif ? icone : (`${icone}-outline` as NomIcone)}
-                size={21}
+                size={tailleIcone}
                 color={actif ? colors.primary : colors.texteTertiaire}
               />
             </View>
 
-            <Text numberOfLines={1} style={[styles.libelle, actif && styles.libelleActif]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.libelle,
+                { fontSize: r.police(11) },
+                actif && styles.libelleActif,
+              ]}
+            >
               {label}
             </Text>
           </Pressable>
@@ -135,7 +159,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pastille: {
-    width: 46,
     height: 30,
     borderRadius: rayon.plein,
     alignItems: 'center',
@@ -143,7 +166,6 @@ const styles = StyleSheet.create({
   },
   pastilleActive: { backgroundColor: colors.primaryClair },
   libelle: {
-    fontSize: 11,
     fontWeight: '500',
     color: colors.texteTertiaire,
     paddingHorizontal: 2,

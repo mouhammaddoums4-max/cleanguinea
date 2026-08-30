@@ -8,12 +8,14 @@ import { useAuth } from '../../src/auth';
 import { useI18n, useFormat } from '../../src/i18n';
 import { Bouton, Carte, Chargement, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 /** Tableau de bord du collecteur : ce qu'il a fait aujourd'hui, cette semaine, ce mois. */
 export default function TableauDeBordCollecteur() {
   const router = useRouter();
   const { utilisateur } = useAuth();
   const { t } = useI18n();
+  const r = useResponsive();
   const format = useFormat();
 
   const tdb = useQuery({
@@ -35,7 +37,7 @@ export default function TableauDeBordCollecteur() {
         sousTitre={`${utilisateur?.nom} · ${utilisateur?.identifiant ?? ''}`}
       />
       <ScrollView
-        contentContainerStyle={styles.contenu}
+        contentContainerStyle={[styles.contenu, r.contenu]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -161,7 +163,7 @@ function Periode({
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacement.lg, gap: espacement.md, paddingBottom: espacement.xxl },
+  contenu: { gap: espacement.md, paddingBottom: espacement.xxl },
 
   carteVerte: { backgroundColor: colors.primary, borderColor: colors.primary, gap: 4 },
   libelleClair: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },

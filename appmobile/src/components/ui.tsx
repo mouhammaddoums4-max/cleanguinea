@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { colors, espacement, rayon, ombre } from '../theme';
+import { useResponsive } from '../responsive';
 
 /**
  * Conteneur d'ecran, plein ecran.
@@ -61,11 +62,17 @@ export function EnTete({
 }: { titre: string; sousTitre?: string; retour?: boolean; action?: React.ReactNode }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const r = useResponsive();
 
   return (
     // paddingTop = inset + marge : le fond blanc touche l'encoche, le titre
     // se place sous l'heure et la batterie.
-    <View style={[styles.enTete, { paddingTop: insets.top + espacement.md }]}>
+    <View
+      style={[
+        styles.enTete,
+        { paddingTop: insets.top + espacement.md, paddingHorizontal: r.marge },
+      ]}
+    >
       {retour && (
         <Pressable
           onPress={() => router.back()}
@@ -231,9 +238,13 @@ export function Vide({
 }
 
 export function Contenu({ children }: { children: React.ReactNode }) {
+  const r = useResponsive();
+
   return (
     <ScrollView
-      contentContainerStyle={styles.contenu}
+      // Les marges suivent la largeur de l'ecran : 10 px sur un petit
+      // telephone, 24 px sur une tablette ou la largeur est bornee et centree.
+      contentContainerStyle={[styles.contenu, r.contenu]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -244,14 +255,14 @@ export function Contenu({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   ecran: { flex: 1, backgroundColor: colors.fond },
-  contenu: { padding: espacement.lg, gap: espacement.lg, paddingBottom: espacement.xxl },
+  // Marges horizontales et ecart fournis par useResponsive.
+  contenu: { paddingTop: espacement.lg, paddingBottom: espacement.xxl },
 
   enTete: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: espacement.md,
-    paddingHorizontal: espacement.lg,
-    paddingVertical: espacement.md,
+    paddingBottom: espacement.md,
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.bordure,

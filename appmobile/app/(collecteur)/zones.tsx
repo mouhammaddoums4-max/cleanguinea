@@ -9,6 +9,7 @@ import { useI18n, useFormat } from '../../src/i18n';
 import { ouvrirItineraire } from '../../src/geo';
 import { Bouton, Carte, Chargement, Ecran, useHautBarreStatut, Etiquette, Vide } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 /** Couleur et fond de l'étiquette de statut. */
 const TEINTES: Record<string, { teinte: string; fond: string }> = {
@@ -28,6 +29,7 @@ export default function Zones() {
   const { t } = useI18n();
   const format = useFormat();
   const hautBarre = useHautBarreStatut();
+  const r = useResponsive();
 
   const donnees = useQuery({
     queryKey: ['mes-zones'],
@@ -45,7 +47,7 @@ export default function Zones() {
   return (
     <Ecran>
       <ScrollView
-        contentContainerStyle={[styles.contenu, { paddingTop: hautBarre + espacement.lg }]}
+        contentContainerStyle={[styles.contenu, r.contenu, { paddingTop: hautBarre + espacement.lg }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={donnees.isRefetching} onRefresh={() => donnees.refetch()} />
@@ -188,7 +190,8 @@ function Info({ icone, texte }: { icone: keyof typeof Ionicons.glyphMap; texte: 
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacement.lg, gap: espacement.md, paddingBottom: espacement.xxl },
+  // Marges horizontales et ecart fournis par useResponsive.
+  contenu: { paddingBottom: espacement.xxl },
   enTete: { flexDirection: 'row', alignItems: 'center', marginBottom: espacement.xs },
   bonjour: { fontSize: 20, fontWeight: '700', color: colors.texte },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },

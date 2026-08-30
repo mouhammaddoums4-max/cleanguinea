@@ -6,6 +6,7 @@ import { api, type TourneeTerminee } from '../../src/api';
 import { useI18n, useFormat } from '../../src/i18n';
 import { Carte, Chargement, Ecran, EnTete, Vide } from '../../src/components/ui';
 import { colors, espacement, rayon } from '../../src/theme';
+import { useResponsive } from '../../src/responsive';
 
 type Reponse = {
   tournees: TourneeTerminee[];
@@ -15,6 +16,7 @@ type Reponse = {
 /** Zones confirmees par le collecteur sur les 30 derniers jours. */
 export default function HistoriqueCollecteur() {
   const { t } = useI18n();
+  const r = useResponsive();
   const format = useFormat();
 
   const donnees = useQuery({
@@ -43,7 +45,7 @@ export default function HistoriqueCollecteur() {
         <FlatList
           data={donnees.data!.tournees}
           keyExtractor={(x) => x.id}
-          contentContainerStyle={styles.liste}
+          contentContainerStyle={[styles.liste, r.contenu]}
           showsVerticalScrollIndicator={false}
           refreshing={donnees.isRefetching}
           onRefresh={() => donnees.refetch()}
@@ -72,7 +74,7 @@ export default function HistoriqueCollecteur() {
 }
 
 const styles = StyleSheet.create({
-  liste: { padding: espacement.lg, gap: espacement.sm, paddingBottom: espacement.xxl },
+  liste: { gap: espacement.sm, paddingBottom: espacement.xxl },
   carte: {
     flexDirection: 'row',
     alignItems: 'center',
