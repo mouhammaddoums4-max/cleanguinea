@@ -29,16 +29,16 @@ export default function Points() {
 
   if (solde.isLoading) {
     return (
-      <Ecran>
-        <EnTete titre={t('points.titre')} />
+      <Ecran bas>
+        <EnTete titre={t('points.titre')} retour />
         <Chargement texte={t('commun.chargement')} />
       </Ecran>
     );
   }
 
   return (
-    <Ecran>
-      <EnTete titre={t('points.titre')} />
+    <Ecran bas>
+      <EnTete titre={t('points.titre')} retour />
       <Contenu>
         <Carte style={styles.carteVerte}>
           <Text style={styles.libelleClair}>{t('points.soldeDisponible')}</Text>

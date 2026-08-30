@@ -25,8 +25,8 @@ export default function Historique() {
   const terminees = missions.data?.filter((m) => m.statut === 'TERMINEE') ?? [];
 
   return (
-    <Ecran bas>
-      <EnTete titre={t('historique.titre')} retour />
+    <Ecran>
+      <EnTete titre={t('historique.titre')} />
       {missions.isLoading ? (
         <Chargement />
       ) : terminees.length === 0 ? (

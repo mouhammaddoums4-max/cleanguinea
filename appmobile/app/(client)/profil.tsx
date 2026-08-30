@@ -72,11 +72,8 @@ export default function Profil() {
           route: '/(client)/paiements',
         },
         { icone: 'cube-outline', libelle: t('profil.mesBacs'), route: '/(client)/collectes' },
-        {
-          icone: 'time-outline',
-          libelle: t('historique.titre'),
-          route: '/(client)/historique',
-        },
+        // L'historique a son propre onglet : le rappeler ici n'ajouterait
+        // qu'un detour vers un ecran deja a portee de pouce.
       ],
     },
     {
