@@ -32,7 +32,16 @@ export const fr = {
 
   connexion: {
     titre: 'Se connecter',
-    intro: 'Entrez le numéro de téléphone associé à votre abonnement Clean Guinée.',
+    profilClient: 'Client',
+    profilCollecteur: 'Collecteur',
+    introClient:
+      "Entrez le numéro d'abonnement figurant sur votre contrat et sur vos bacs.",
+    introCollecteur: 'Entrez votre numéro employé, remis par votre superviseur.',
+    numeroAbonnement: "Numéro d'abonnement",
+    numeroEmploye: 'Numéro employé',
+    aideClient:
+      "Votre numéro d'abonnement commence par CG. Vous l'avez reçu par SMS à l'inscription.",
+    aideCollecteur: 'Votre numéro employé commence par COL. En cas de perte, voyez votre superviseur.',
     telephone: 'Téléphone',
     motDePasse: 'Mot de passe',
     afficherMotDePasse: 'Afficher le mot de passe',
@@ -236,12 +245,74 @@ export const fr = {
     aujourdhui: "aujourd'hui",
   },
 
+
+  zones: {
+    aCollecter: 'Zones à collecter',
+    aFaire: 'À faire',
+    enCours: 'En cours',
+    terminees: 'Terminées',
+    foyers: 'foyers',
+    foyersServis: 'foyers servis',
+    demandes: 'demandes',
+    autresFoyers: 'autres foyers',
+    toutFait: 'Toutes vos zones sont collectées. Bonne journée !',
+    aucuneZone: 'Aucune zone aujourd’hui',
+    aucuneZoneDetail: 'Votre superviseur ne vous a affecté aucune zone pour le moment.',
+    aucuneTerminee: 'Aucune zone terminée',
+    detail: 'Détail de la zone',
+    itineraire: 'Itinéraire',
+    demarrer: 'Démarrer la collecte',
+    confirmerCollecte: 'Confirmer la collecte',
+    pesees: 'Poids relevés',
+    peseesAide: 'Saisissez le poids collecté dans cette zone, par catégorie.',
+    total: 'Total',
+    foyersServisLabel: 'Nombre de foyers servis',
+    commentaire: 'Commentaire (optionnel)',
+    commentairePlaceholder: 'Accès difficile, bac manquant…',
+    detailPesees: 'Détail des pesées',
+    zoneConfirmee: 'Zone confirmée',
+    confirmationResume: '{poids} kg enregistrés pour {foyers} foyers.',
+    echecDemarrage: 'Impossible de démarrer',
+    echecConfirmation: 'Confirmation impossible',
+    carteSousTitre: 'Vos zones du jour',
+    carteIndisponible: 'Carte indisponible dans Expo Go',
+    positionIndisponible:
+      'Position non disponible : activez la localisation pour trier les zones par distance.',
+    statut: {
+      A_FAIRE: 'À faire',
+      EN_COURS: 'En cours',
+      TERMINEE: 'Terminée',
+      ANNULEE: 'Annulée',
+    },
+  },
+
+  tdb: {
+    aujourdhui: "Aujourd'hui",
+    cetteSemaine: 'Cette semaine',
+    ceMois: 'Ce mois-ci',
+    zones: 'zones',
+    zonesRestantes: 'Il vous reste {n} zone(s) à collecter',
+    prochaineZone: 'Prochaine zone',
+    voirMesZones: 'Voir mes zones',
+  },
+
+  inscriptionGeo: {
+    titre: 'Localiser mon domicile',
+    aide:
+      "Votre position aide le collecteur à trouver votre porte. L'adresse seule est souvent imprécise.",
+    utiliserPosition: 'Utiliser ma position actuelle',
+    positionEnregistree: 'Position enregistrée',
+    refusee: 'Localisation refusée. Vous pourrez l’ajouter plus tard depuis votre profil.',
+    indisponible: 'Position indisponible pour le moment.',
+  },
+
   onglets: {
     accueil: 'Accueil',
     collectes: 'Collectes',
     historique: 'Historique',
     profil: 'Profil',
-    missions: 'Missions',
+    tableauDeBord: 'Tableau de bord',
+    zones: 'Zones',
     carte: 'Carte',
   },
 } as const;

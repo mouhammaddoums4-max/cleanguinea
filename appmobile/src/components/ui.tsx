@@ -2,29 +2,54 @@ import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   type TextInputProps, type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { colors, espacement, rayon, ombre } from '../theme';
 
 /**
- * Conteneur d'ecran.
+ * Conteneur d'ecran, plein ecran.
  *
- * `bas` controle la zone sure du bas :
- *   - false (defaut) pour un ecran a onglets : la BarreOnglets gere deja l'inset,
- *     l'ajouter ici le compterait DEUX FOIS et laisserait un vide sous la barre ;
- *   - true pour un ecran empile (sans onglets), sinon le contenu passe sous la
+ * Le fond couvre TOUT l'ecran, y compris sous la barre de statut et sous la
+ * barre de navigation : c'est un simple View, pas un SafeAreaView, sinon
+ * l'application apparaitrait encadree de bandes.
+ *
+ * Ce sont les *marges du contenu* qui evitent les barres systeme, pas le fond :
+ *   - `bas = false` (defaut) pour un ecran a onglets : la BarreOnglets absorbe
+ *     deja l'inset du bas, l'ajouter ici le compterait DEUX FOIS ;
+ *   - `bas = true` pour un ecran empile, sans quoi le contenu passerait sous la
  *     barre de navigation du telephone.
+ *
+ * `souslaBarreDeStatut` laisse le contenu remonter sous la barre de statut,
+ * pour les ecrans dont l'en-tete colore doit aller jusqu'en haut.
  */
 export function Ecran({
-  children, bas = false, style,
-}: { children: React.ReactNode; bas?: boolean; style?: ViewStyle }) {
-  const edges: Edge[] = bas ? ['top', 'bottom'] : ['top'];
+  children, bas = false, sousLaBarreDeStatut = false, style,
+}: {
+  children: React.ReactNode;
+  bas?: boolean;
+  sousLaBarreDeStatut?: boolean;
+  style?: ViewStyle;
+}) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView edges={edges} style={[styles.ecran, style]}>
+    <View
+      style={[
+        styles.ecran,
+        {
+          paddingTop: sousLaBarreDeStatut ? 0 : insets.top,
+          paddingBottom: bas ? insets.bottom : 0,
+          // Encoches laterales en paysage : sans elles, le contenu passe dessous.
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+        style,
+      ]}
+    >
       {children}
-    </SafeAreaView>
+    </View>
   );
 }
 

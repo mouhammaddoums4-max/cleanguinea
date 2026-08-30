@@ -8,12 +8,31 @@ const prisma = new PrismaClient();
 
 const MDP_DEMO = 'cleanguinea2026';
 
+// Coordonnees approximatives des quartiers de Conakry, pour centrer la carte
+// du collecteur. A affiner sur le terrain lors du pilote.
 const COMMUNES = {
-  Ratoma: ['Cite FOFANA', 'Kipe', 'Nongo', 'Taouyah'],
-  Matam: ['Cite Faranah', 'Matam Lido'],
-  Dixinn: ['Cite Miniere', 'Camayenne'],
-  Matoto: ['Dabompa', 'Gbessia'],
-  Kaloum: ['Almamya', 'Sandervalia'],
+  Ratoma: [
+    ['Cite FOFANA', 9.618, -13.63],
+    ['Kipe', 9.6412, -13.6205],
+    ['Nongo', 9.653, -13.612],
+    ['Taouyah', 9.598, -13.648],
+  ],
+  Matam: [
+    ['Cite Faranah', 9.534, -13.662],
+    ['Matam Lido', 9.528, -13.671],
+  ],
+  Dixinn: [
+    ['Cite Miniere', 9.5455, -13.674],
+    ['Camayenne', 9.539, -13.683],
+  ],
+  Matoto: [
+    ['Dabompa', 9.581, -13.594],
+    ['Gbessia', 9.572, -13.612],
+  ],
+  Kaloum: [
+    ['Almamya', 9.5115, -13.708],
+    ['Sandervalia', 9.508, -13.713],
+  ],
 };
 
 const OFFRES = [
@@ -58,6 +77,7 @@ async function vider() {
     prisma.pesee.deleteMany(),
     prisma.missionBac.deleteMany(),
     prisma.mission.deleteMany(),
+    prisma.tournee.deleteMany(),
     prisma.paiement.deleteMany(),
     prisma.abonnement.deleteMany(),
     prisma.bac.deleteMany(),
@@ -92,9 +112,9 @@ async function main() {
   const quartiers = {};
   for (const [nomCommune, listeQuartiers] of Object.entries(COMMUNES)) {
     const commune = await prisma.commune.create({ data: { nom: nomCommune } });
-    for (const nomQuartier of listeQuartiers) {
+    for (const [nomQuartier, latitude, longitude] of listeQuartiers) {
       quartiers[`${nomCommune}/${nomQuartier}`] = await prisma.quartier.create({
-        data: { nom: nomQuartier, communeId: commune.id },
+        data: { nom: nomQuartier, communeId: commune.id, latitude, longitude },
       });
     }
   }
@@ -161,6 +181,9 @@ async function main() {
             adresse: `${c.quartier}, ${c.commune}`,
             quartierId: quartier.id,
             notes: c.notes,
+            // Foyers disperses sur ~500 m autour du centre du quartier.
+            latitude: quartier.latitude + (Math.random() - 0.5) * 0.009,
+            longitude: quartier.longitude + (Math.random() - 0.5) * 0.009,
           },
         },
       },
@@ -297,6 +320,71 @@ async function main() {
   await prisma.missionBac.createMany({ data: missionBacs });
   await prisma.pesee.createMany({ data: pesees });
 
+  console.log('Tournees de zone...');
+  const listeQuartiers = Object.values(quartiers);
+  const tournees = [];
+  let numeroZone = 1;
+
+  // Chaque collecteur recoit 2 a 3 zones par jour, sur les 14 derniers jours.
+  for (let jour = 14; jour >= 0; jour--) {
+    const date = new Date();
+    date.setDate(date.getDate() - jour);
+    date.setHours(0, 0, 0, 0);
+
+    for (const [i, collecteurUser] of collecteurs.entries()) {
+      const nbZones = 2 + (i % 2);
+      for (let z = 0; z < nbZones; z++) {
+        const quartier = listeQuartiers[(i * 3 + z + jour) % listeQuartiers.length];
+
+        const debut = new Date(date);
+        debut.setHours(7 + z * 3, 30, 0, 0);
+        const fin = new Date(debut.getTime() + 2.5 * 3_600_000);
+
+        // Les jours passes sont termines ; aujourd'hui, la premiere zone est en
+        // cours et les suivantes restent a faire.
+        const passe = jour > 0;
+        const statut = passe ? 'TERMINEE' : z === 0 ? 'EN_COURS' : 'A_FAIRE';
+
+        tournees.push({
+          id: randomUUID(),
+          reference: `Z-${date.getFullYear()}-${String(numeroZone++).padStart(4, '0')}`,
+          date,
+          quartierId: quartier.id,
+          collecteurId: collecteurUser.collecteur.id,
+          statut,
+          heureDebutPrevue: debut,
+          heureFinPrevue: fin,
+          demarreeA: statut === 'A_FAIRE' ? null : debut,
+          termineeA: passe ? fin : null,
+          nbFoyersServis: passe ? 28 + Math.floor(Math.random() * 22) : 0,
+          poidsTotalKg: passe ? Number((180 + Math.random() * 260).toFixed(1)) : 0,
+          latitude: quartier.latitude,
+          longitude: quartier.longitude,
+        });
+      }
+    }
+  }
+
+  await prisma.tournee.createMany({ data: tournees });
+
+  // Pesees des zones terminees, ventilees par categorie.
+  const REPARTITION = [
+    ['PLASTIQUE', 0.3], ['METAL_FER', 0.14], ['CARTON', 0.16],
+    ['VERRE', 0.08], ['ORGANIQUE', 0.22], ['AUTRES', 0.1],
+  ];
+  const peseesZones = [];
+  for (const t of tournees.filter((x) => x.statut === 'TERMINEE')) {
+    for (const [categorie, part] of REPARTITION) {
+      peseesZones.push({
+        tourneeId: t.id,
+        categorie,
+        poidsKg: Number((t.poidsTotalKg * part).toFixed(1)),
+      });
+    }
+  }
+  await prisma.pesee.createMany({ data: peseesZones });
+  console.log(`  ${tournees.length} zones · ${peseesZones.length} pesees de zone`);
+
   console.log('Paiements...');
   const paiements = [];
   for (const user of clients) {
@@ -366,18 +454,22 @@ async function main() {
     ],
   });
 
-  const [nbUsers, nbMissions, nbPesees] = await Promise.all([
+  const [nbUsers, nbMissions, nbPesees, nbTournees, premierAbonnement] = await Promise.all([
     prisma.user.count(),
     prisma.mission.count(),
     prisma.pesee.count(),
+    prisma.tournee.count(),
+    prisma.abonnement.findFirst({ orderBy: { reference: 'asc' }, select: { reference: true } }),
   ]);
 
   console.log('\nBase peuplee.');
-  console.log(`  ${nbUsers} utilisateurs · ${nbMissions} missions · ${nbPesees} pesees`);
+  console.log(
+    `  ${nbUsers} utilisateurs · ${nbTournees} zones · ${nbMissions} missions · ${nbPesees} pesees`,
+  );
   console.log('\nComptes de demonstration (mot de passe commun) :');
-  console.log(`  Admin      +224621000000 / ${MDP_DEMO}`);
-  console.log(`  Collecteur +224623111222 / ${MDP_DEMO}`);
-  console.log(`  Client     +224622123456 / ${MDP_DEMO}`);
+  console.log(`  Admin       +224621000000                  / ${MDP_DEMO}`);
+  console.log(`  Collecteur  COL-001  (numero employe)      / ${MDP_DEMO}`);
+  console.log(`  Client      ${premierAbonnement?.reference}  (numero d abonnement) / ${MDP_DEMO}`);
 }
 
 main()

@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as NavigationBar from 'expo-navigation-bar';
+import { NavigationBar } from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 
 import { AuthProvider } from '../src/auth';
@@ -21,16 +21,6 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.fond);
-
-    // Android est en edge-to-edge obligatoire depuis Expo SDK 54 : l'application se
-    // dessine SOUS la barre de navigation du systeme. On ne peut plus la rendre opaque,
-    // mais on garde des boutons systeme lisibles sur notre fond clair.
-    // Le decalage reel de la barre d'onglets est gere dans app/(tabs)/_layout.tsx.
-    if (Platform.OS === 'android') {
-      NavigationBar.setButtonStyleAsync('dark').catch(() => {
-        // Ignore : indisponible sur certains lanceurs et en mode gestuel.
-      });
-    }
   }, []);
 
   return (
@@ -42,7 +32,16 @@ export default function RootLayout() {
         <I18nProvider>
           <ConfigProvider>
             <AuthProvider>
-              <StatusBar style="dark" />
+              {/* translucent + fond transparent : l'application dessine sous la barre. */}
+              <StatusBar style="dark" translucent backgroundColor="transparent" />
+              {/*
+                Android est en edge-to-edge obligatoire depuis le SDK 54 : l'application
+                se dessine SOUS la barre systeme, qu'on ne peut plus rendre opaque. On
+                garde au moins des icones sombres, lisibles sur notre fond clair.
+                Le decalage reel de la barre d'onglets est gere par BarreOnglets.
+                (`setButtonStyleAsync` a disparu en SDK 57 au profit de ce composant.)
+              */}
+              {Platform.OS === 'android' && <NavigationBar style="light" />}
               <Stack
                 screenOptions={{
                   headerShown: false,

@@ -1,107 +1,182 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { api, type Mission } from '../../src/api';
-import { Carte, Chargement, Contenu, Ecran, EnTete, Vide } from '../../src/components/ui';
-import { colors, espacement } from '../../src/theme';
+import { api, type Zone, type ResumeZones } from '../../src/api';
 import { useI18n, useFormat } from '../../src/i18n';
+import {
+  distanceM, formaterDistance, ouvrirItineraire, positionAutorisee, relevePosition,
+  type Position,
+} from '../../src/geo';
+import { CarteZones } from '../../src/components/CarteZones';
+import { Carte, Chargement, Ecran, EnTete, Etiquette, Vide } from '../../src/components/ui';
+import { colors, espacement, rayon } from '../../src/theme';
 
-type Reponse = { missions: Mission[] };
-
-/**
- * Tournee du jour, regroupee par commune.
- *
- * La carte interactive (react-native-maps) demande une cle Google Maps et un build
- * natif : en attendant, on affiche la tournee ordonnee par quartier, qui est
- * l'information dont le collecteur a reellement besoin sur le terrain.
- */
+/** Carte de toutes les zones du jour, ordonnées par distance au collecteur. */
 export default function CarteTournee() {
   const router = useRouter();
   const { t } = useI18n();
   const format = useFormat();
+  const [moi, setMoi] = useState<Position | null>(null);
 
   const donnees = useQuery({
-    queryKey: ['mes-missions'],
-    queryFn: () => api<Reponse>('/api/missions/mes-missions'),
+    queryKey: ['mes-zones'],
+    queryFn: () => api<{ zones: Zone[]; resume: ResumeZones }>('/api/tournees/mes-zones'),
   });
 
-  const parCommune = new Map<string, Mission[]>();
-  for (const m of donnees.data?.missions ?? []) {
-    const zone = m.client.quartier.commune.nom;
-    if (!parCommune.has(zone)) parCommune.set(zone, []);
-    parCommune.get(zone)!.push(m);
-  }
+  // Position relevée une fois à l'ouverture, puis mise à jour côté serveur pour
+  // que le client puisse suivre le collecteur.
+  useEffect(() => {
+    (async () => {
+      const position = (await positionAutorisee()) ? await relevePosition() : null;
+      if (!position) return;
+      setMoi(position);
+      api('/api/tournees/collecteur/position', { method: 'PATCH', body: position }).catch(
+        () => {
+          // Sans conséquence : le suivi temps réel est un confort, pas un prérequis.
+        },
+      );
+    })();
+  }, []);
+
+  const zones = donnees.data?.zones ?? [];
+
+  const avecDistance = zones
+    .map((z) => ({
+      ...z,
+      distance: moi && z.position ? distanceM(moi, z.position) : null,
+    }))
+    .sort((a, b) => {
+      // Les zones à faire d'abord, puis la plus proche.
+      const faite = (z: typeof a) => (z.statut === 'TERMINEE' ? 1 : 0);
+      if (faite(a) !== faite(b)) return faite(a) - faite(b);
+      if (a.distance == null || b.distance == null) return 0;
+      return a.distance - b.distance;
+    });
+
+  const marqueurs = zones
+    .filter((z) => z.position)
+    .map((z) => ({
+      id: z.id,
+      position: z.position!,
+      titre: z.zone,
+      sousTitre: `${z.commune} · ${z.nbFoyers} ${t('zones.foyers')}`,
+      couleur: z.statut === 'EN_COURS' ? colors.alerte : colors.primary,
+      attenue: z.statut === 'TERMINEE',
+    }));
 
   return (
     <Ecran>
-      <EnTete titre={t('collecteur.maTournee')} sousTitre={t('collecteur.groupeeParCommune')} />
-      {donnees.isLoading ? (
-        <Chargement texte={t('commun.chargement')} />
-      ) : parCommune.size === 0 ? (
-        <Vide icone="map-outline" titre={t('collecteur.aucuneMission')} />
-      ) : (
-        <Contenu>
-          {[...parCommune.entries()].map(([zone, missions]) => (
-            <View key={zone} style={{ gap: espacement.sm }}>
-              <View style={styles.ligneZone}>
-                <Ionicons name="location" size={16} color={colors.primary} />
-                <Text style={styles.zone}>{zone}</Text>
-                <Text style={styles.compte}>
-                  {missions.length} {t('collecteur.arrets')}
-                </Text>
-              </View>
+      <EnTete titre={t('onglets.carte')} sousTitre={t('zones.carteSousTitre')} />
+      <ScrollView
+        contentContainerStyle={styles.contenu}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={donnees.isRefetching} onRefresh={() => donnees.refetch()} />
+        }
+      >
+        {donnees.isLoading ? (
+          <Chargement texte={t('commun.chargement')} />
+        ) : zones.length === 0 ? (
+          <Vide icone="map-outline" titre={t('zones.aucuneZone')} />
+        ) : (
+          <>
+            <CarteZones
+              marqueurs={marqueurs}
+              moi={moi}
+              hauteur={300}
+              messageReplis={t('zones.carteIndisponible')}
+            />
 
-              {missions.map((m, i) => (
-                <Carte
-                  key={m.id}
-                  onPress={() => router.push(`/(collecteur)/mission/${m.id}`)}
-                  style={styles.arret}
+            {!moi && (
+              <View style={styles.avis}>
+                <Ionicons name="location-outline" size={15} color={colors.texteTertiaire} />
+                <Text style={styles.avisTexte}>{t('zones.positionIndisponible')}</Text>
+              </View>
+            )}
+
+            {avecDistance.map((z) => (
+              <Carte
+                key={z.id}
+                onPress={() => router.push(`/(collecteur)/zone/${z.id}`)}
+                style={styles.ligne}
+              >
+                <View
+                  style={[
+                    styles.pastille,
+                    {
+                      backgroundColor:
+                        z.statut === 'TERMINEE'
+                          ? colors.primaryClair
+                          : z.statut === 'EN_COURS'
+                            ? colors.alerteClair
+                            : colors.surfaceAlt,
+                    },
+                  ]}
                 >
-                  <View style={styles.rang}>
-                    <Text style={styles.rangTexte}>{i + 1}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.nom}>{m.client.user.nom}</Text>
-                    <Text style={styles.petit}>
-                      {m.client.quartier.nom} · {format.heure(m.datePlanifiee)}
-                    </Text>
-                  </View>
                   <Ionicons
-                    name={m.statut === 'TERMINEE' ? 'checkmark-circle' : 'chevron-forward'}
-                    size={18}
-                    color={m.statut === 'TERMINEE' ? colors.primary : colors.texteTertiaire}
+                    name={z.statut === 'TERMINEE' ? 'checkmark' : 'location'}
+                    size={16}
+                    color={
+                      z.statut === 'TERMINEE'
+                        ? colors.primary
+                        : z.statut === 'EN_COURS'
+                          ? colors.alerte
+                          : colors.texteSecondaire
+                    }
                   />
-                </Carte>
-              ))}
-            </View>
-          ))}
-        </Contenu>
-      )}
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.nom}>{z.zone}</Text>
+                  <Text style={styles.petit}>
+                    {z.commune} · {z.nbFoyers} {t('zones.foyers')}
+                    {z.heureDebutPrevue ? ` · ${format.heure(z.heureDebutPrevue)}` : ''}
+                  </Text>
+                </View>
+
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  {z.distance != null && (
+                    <Text style={styles.distance}>{formaterDistance(z.distance)}</Text>
+                  )}
+                  {z.statut !== 'TERMINEE' && !!z.position && (
+                    <Ionicons
+                      name="navigate-circle"
+                      size={26}
+                      color={colors.primary}
+                      onPress={() => ouvrirItineraire(z.position!, z.zone)}
+                    />
+                  )}
+                </View>
+              </Carte>
+            ))}
+          </>
+        )}
+      </ScrollView>
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
-  ligneZone: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  zone: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.texte },
-  compte: { fontSize: 12, color: colors.texteSecondaire },
-  arret: {
+  contenu: { padding: espacement.lg, gap: espacement.sm, paddingBottom: espacement.xxl },
+  ligne: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: espacement.md,
     paddingVertical: espacement.md,
   },
-  rang: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.primaryClair,
+  pastille: {
+    width: 32,
+    height: 32,
+    borderRadius: rayon.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rangTexte: { fontSize: 12, fontWeight: '700', color: colors.primaryTexte },
-  nom: { fontSize: 14, fontWeight: '600', color: colors.texte },
+  nom: { fontSize: 15, fontWeight: '600', color: colors.texte },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
+  distance: { fontSize: 12, fontWeight: '600', color: colors.texteSecondaire },
+  avis: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4 },
+  avisTexte: { flex: 1, fontSize: 12, color: colors.texteTertiaire },
 });

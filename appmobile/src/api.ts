@@ -117,6 +117,76 @@ export type Utilisateur = {
   telephone: string;
   role: Role;
   langue?: 'fr' | 'en';
+  /** Numero d'abonnement (CG-...) pour un client, numero employe (COL-...) sinon. */
+  identifiant?: string | null;
+};
+
+export type Position = { latitude: number; longitude: number };
+
+export type StatutZone = 'A_FAIRE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';
+
+/** Zone confiee au collecteur pour la journee. */
+export type Zone = {
+  id: string;
+  reference: string;
+  statut: StatutZone;
+  zone: string;
+  commune: string;
+  heureDebutPrevue: string | null;
+  heureFinPrevue: string | null;
+  demarreeA: string | null;
+  termineeA: string | null;
+  nbFoyers: number;
+  nbFoyersServis: number;
+  poidsTotalKg: number;
+  position: Position | null;
+};
+
+export type ResumeZones = {
+  total: number;
+  aFaire: number;
+  enCours: number;
+  terminees: number;
+  poidsTotalKg: number;
+  foyersServis: number;
+};
+
+export type FoyerZone = {
+  id: string;
+  nom: string;
+  telephone: string;
+  adresse: string;
+  notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  bacs: { id: string; numero: number; categorie: Categorie; niveauTiers: number }[];
+  /** Renseigne si le foyer a signale un bac plein. */
+  demande: { id: string; reference: string; origine: string } | null;
+};
+
+export type DetailZone = Omit<Zone, 'nbFoyers'> & {
+  commentaire: string | null;
+  foyers: FoyerZone[];
+  pesees: { id: string; categorie: Categorie; poidsKg: number }[];
+};
+
+export type TourneeTerminee = {
+  id: string;
+  reference: string;
+  date: string;
+  termineeA: string | null;
+  nbFoyersServis: number;
+  poidsTotalKg: number;
+  quartier: { nom: string; commune: { nom: string } };
+};
+
+export type TableauBordCollecteur = {
+  jour: { zones: number; poidsKg: number; foyers: number };
+  semaine: { zones: number; poidsKg: number; foyers: number };
+  mois: { zones: number; poidsKg: number; foyers: number };
+  zonesRestantes: number;
+  note: number | null;
+  nbEvaluations: number;
 };
 
 export type Bac = {

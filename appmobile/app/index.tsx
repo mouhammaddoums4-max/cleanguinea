@@ -26,6 +26,6 @@ export default function Index() {
   return utilisateur.role === 'CLIENT' ? (
     <Redirect href="/(client)/accueil" />
   ) : (
-    <Redirect href="/(collecteur)/missions" />
+    <Redirect href="/(collecteur)/tableau-de-bord" />
   );
 }

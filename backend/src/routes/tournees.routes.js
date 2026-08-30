@@ -282,6 +282,13 @@ router.post(
     const poidsTotal = data.pesees.reduce((s, p) => s + p.poidsKg, 0);
     const { debut, fin } = aujourdhui();
 
+    // Lectures faites AVANT d'ouvrir la transaction : chaque aller-retour compte
+    // contre son delai, et la base est derriere un proxy a forte latence.
+    const [centreTri, capacite] = await Promise.all([
+      prisma.centreTri.findFirst({ where: { actif: true } }),
+      parametre('tri.capaciteParCategorieKg'),
+    ]);
+
     const confirmee = await prisma.$transaction(async (tx) => {
       await tx.pesee.createMany({
         data: data.pesees.map((p) => ({
@@ -293,9 +300,7 @@ router.post(
       });
 
       // Entree en stock au centre de tri.
-      const centreTri = await tx.centreTri.findFirst({ where: { actif: true } });
       if (centreTri) {
-        const capacite = await parametre('tri.capaciteParCategorieKg');
         for (const p of data.pesees) {
           await tx.stock.upsert({
             where: {
@@ -348,6 +353,10 @@ router.post(
         },
         include: tourneeComplete,
       });
+    }, {
+      // 5 s par defaut : insuffisant quand la base repond en ~1 s par requete.
+      timeout: 30_000,
+      maxWait: 15_000,
     });
 
     // Points Clean, hors transaction : un incident ici ne doit pas annuler la collecte.

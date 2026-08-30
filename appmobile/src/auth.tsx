@@ -3,11 +3,18 @@ import { useRouter, useSegments } from 'expo-router';
 
 import { api, ecrireJeton, effacerJeton, lireJeton, type Utilisateur } from './api';
 
-type Identifiants = { telephone: string; motDePasse: string };
+type Identifiants = {
+  /** Numero d'abonnement (CG-...), numero employe (COL-...) ou telephone. */
+  identifiant: string;
+  motDePasse: string;
+};
 
 type Inscription = {
   nom: string;
   telephone: string;
+  /** Position relevee par le telephone a l'inscription. */
+  latitude?: number;
+  longitude?: number;
   email?: string;
   motDePasse: string;
   adresse: string;
@@ -105,9 +112,12 @@ export function useRedirectionSelonRole() {
       return;
     }
 
-    const espace = utilisateur.role === 'CLIENT' ? '(client)' : '(collecteur)';
     if (dansAuth || segments.length === 0) {
-      router.replace(espace === '(client)' ? '/(client)/accueil' : '/(collecteur)/missions');
+      router.replace(
+        utilisateur.role === 'CLIENT'
+          ? '/(client)/accueil'
+          : '/(collecteur)/tableau-de-bord',
+      );
     }
   }, [utilisateur, chargement, segments, router]);
 }

@@ -2,68 +2,69 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { api, type Mission } from '../../src/api';
-import { Carte, Chargement, Ecran, EnTete, PastilleBac, Vide } from '../../src/components/ui';
-import { colors, espacement } from '../../src/theme';
-import { useConfig } from '../../src/config';
+import { api, type TourneeTerminee } from '../../src/api';
 import { useI18n, useFormat } from '../../src/i18n';
+import { Carte, Chargement, Ecran, EnTete, Vide } from '../../src/components/ui';
+import { colors, espacement, rayon } from '../../src/theme';
 
-type Reponse = { missions: Mission[] };
+type Reponse = {
+  tournees: TourneeTerminee[];
+  cumul: { zones: number; poidsTotalKg: number; foyersServis: number };
+};
 
-/** Ecran 5 de l'application collecteur : collectes realisees. */
+/** Zones confirmees par le collecteur sur les 30 derniers jours. */
 export default function HistoriqueCollecteur() {
-  const { categorie } = useConfig();
   const { t } = useI18n();
   const format = useFormat();
 
   const donnees = useQuery({
-    queryKey: ['mes-missions'],
-    queryFn: () => api<Reponse>('/api/missions/mes-missions'),
+    queryKey: ['historique-zones'],
+    queryFn: () => api<Reponse>('/api/tournees/collecteur/historique'),
   });
 
-  const terminees = (donnees.data?.missions ?? []).filter((m) => m.statut === 'TERMINEE');
-  const total = terminees.reduce((s, m) => s + m.poidsTotalKg, 0);
+  const cumul = donnees.data?.cumul;
 
   return (
-    <Ecran>
+    <Ecran bas>
       <EnTete
         titre={t('collecteur.historique')}
-        sousTitre={`${terminees.length} ${t('collecteur.collectesJour')} · ${total.toFixed(1)} kg ${t('collecteur.aujourdhui')}`}
+        sousTitre={
+          cumul
+            ? `${cumul.zones} ${t('tdb.zones')} · ${cumul.poidsTotalKg} kg · ${cumul.foyersServis} ${t('zones.foyersServis')}`
+            : undefined
+        }
+        retour
       />
       {donnees.isLoading ? (
         <Chargement texte={t('commun.chargement')} />
-      ) : terminees.length === 0 ? (
-        <Vide icone="time-outline" titre={t('historique.aucune')} />
+      ) : (donnees.data?.tournees.length ?? 0) === 0 ? (
+        <Vide icone="time-outline" titre={t('zones.aucuneTerminee')} />
       ) : (
         <FlatList
-          data={terminees}
-          keyExtractor={(m) => m.id}
+          data={donnees.data!.tournees}
+          keyExtractor={(x) => x.id}
           contentContainerStyle={styles.liste}
           showsVerticalScrollIndicator={false}
           refreshing={donnees.isRefetching}
           onRefresh={() => donnees.refetch()}
-          renderItem={({ item }) => {
-            const c = categorie(item.bacs[0]?.bac.categorie ?? 'AUTRES');
-            return (
+          renderItem={({ item }) => (
             <Carte style={styles.carte}>
-              <PastilleBac couleur={c.couleur} couleurFond={c.couleurFond} icone={c.icone} />
+              <View style={styles.pastille}>
+                <Ionicons name="checkmark" size={16} color={colors.primary} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.date}>
-                  {format.date(item.datePlanifiee)} · {format.heure(item.datePlanifiee)}
+                  {format.date(item.date)}
+                  {item.termineeA ? ` · ${format.heure(item.termineeA)}` : ''}
                 </Text>
-                <Text style={styles.nom}>{item.client.user.nom}</Text>
+                <Text style={styles.nom}>{item.quartier.nom}</Text>
                 <Text style={styles.petit}>
-                  {item.client.quartier.commune.nom} · {t('bacs.bac')}{' '}
-                  {item.bacs[0]?.bac.numero ?? '-'}
+                  {item.quartier.commune.nom} · {item.nbFoyersServis} {t('zones.foyersServis')}
                 </Text>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.poids}>{item.poidsTotalKg} kg</Text>
-                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              </View>
+              <Text style={styles.poids}>{item.poidsTotalKg} kg</Text>
             </Carte>
-            );
-          }}
+          )}
         />
       )}
     </Ecran>
@@ -78,8 +79,16 @@ const styles = StyleSheet.create({
     gap: espacement.md,
     paddingVertical: espacement.md,
   },
+  pastille: {
+    width: 32,
+    height: 32,
+    borderRadius: rayon.sm,
+    backgroundColor: colors.primaryClair,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   date: { fontSize: 11, color: colors.texteSecondaire },
   nom: { fontSize: 15, fontWeight: '600', color: colors.texte, marginTop: 2 },
   petit: { fontSize: 12, color: colors.texteSecondaire, marginTop: 2 },
-  poids: { fontSize: 15, fontWeight: '700', color: colors.texte, marginBottom: 2 },
+  poids: { fontSize: 15, fontWeight: '700', color: colors.texte },
 });

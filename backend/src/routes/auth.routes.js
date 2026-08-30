@@ -60,6 +60,10 @@ const inscriptionSchema = z.object({
   commune: z.string().min(2, 'Commune requise'),
   quartier: z.string().min(2, 'Quartier requis'),
   nbPersonnes: z.number().int().positive().optional(),
+  // Position relevee par le telephone a l'inscription : c'est elle qui permet
+  // au collecteur de trouver le foyer, l'adresse seule etant souvent imprecise.
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   langue: z.enum(['fr', 'en']).default('fr'),
   cguAcceptees: z.literal(true, { errorMap: () => ({ message: 'Vous devez accepter les CGU' }) }),
 });
@@ -122,6 +126,8 @@ router.post(
               adresse: data.adresse,
               quartierId: quartier.id,
               nbPersonnes: data.nbPersonnes ?? 6,
+              latitude: data.latitude,
+              longitude: data.longitude,
             },
           },
         },

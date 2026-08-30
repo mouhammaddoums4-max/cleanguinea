@@ -33,6 +33,8 @@ router.patch(
         adresse: z.string().min(3).optional(),
         notes: z.string().max(280).nullable().optional(),
         nbPersonnes: z.number().int().positive().max(50).optional(),
+        latitude: z.number().min(-90).max(90).nullable().optional(),
+        longitude: z.number().min(-180).max(180).nullable().optional(),
       })
       .parse(req.body);
 

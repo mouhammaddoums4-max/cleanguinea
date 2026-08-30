@@ -7,9 +7,19 @@ import type { fr } from './fr';
  * Interface copy only. Business labels (waste categories, tariffs, loyalty tiers)
  * come from the API (`/api/config`), never from here.
  */
-type Traductions = {
-  [S in keyof typeof fr]: { [K in keyof (typeof fr)[S]]: (typeof fr)[S][K] extends readonly string[] ? string[] : string };
+/**
+ * Meme forme que `fr`, aux valeurs pres : une cle manquante ou mal orthographiee
+ * fait echouer la compilation, ce qui evite les textes non traduits en production.
+ */
+type Miroir<T> = {
+  [K in keyof T]: T[K] extends readonly string[]
+    ? string[]
+    : T[K] extends object
+      ? Miroir<T[K]>
+      : string;
 };
+
+type Traductions = Miroir<typeof fr>;
 
 export const en: Traductions = {
   commun: {
@@ -38,7 +48,16 @@ export const en: Traductions = {
 
   connexion: {
     titre: 'Sign in',
-    intro: 'Enter the phone number linked to your Clean Guinée subscription.',
+    profilClient: 'Customer',
+    profilCollecteur: 'Collector',
+    introClient: 'Enter the subscription number shown on your contract and on your bins.',
+    introCollecteur: 'Enter your staff number, given to you by your supervisor.',
+    numeroAbonnement: 'Subscription number',
+    numeroEmploye: 'Staff number',
+    aideClient:
+      'Your subscription number starts with CG. You received it by SMS when you signed up.',
+    aideCollecteur:
+      'Your staff number starts with COL. If you lost it, ask your supervisor.',
     telephone: 'Phone number',
     motDePasse: 'Password',
     afficherMotDePasse: 'Show password',
@@ -241,12 +260,74 @@ export const en: Traductions = {
     aujourdhui: 'today',
   },
 
+
+  zones: {
+    aCollecter: 'Zones to collect',
+    aFaire: 'To do',
+    enCours: 'In progress',
+    terminees: 'Completed',
+    foyers: 'households',
+    foyersServis: 'households served',
+    demandes: 'requests',
+    autresFoyers: 'more households',
+    toutFait: 'All your zones are collected. Have a good day!',
+    aucuneZone: 'No zone today',
+    aucuneZoneDetail: 'Your supervisor has not assigned you a zone yet.',
+    aucuneTerminee: 'No completed zone',
+    detail: 'Zone details',
+    itineraire: 'Directions',
+    demarrer: 'Start collection',
+    confirmerCollecte: 'Confirm collection',
+    pesees: 'Recorded weights',
+    peseesAide: 'Enter the weight collected in this zone, by category.',
+    total: 'Total',
+    foyersServisLabel: 'Number of households served',
+    commentaire: 'Comment (optional)',
+    commentairePlaceholder: 'Difficult access, missing bin…',
+    detailPesees: 'Weight breakdown',
+    zoneConfirmee: 'Zone confirmed',
+    confirmationResume: '{poids} kg recorded for {foyers} households.',
+    echecDemarrage: 'Could not start',
+    echecConfirmation: 'Confirmation failed',
+    carteSousTitre: "Today's zones",
+    carteIndisponible: 'Map unavailable in Expo Go',
+    positionIndisponible:
+      'Location unavailable: turn it on to sort zones by distance.',
+    statut: {
+      A_FAIRE: 'To do',
+      EN_COURS: 'In progress',
+      TERMINEE: 'Completed',
+      ANNULEE: 'Cancelled',
+    },
+  },
+
+  tdb: {
+    aujourdhui: 'Today',
+    cetteSemaine: 'This week',
+    ceMois: 'This month',
+    zones: 'zones',
+    zonesRestantes: 'You have {n} zone(s) left to collect',
+    prochaineZone: 'Next zone',
+    voirMesZones: 'View my zones',
+  },
+
+  inscriptionGeo: {
+    titre: 'Locate my home',
+    aide:
+      'Your location helps the collector find your door. An address alone is often imprecise.',
+    utiliserPosition: 'Use my current location',
+    positionEnregistree: 'Location saved',
+    refusee: 'Location declined. You can add it later from your profile.',
+    indisponible: 'Location unavailable right now.',
+  },
+
   onglets: {
     accueil: 'Home',
     collectes: 'Bins',
     historique: 'History',
     profil: 'Profile',
-    missions: 'Jobs',
+    tableauDeBord: 'Dashboard',
+    zones: 'Zones',
     carte: 'Map',
   },
 };

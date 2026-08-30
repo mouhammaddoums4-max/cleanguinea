@@ -300,7 +300,13 @@ router.post(
     }
 
     const poidsTotal = data.pesees.reduce((s, p) => s + p.poidsKg, 0);
-    const seuilContam = await seuilContamination();
+
+    // Lectures groupees hors transaction : elles n'ont pas a consommer son delai.
+    const [seuilContam, centre, capacite] = await Promise.all([
+      seuilContamination(),
+      prisma.centreTri.findFirst({ where: { actif: true } }),
+      parametre('tri.capaciteParCategorieKg'),
+    ]);
 
     const misAJour = await prisma.$transaction(async (tx) => {
       await tx.pesee.createMany({
@@ -324,7 +330,6 @@ router.post(
       }
 
       // Entree en stock au centre de tri.
-      const centre = await tx.centreTri.findFirst({ where: { actif: true } });
       if (centre) {
         for (const p of data.pesees) {
           await tx.stock.upsert({
@@ -333,7 +338,7 @@ router.post(
               centreTriId: centre.id,
               categorie: p.categorie,
               quantiteKg: p.poidsKg,
-              capaciteKg: await parametre('tri.capaciteParCategorieKg'),
+              capaciteKg: capacite,
             },
             update: { quantiteKg: { increment: p.poidsKg } },
           });
@@ -351,7 +356,7 @@ router.post(
         },
         include: missionComplete,
       });
-    });
+    }, { timeout: 30_000, maxWait: 15_000 });
 
     // Points Clean, hors transaction : un echec ici ne doit pas annuler la collecte.
     const solde = await prisma.soldePoints.findUnique({

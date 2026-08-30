@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { api } from '../../src/api';
 import { useAuth } from '../../src/auth';
+import { useRouter as useRouterExpo } from 'expo-router';
 import { Bouton, Carte, Contenu, Ecran, EnTete } from '../../src/components/ui';
 import { colors, espacement } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
@@ -46,6 +47,7 @@ export default function ProfilCollecteur() {
           <Carte style={{ gap: espacement.md }}>
             {[
               { libelle: t('collecteur.matricule'), valeur: c.matricule },
+              { libelle: t('connexion.numeroEmploye'), valeur: utilisateur?.identifiant ?? '—' },
               { libelle: t('collecteur.vehicule'), valeur: c.vehicule ?? '—' },
               { libelle: t('collecteur.evaluations'), valeur: String(c.nbEvaluations) },
             ].map((l) => (
@@ -56,6 +58,20 @@ export default function ProfilCollecteur() {
             ))}
           </Carte>
         )}
+
+        <Bouton
+          titre={t('collecteur.historique')}
+          variante="contour"
+          icone="time-outline"
+          onPress={() => router.push('/(collecteur)/historique')}
+        />
+
+        <Bouton
+          titre={t('profil.langue')}
+          variante="contour"
+          icone="language-outline"
+          onPress={() => router.push('/(client)/langue')}
+        />
 
         <Bouton
           titre={t('profil.seDeconnecter')}

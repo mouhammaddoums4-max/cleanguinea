@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../../src/auth';
 import { Bouton, Champ, Contenu, Ecran, EnTete } from '../../src/components/ui';
+import { MarqueEnTete } from '../../src/components/MarqueEnTete';
 import { colors, espacement, rayon } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useConfig } from '../../src/config';
@@ -56,6 +57,9 @@ export default function Inscription() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Contenu>
+          {/* Slogan omis ici : le formulaire est long, on garde l'ecran compact. */}
+          <MarqueEnTete taille={60} avecSlogan={false} />
+
           <Champ
             icone="person-outline"
             placeholder={t('inscription.nomComplet')}
