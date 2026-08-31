@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authentifier, exigerRole } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/erreurs.js';
+import { enregistrerPesees, lotSchema as peseesSchema } from '../services/pesee.service.js';
 
 const router = Router();
 router.use(authentifier, exigerRole('ADMIN', 'SUPERVISEUR'));
@@ -24,6 +25,28 @@ router.get(
         capaciteRestantePct: Number((100 - (s.quantiteKg / s.capaciteKg) * 100).toFixed(1)),
       })),
     );
+  }),
+);
+
+/**
+ * POST /api/tri/pesees
+ *
+ * Pesee a l'entrepot. Les trieurs pesent chaque bac categorie par categorie,
+ * et c'est ici que les points Clean sont credites : le collecteur ne pese plus
+ * rien sur le terrain, il n'y a donc aucun autre endroit ou le faire.
+ *
+ * Le lot est accepte en bloc mais traite ligne a ligne. Un code QR illisible ne
+ * doit pas faire perdre les cinquante pesees deja saisies : chaque ligne porte
+ * son propre statut dans la reponse.
+ */
+router.post(
+  '/pesees',
+  asyncHandler(async (req, res) => {
+    const data = peseesSchema.parse(req.body);
+    const resultat = await enregistrerPesees(data);
+
+    // 207 : le lot a ete traite, mais toutes les lignes n'ont pas abouti.
+    res.status(resultat.resume.enErreur > 0 ? 207 : 201).json(resultat);
   }),
 );
 

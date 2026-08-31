@@ -103,6 +103,15 @@ export async function debiterPoints({ userId, points, motif, conversion }) {
 /**
  * Poids de recyclables deja presente ce mois-ci par un client.
  * Les categories comptees sont celles marquees `recyclable` dans le referentiel.
+ *
+ * Une pesee peut etre rattachee au client par deux chemins : la mission (une
+ * demande ponctuelle) ou le bac (la pesee faite a l'entrepot). Les deux doivent
+ * compter.
+ *
+ * Ne regarder que les missions laissait passer tout le tonnage pese a
+ * l'entrepot — c'est-a-dire la quasi-totalite, depuis que le collecteur ne pese
+ * plus sur le terrain. Le plafond anti-fraude ne voyait donc plus ce qu'il est
+ * charge de limiter.
  */
 export async function poidsRecyclableDuMois(clientId) {
   const debutMois = new Date();
@@ -112,7 +121,7 @@ export async function poidsRecyclableDuMois(clientId) {
   const agg = await prisma.pesee.aggregate({
     _sum: { poidsKg: true },
     where: {
-      mission: { clientId },
+      OR: [{ mission: { clientId } }, { bac: { clientId } }],
       createdAt: { gte: debutMois },
       categorie: { in: await categoriesRecyclables() },
     },
